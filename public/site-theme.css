@@ -1,0 +1,241 @@
+.site-body {
+    background: #fff
+}
+
+.team-toggle {
+    display: block;
+    margin: 32px auto 0;
+    padding: 10px 28px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--blue);
+    font-size: 14px
+}
+
+.team-toggle:hover {
+    border-color: var(--blue)
+}
+
+.team-toggle[hidden],
+.person[hidden] {
+    display: none
+}
+
+a.news-row:hover h3 {
+    color: var(--blue)
+}
+
+.site-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    order: 2
+}
+
+.site-body .menu-toggle {
+    order: 3
+}
+
+.site-body .theme-control select {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink);
+    min-height: 36px
+}
+
+.site-body .theme-control select:focus-visible {
+    outline: 3px solid #f1aa36;
+    outline-offset: 3px
+}
+
+[data-theme="dark"] .site-body {
+    background: #101722
+}
+
+[data-theme="dark"] .site-body header,
+[data-theme="dark"] .site-body nav {
+    background: var(--surface);
+    border-color: var(--line)
+}
+
+[data-theme="dark"] .site-body .theme-control select {
+    background: var(--field)
+}
+
+[data-theme="dark"] .site-body .hero {
+    background: #101d30
+}
+
+[data-theme="dark"] .site-body .hero-image {
+    filter: brightness(.55) saturate(.8)
+}
+
+[data-theme="dark"] .site-body .hero:after {
+    background: linear-gradient(90deg, #101d30 0%, #101d30f5 26%, #101d30b8 46%, #101d3020 85%)
+}
+
+[data-theme="dark"] .site-body .hero p {
+    color: #b8c8dd
+}
+
+[data-theme="dark"] .site-body .hero-note {
+    color: #a4b7d0
+}
+
+[data-theme="dark"] .site-body .services,
+[data-theme="dark"] .site-body .news {
+    background: #131f2e
+}
+
+[data-theme="dark"] .site-body .service-card,
+[data-theme="dark"] .site-body .news-row {
+    background: var(--surface);
+    border-color: var(--line)
+}
+
+[data-theme="dark"] .site-body .service-card:hover {
+    border-color: #7ca4d8
+}
+
+[data-theme="dark"] .site-body .service-card button,
+[data-theme="dark"] .site-body .about-tags {
+    color: #accbf2
+}
+
+[data-theme="dark"] .site-body .person {
+    background: transparent
+}
+
+[data-theme="dark"] .site-body .portrait {
+    background: linear-gradient(135deg, #223247, #192332)
+}
+
+[data-theme="dark"] .site-body .contact {
+    background: #122b4d
+}
+
+[data-theme="dark"] .site-body .nav-contact {
+    background: #2965cc;
+    color: white
+}
+
+[data-theme="dark"] .site-body .nav-contact:hover {
+    background: #3375e3
+}
+
+[data-theme="dark"] .site-body dialog,
+[data-theme="dark"] .site-body .skip {
+    background: var(--surface);
+    color: var(--ink)
+}
+
+[data-theme="dark"] .site-body dialog::backdrop {
+    background: #030913b8
+}
+
+[data-theme="dark"] .site-body #error {
+    background: #352328;
+    color: #ffb1a9;
+    border-color: #765057
+}
+
+@media(min-width:1001px) and (max-width:1250px) {
+    .site-body nav {
+        gap: 17px
+    }
+
+    .site-actions {
+        gap: 12px
+    }
+
+    .site-body .theme-control label {
+        display: none
+    }
+
+    .site-body .nav-contact {
+        padding: 10px 12px
+    }
+
+    .site-body .nav-contact span {
+        margin-left: 10px
+    }
+}
+
+@media(max-width:1000px) {
+    .site-body header {
+        gap: 12px
+    }
+
+    .site-body .menu-toggle {
+        display: block;
+        background: none;
+        border: 0;
+        color: var(--ink);
+        font-size: 24px
+    }
+
+    .site-actions {
+        margin-left: auto
+    }
+
+    .site-body nav {
+        display: none;
+        position: absolute;
+        top: 94px;
+        left: 0;
+        right: 0;
+        background: white;
+        height: auto;
+        padding: 20px;
+        box-shadow: 0 12px 20px #12274312
+    }
+
+    .site-body nav.open {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch
+    }
+
+    .site-body nav a {
+        padding: 10px;
+        height: auto
+    }
+
+    .site-body nav a.active:after {
+        display: none
+    }
+}
+
+@media(max-width:760px) {
+    .site-body nav {
+        top: 76px
+    }
+
+    .site-body .theme-control label {
+        display: none
+    }
+
+    .site-actions {
+        gap: 0
+    }
+
+    .site-body .theme-control select {
+        max-width: 110px;
+        padding: 5px
+    }
+
+    .site-body header {
+        gap: 8px
+    }
+
+    .site-body .menu-toggle {
+        padding: 2px 0 2px 6px
+    }
+
+    [data-theme="dark"] .site-body .hero:after {
+        background: linear-gradient(180deg, #101d30 0%, #101d30f5 35%, #101d3099 65%, #101d3022 100%)
+    }
+}

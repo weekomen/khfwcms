@@ -1,0 +1,11 @@
+node_modules/
+data/content.json
+data/admin-token
+data/*.tmp
+data/uploads/
+reference/image*
+reference/contact.jpg
+test-results/
+reference/
+tmp/
+*.log

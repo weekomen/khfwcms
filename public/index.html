@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="课后邦聚焦素质教育与课后服务，连接优质课程、专业师资与数字化服务。">
+    <title>课后邦｜素质教育与课后服务</title>
+    <script src="/theme.js"></script>
+    <link rel="icon" href="/assets/logo.webp">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="/site-theme.css">
+    <link rel="stylesheet" href="/courses.css">
+    <script src="/courses.js" defer></script>
+    <script src="/app.js" defer></script>
+</head>
+
+<body class="site-body">
+    <a class="skip" href="#main">跳至正文</a>
+    <header><a class="brand" href="#home"><img src="/assets/logo.webp" alt="课后邦标志"><span><b>课后邦</b><small>KEHOU
+                    BANG</small></span></a><button class="menu-toggle" aria-expanded="false" aria-controls="nav"
+            aria-label="展开导航">☰</button>
+        <nav id="nav"><a class="active" href="#home">首页</a><a href="#about">关于课后邦</a><a href="#services">产品与服务</a><a
+                href="#team">专业团队</a><a href="#news">公司动态</a></nav>
+        <div class="site-actions">
+            <div class="theme-control"><label for="theme-select">外观</label><select id="theme-select">
+                    <option value="system">跟随系统</option>
+                    <option value="light">日间模式</option>
+                    <option value="dark">夜间模式</option>
+                </select></div><a class="nav-contact" href="#contact">合作咨询 <span>↗</span></a>
+        </div>
+    </header>
+    <main id="main">
+        <section class="hero" id="home">
+            <div class="hero-image" role="img" aria-label="PPT 中的建筑景观配图"></div>
+            <div class="hero-content wrap">
+                <div class="eyebrow"><span></span> 用心做教育 · 陪伴每一份成长</div>
+                <h1 id="headline">让课后时光，<br>生长更多可能。</h1>
+                <p id="intro"></p>
+                <div class="hero-actions"><a class="button primary" href="#services">探索我们的服务 <span>↗</span></a><a
+                        class="text-link" href="#about">认识课后邦 <span>→</span></a></div>
+                <div class="hero-note"><span>EDUCATION WITH POSSIBILITY</span><span>向下探索 ↓</span></div>
+            </div>
+            <div class="hero-index">01 <span>/ 课后，有更多可能</span></div>
+        </section>
+        <div class="pillars wrap">
+            <div><span>01</span><b>优质课程</b><small>丰富课程供给</small></div>
+            <div><span>02</span><b>专业师资</b><small>用心陪伴成长</small></div>
+            <div><span>03</span><b>数字赋能</b><small>提升服务效率</small></div>
+            <div><span>04</span><b>协同共建</b><small>支持项目落地</small></div>
+        </div>
+        <section class="section wrap about" id="about">
+            <div>
+                <div class="eyebrow">ABOUT US / 关于课后邦</div>
+                <h2>深耕课后服务<br>让教育的可能，<em>被看见。</em></h2>
+            </div>
+            <div class="about-copy">
+                <p id="about-copy"></p>
+                <div class="about-tags"><span>课程资源</span><span>教学保障</span><span>技术支持</span><span>运营协同</span></div><a
+                    class="text-link" href="#team">认识我们的团队 <span>↗</span></a>
+            </div>
+        </section>
+        <section class="services section" id="services">
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <div class="eyebrow">OUR SERVICES / 产品与服务</div>
+                        <h2>从优质课程，到每一次落地</h2>
+                    </div>
+                    <p>围绕教育服务的每个环节<br>提供专业、持续的支持</p>
+                </div>
+                <div id="course-catalog"></div>
+                <h3 class="support-heading">课程落地与配套服务</h3>
+                <div class="service-grid" id="service-grid"></div>
+            </div>
+        </section>
+        <section class="section wrap team" id="team">
+            <div class="section-head">
+                <div>
+                    <div class="eyebrow">OUR PEOPLE / 专业团队</div>
+                    <h2>一群专业的人，同一份教育初心</h2>
+                </div>
+                <p>教育 × 技术 × 运营<br>以各自所长，共同做好教育服务</p>
+            </div>
+            <div class="filters" id="team-filters" aria-label="团队分类"></div>
+            <div class="team-grid" id="team-grid"></div>
+        </section>
+        <section class="news section" id="news">
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <div class="eyebrow">NEWS & INSIGHTS / 公司动态</div>
+                        <h2>看见我们的每一步</h2>
+                    </div><span class="muted">记录成长，也分享教育的思考</span>
+                </div>
+                <div id="news-list"></div>
+            </div>
+        </section>
+        <section id="contact" class="contact">
+            <div class="wrap">
+                <div class="eyebrow">LET’S CONNECT / 联系我们</div>
+                <div class="contact-main">
+                    <div>
+                        <h2>让好的教育，<br>在更多地方发生。</h2>
+                        <p>课程合作 · 师资服务 · 数字化建设 · 项目运营</p>
+                    </div>
+                    <div id="contact-info"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer class="wrap"><a class="footer-brand" href="#home">课后邦 <small>素质教育 · 课后服务</small></a>
+        <div><span id="copyright"></span><span id="filing"></span></div><a href="/admin">内容管理 ↗</a>
+    </footer>
+    <dialog id="detail"><button class="dialog-close" aria-label="关闭详情">×</button>
+        <div id="detail-content"></div>
+    </dialog>
+    <div id="error" role="alert" hidden></div>
+</body>
+
+</html>

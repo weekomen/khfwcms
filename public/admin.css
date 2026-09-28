@@ -1,0 +1,236 @@
+.admin-body {
+    background: var(--bg)
+}
+
+.admin-wrap {
+    max-width: 1150px;
+    margin: 50px auto;
+    padding: 0 25px
+}
+
+.admin-actions {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    font-size: 13px
+}
+
+.admin-actions button {
+    border: 1px solid var(--line);
+    background: white;
+    padding: 5px 15px;
+    color: var(--muted)
+}
+
+#login {
+    max-width: 510px;
+    margin: 90px auto;
+    padding: 35px;
+    background: white;
+    border: 1px solid var(--line)
+}
+
+#login h1 {
+    font-size: 30px
+}
+
+#login p {
+    color: var(--muted);
+    font-size: 13px
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    color: #476081;
+    margin: 0 0 6px
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid #cdd8e6;
+    border-radius: 3px;
+    outline: none
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px #0754d611
+}
+
+textarea {
+    resize: vertical;
+    min-height: 95px;
+    line-height: 1.8
+}
+
+#login input {
+    margin-bottom: 20px
+}
+
+.admin-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px
+}
+
+.admin-heading h1 {
+    font-size: 28px;
+    margin: 10px 0 25px
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 30px;
+    border-bottom: 1px solid var(--line);
+    margin: 20px 0 30px
+}
+
+.admin-tabs button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 10px 0;
+    background: none;
+    color: var(--muted)
+}
+
+.admin-tabs .selected {
+    border-color: var(--blue);
+    color: var(--blue)
+}
+
+.edit-card {
+    padding: 28px;
+    background: white;
+    border: 1px solid var(--line);
+    margin-bottom: 20px
+}
+
+.edit-card h2 {
+    font-size: 20px;
+    margin: 0 0 20px
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px
+}
+
+.form-field.wide {
+    grid-column: 1/-1
+}
+
+.card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center
+}
+
+.remove {
+    color: #a54238;
+    border: 1px solid #efd5d0;
+    padding: 5px 12px;
+    background: white;
+    font-size: 12px
+}
+
+.add {
+    border: 1px dashed #8eadd8;
+    color: var(--blue);
+    background: #f0f5fc;
+    padding: 15px;
+    width: 100%
+}
+
+.published-field {
+    display: flex;
+    gap: 10px;
+    align-items: center
+}
+
+.published-field input {
+    width: 18px;
+    height: 18px
+}
+
+.admin-note {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 25px
+}
+
+#status {
+    position: sticky;
+    bottom: 15px;
+    background: #e7effc;
+    color: #144da7;
+    padding: 12px 18px;
+    border: 1px solid #c7d9f4
+}
+
+#status:empty {
+    display: none
+}
+
+#status.error {
+    background: #fff0ec;
+    color: #a54238;
+    border-color: #edc7bf
+}
+
+.preview-thumb {
+    height: 85px;
+    max-width: 100%;
+    background: var(--bg);
+    margin-bottom: 10px
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: wait
+}
+
+@media(max-width:700px) {
+    .admin-wrap {
+        margin-top: 30px
+    }
+
+    .admin-heading {
+        display: block
+    }
+
+    .admin-heading h1 {
+        font-size: 24px
+    }
+
+    .admin-tabs {
+        gap: 20px;
+        font-size: 13px
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr
+    }
+
+    .edit-card {
+        padding: 20px
+    }
+
+    .admin-actions {
+        gap: 12px
+    }
+
+    #login {
+        margin: 40px auto;
+        padding: 25px
+    }
+}

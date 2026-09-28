@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>课后邦｜内容管理</title>
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin.css">
+    <link rel="stylesheet" href="/upload.css">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="/courses.css">
+    <script src="/admin.js" defer></script>
+</head>
+
+<body class="admin-body">
+    <header><a class="brand" href="/"><img src="/assets/logo.webp" alt="课后邦"><span><b>内容管理</b><small>KEHOU BANG
+                    CMS</small></span></a>
+        <div class="admin-actions">
+            <div class="theme-control"><label for="theme-select">外观</label><select id="theme-select">
+                    <option value="system">跟随系统</option>
+                    <option value="light">日间模式</option>
+                    <option value="dark">夜间模式</option>
+                </select></div><a href="/" target="_blank" rel="noopener">预览官网 ↗</a><button id="logout"
+                hidden>退出登录</button>
+        </div>
+    </header>
+    <main class="admin-wrap">
+        <section id="login">
+            <div class="eyebrow">CONTENT MANAGEMENT</div>
+            <h1>管理网站内容</h1>
+            <p>使用本机生成的管理密钥登录。密钥存放位置见项目说明。</p>
+            <form id="login-form"><label for="token">管理密钥</label><input id="token" type="password"
+                    autocomplete="current-password" required><button class="button primary">登录后台 →</button></form>
+        </section>
+        <section id="editor" hidden>
+            <div class="admin-heading">
+                <div>
+                    <div class="eyebrow">WORKSPACE / 内容工作台</div>
+                    <h1>把每一次成长，分享出去。</h1>
+                </div><button id="save" class="button primary">保存并更新官网 ↗</button>
+            </div>
+            <div class="admin-tabs" role="navigation" aria-label="内容栏目"><button data-tab="site"
+                    class="selected">网站设置</button><button data-tab="services">产品与服务</button><button
+                    data-tab="courses">课程目录</button><button data-tab="team">专业团队</button><button
+                    data-tab="news">公司动态</button></div>
+            <div id="fields"></div>
+        </section>
+        <p id="status" role="status" aria-live="polite"></p>
+    </main>
+</body>
+
+</html>
