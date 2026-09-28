@@ -1,4 +1,4 @@
-window.renderCourses = courses => {
+window.renderCourses = (courses, showDetail) => {
   const root = document.getElementById('course-catalog');
   if (!courses.length) { root.hidden = true; return; }
   const make = (tag, cls, text) => { const node = document.createElement(tag); node.className = cls; if (text !== undefined) node.textContent = text; return node; };
@@ -11,8 +11,8 @@ window.renderCourses = courses => {
   const grid = make('div', 'course-grid'); grid.id = 'course-grid';
   const toggle = make('button', 'team-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-controls', 'course-grid');
   const count = make('p', 'course-count'); count.setAttribute('role', 'status');
-  const footer = make('div', 'course-footer'); const manual = make('a', 'text-link', '查看完整课程手册 ↗'); manual.href = '/assets/course-manual.pdf'; manual.target = '_blank'; manual.rel = 'noopener noreferrer';
-  footer.append(make('p', 'muted', '具体适用年级、课时及开课要求，请参阅课程手册。'), manual);
+  const footer = make('div', 'course-footer');
+  footer.append(make('p', 'muted', '点击课程详情，即可了解课程介绍与学习内容。'));
   function render() {
     const matches = courses.filter(c => c.category === selected);
     filters.querySelectorAll('button').forEach(b => { b.classList.toggle('selected', b.dataset.category === selected); b.setAttribute('aria-pressed', String(b.dataset.category === selected)); });
@@ -22,7 +22,15 @@ window.renderCourses = courses => {
     grid.replaceChildren();
     matches.slice(0, expanded ? matches.length : 6).forEach(course => {
       const card = make('article', 'course-card'); card.append(make('h4', '', course.title), make('p', '', course.summary));
-      if (course.page) { const link = make('a', 'text-link', '查看课程详情 ↗'); link.href = `/assets/course-manual.pdf#page=${course.page}`; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.setAttribute('aria-label', `${course.title}：查看课程手册第 ${course.page} 页（新标签页）`); card.append(link); }
+      const button = make('button', 'text-link course-detail-button', '查看课程详情 →'); button.type = 'button'; button.setAttribute('aria-label', `查看${course.title}课程详情`);
+      button.onclick = () => {
+        const title = make('h2', '', course.title); title.id = 'course-dialog-title';
+        const nodes = [make('div', 'eyebrow', course.category + ' / 课程介绍'), title, make('p', 'course-description', course.description || course.summary)];
+        const outline = (course.outline || '').split('\n').filter(line => line.trim());
+        if (outline.length) { const list = make('ul', 'course-outline'); outline.forEach(line => list.append(make('li', '', line))); nodes.push(make('h3', 'course-detail-heading', '学习内容'), list); }
+        showDetail(nodes);
+      };
+      card.append(button);
       grid.append(card);
     });
     count.textContent = `${selected} · 共 ${matches.length} 门课程`;

@@ -1,7 +1,7 @@
 const $ = s => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const dialog = $('#detail');
-function detail(nodes) { $('#detail-content').replaceChildren(...nodes); dialog.showModal(); document.body.classList.add('modal-open'); }
+function detail(nodes) { $('#detail-content').replaceChildren(...nodes); const heading = $('#detail-content').querySelector('h2'); if (heading) { heading.id = 'detail-title'; dialog.setAttribute('aria-labelledby', 'detail-title'); } dialog.showModal(); dialog.scrollTop = 0; document.body.classList.add('modal-open'); }
 dialog.addEventListener('close', () => document.body.classList.remove('modal-open'));
 $('.dialog-close').onclick = () => dialog.close();
 dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
@@ -9,13 +9,30 @@ $('.menu-toggle').onclick = () => { const open = $('#nav').classList.toggle('ope
 document.querySelectorAll('nav a').forEach(a => a.addEventListener('click', () => { $('#nav').classList.remove('open'); $('.menu-toggle').setAttribute('aria-expanded', 'false'); }));
 const observer = new IntersectionObserver(entries => { for (const entry of entries) if (entry.isIntersecting) document.querySelectorAll('nav a').forEach(a => { const active = a.hash === '#' + entry.target.id; a.classList.toggle('active', active); if (active) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); }); }, { rootMargin: '-20% 0px -55% 0px' });
 document.querySelectorAll('main section[id]').forEach(s => observer.observe(s));
+const backToTop = $('#back-to-top');
+const updateBackToTop = () => { backToTop.hidden = window.scrollY < 450; };
+window.addEventListener('scroll', updateBackToTop, { passive: true }); updateBackToTop();
+backToTop.onclick = () => { window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); $('.brand').focus({ preventScroll: true }); };
+const platforms = [
+  { name: '微信', image: '/assets/qr-wechat.jpg', note: '使用微信扫码' },
+  { name: '视频号', image: '/assets/qr-channels.jpg', note: '课后邦教育科技集团' },
+  { name: '快手', image: '/assets/qr-kuaishou.png', note: '快手 ID：2544355795' },
+  { name: '抖音', image: '/assets/qr-douyin.png', note: '抖音号：Aaron1331' }
+];
+platforms.forEach(platform => {
+  const button = el('button', 'platform-card'); button.type = 'button'; button.setAttribute('aria-label', `放大${platform.name}二维码`);
+  const img = el('img', 'platform-qr'); img.src = platform.image; img.alt = `${platform.name}二维码`; img.loading = 'lazy';
+  button.append(img, el('strong', '', platform.name), el('span', '', platform.note), el('small', '', '点击放大扫码'));
+  button.onclick = () => { const large = el('img', 'qr-large'); large.src = platform.image; large.alt = `${platform.name}二维码原图`; detail([el('h2', '', platform.name), el('p', '', platform.note), large]); };
+  $('#platform-grid').append(button);
+});
 async function init() {
   try {
     const response = await fetch('/api/content'); if (!response.ok) throw Error(); const data = await response.json(); const { site } = data;
     document.title = `${site.name}｜${site.tagline}`; $('.brand b').textContent = site.name;
     $('#headline').textContent = site.headline; $('#intro').textContent = site.intro; $('#about-copy').textContent = site.about;
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name} 版权所有`; $('#filing').textContent = site.filing;
-    window.renderCourses(data.courses || []);
+    window.renderCourses(data.courses || [], detail);
     data.services.forEach((s, i) => {
       const card = el('article', 'service-card'); const number = el('div', 'service-number', '0' + (i + 1) + ' / SERVICE'); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][i % 4]));
       const button = el('button', '', '了解更多'); button.append(el('span', '', '↗')); button.setAttribute('aria-label', `了解${s.title}`);

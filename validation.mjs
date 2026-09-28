@@ -11,6 +11,7 @@ export function validateContent(c) {
     list(c.courses, 200);
     for (const course of c.courses) {
       for (const key of ['title', 'category', 'summary']) text(course[key]);
+      for (const key of ['description', 'outline']) if (course[key] !== undefined) text(course[key]);
       if (!course.title.trim() || !course.category.trim()) throw Error('课程名称和分类不能为空');
       if (!Number.isInteger(course.page) || course.page < 0 || course.page > 32) throw Error('课程手册页码须为 1–32，填 0 表示不关联手册');
     }
