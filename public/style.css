@@ -935,20 +935,27 @@ body.modal-open {
     }
 
     .service-grid {
-        gap: 12px
+        gap: 10px
     }
 
     .service-card {
-        padding: 21px 17px
+        padding: 14px
     }
 
     .service-card h3 {
         font-size: 18px;
-        margin-top: 18px
+        margin: 12px 0 6px
     }
 
     .service-card p {
-        font-size: 12px
+        font-size: 12px;
+        line-height: 1.7;
+        margin: 0 0 12px
+    }
+
+    .service-card button {
+        padding-top: 10px;
+        min-height: 34px
     }
 
     .service-symbol {
