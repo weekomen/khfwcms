@@ -33,6 +33,8 @@ test('CMS authentication, draft isolation, publication, persistence and static i
     const content = await (await api('/api/admin/content', { headers })).json();
     content.team[0].image = uploaded.url;
     content.courses[0].summary = '课程简介保存验证';
+    content.courses[0].description = '课程详细介绍保存验证';
+    content.courses[0].outline = '学习内容一\n学习内容二';
     content.news[0] = { ...content.news[0], title: '已发布测试文章', published: true, body: '测试内容', date: '2026-09-23' };
     assert.equal((await api('/api/admin/content', { method: 'PUT', headers, body: JSON.stringify(content) })).status, 200);
     const published = await (await api('/api/content')).json(); assert.equal(published.news.length, 1); assert.equal(published.news[0].title, '已发布测试文章');
@@ -40,6 +42,8 @@ test('CMS authentication, draft isolation, publication, persistence and static i
     await stop(); await start(); assert.equal((await (await api('/api/content')).json()).news[0].title, '已发布测试文章');
     assert.equal((await (await api('/api/content')).json()).team[0].image, uploaded.url);
     assert.equal((await (await api('/api/content')).json()).courses[0].summary, '课程简介保存验证');
+    assert.equal((await (await api('/api/content')).json()).courses[0].description, '课程详细介绍保存验证');
+    assert.equal((await (await api('/api/content')).json()).courses[0].outline, '学习内容一\n学习内容二');
     const manual = await api('/assets/course-manual.pdf'); assert.equal(manual.status, 200); assert.equal(manual.headers.get('content-type'), 'application/pdf');
     assert.equal((await api(uploaded.url)).status, 200);
     assert.equal((await api('/')).status, 200); assert.equal((await api('/admin')).status, 200);

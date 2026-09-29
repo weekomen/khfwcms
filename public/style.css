@@ -157,7 +157,7 @@ nav a.active:after {
 .hero-image {
     position: absolute;
     inset: 0 0 0 28%;
-    background: url('/assets/hero.webp') center 58%/cover
+    background: url('/assets/hero-office.jpg') center 58%/cover
 }
 
 .hero:after {
