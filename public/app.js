@@ -35,11 +35,9 @@ async function init() {
     window.renderCourses(data.courses || [], detail);
     data.services.forEach((s, i) => {
       const card = el('article', 'service-card'); const number = el('div', 'service-number', '0' + (i + 1) + ' / SERVICE'); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][i % 4]));
-      const button = el('button', '', '了解更多'); button.append(el('span', '', '↗')); button.setAttribute('aria-label', `了解${s.title}`);
-      button.onclick = () => { const ul = el('ul'); s.features.forEach(f => ul.append(el('li', '', f))); detail([el('div', 'eyebrow', s.category), el('h2', '', s.title), el('p', '', s.description), ul]); };
       const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${s.title}支持内容`);
       s.features.forEach(feature => features.append(el('li', '', feature)));
-      card.append(number, el('h3', '', s.title), el('p', 'service-subtitle', s.subtitle), el('p', 'service-description', s.description), features, button); $('#service-grid').append(card);
+      card.append(number, el('h3', '', s.title), el('p', 'service-subtitle', s.subtitle), el('p', 'service-description', s.description), features); $('#service-grid').append(card);
     });
     let teamExpanded = false;
     const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button';

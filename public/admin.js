@@ -37,7 +37,7 @@ async function apiRequest(url, method = 'GET', body, contentType = 'application/
     if (result.code === 'PASSWORD_CHANGE_REQUIRED') setPasswordRequirement(true);
     const error = Error(result.error || '操作失败，请重试'); error.status = response.status;
     if (sessionLost && dirty) error.message = '登录已过期或状态已更新，请重新登录；当前未保存的编辑仍保留在此页面。';
-    if (sessionLost) status(error.message, true);
+    if (sessionLost && url !== '/api/admin/session') status(error.message, true);
     throw error;
   }
   return result;
