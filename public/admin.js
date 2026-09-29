@@ -1,12 +1,90 @@
 const $ = s => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-let token = sessionStorage.getItem('khb-token') || '', data, tab = 'site', dirty = false, saving = false, uploading = false;
+let csrfToken = '', data, tab = 'site', dirty = false, saving = false, uploading = false, passwordChangeRequired = false;
+const safeConnection = location.protocol === 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+// Remove credentials left by older versions; authentication uses an HttpOnly cookie.
+try { sessionStorage.removeItem('khb-token'); } catch { }
 const status = (message, error = false) => { $('#status').textContent = message; $('#status').classList.toggle('error', error); };
 const changed = () => { dirty = true; status('有未保存的修改'); };
-async function request(method = 'GET', body) { const r = await fetch('/api/admin/content', { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }); const result = await r.json(); if (!r.ok) throw Error(result.error || '操作失败'); return result; }
-async function login() { try { data = await request(); sessionStorage.setItem('khb-token', token); $('#token').value = ''; $('#login').hidden = true; $('#editor').hidden = false; $('#logout').hidden = false; status(''); render(); } catch (e) { sessionStorage.removeItem('khb-token'); token = ''; status(e.message, true); } }
-$('#login-form').onsubmit = e => { e.preventDefault(); token = $('#token').value.trim(); login(); };
-$('#logout').onclick = () => { if (dirty && !confirm('尚有未保存的修改，确定退出？')) return; sessionStorage.removeItem('khb-token'); token = ''; data = null; dirty = false; location.reload(); };
+function showLogin(clear = false) {
+  csrfToken = ''; $('#login').hidden = false; $('#editor').hidden = true; $('#security').hidden = true; $('#logout').hidden = true;
+  $('#password-form').reset();
+  if (clear) { data = null; dirty = false; $('#fields').replaceChildren(); }
+}
+function showPasswordPanel(open) {
+  $('#password-panel').hidden = !open;
+  $('#security-toggle').setAttribute('aria-expanded', String(open));
+  $('#security-toggle').textContent = open ? '收起' : '修改密码';
+  if (!open) $('#password-form').reset();
+}
+function setPasswordRequirement(required) {
+  passwordChangeRequired = required;
+  $('#security').hidden = false; $('#security-toggle').hidden = required;
+  $('#security-note').textContent = required ? '首次登录：请先更换初始密码，再开始管理内容。' : '请使用独立长密码，不要与他人共用。';
+  showPasswordPanel(required);
+  if (required) $('#editor').hidden = true;
+}
+async function apiRequest(url, method = 'GET', body, contentType = 'application/json') {
+  const headers = {};
+  if (body !== undefined) headers['Content-Type'] = contentType;
+  if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  const response = await fetch(url, { method, credentials: 'same-origin', cache: 'no-store', headers,
+    body: body === undefined ? undefined : contentType === 'application/json' ? JSON.stringify(body) : body });
+  const result = await response.json();
+  if (!response.ok) {
+    const sessionLost = (response.status === 401 && url !== '/api/admin/login') || result.code === 'CSRF_INVALID';
+    if (sessionLost) showLogin();
+    if (result.code === 'PASSWORD_CHANGE_REQUIRED') setPasswordRequirement(true);
+    const error = Error(result.error || '操作失败，请重试'); error.status = response.status;
+    if (sessionLost && dirty) error.message = '登录已过期或状态已更新，请重新登录；当前未保存的编辑仍保留在此页面。';
+    if (sessionLost) status(error.message, true);
+    throw error;
+  }
+  return result;
+}
+const request = (method = 'GET', body) => apiRequest('/api/admin/content', method, body);
+async function enterSession(session) {
+  csrfToken = session.csrfToken;
+  $('#login').hidden = true; $('#logout').hidden = false;
+  setPasswordRequirement(session.passwordChangeRequired);
+  if (passwordChangeRequired) { status('请设置新的管理密码。'); $('#current-password').focus(); return; }
+  try { if (!dirty || !data) data = await request(); }
+  catch (error) { showLogin(); throw error; }
+  $('#editor').hidden = false;
+  status(dirty ? '已重新登录，未保存的修改已保留，请检查后保存。' : ''); render();
+}
+$('#login-form').onsubmit = async e => {
+  e.preventDefault();
+  if (!safeConnection) return status('请通过 HTTPS 安全地址登录后台。', true);
+  $('#login-submit').disabled = true; status('正在验证…');
+  try { const session = await apiRequest('/api/admin/login', 'POST', { password: $('#password').value }); $('#password').value = ''; await enterSession(session); }
+  catch (e) { status(e.message, true); }
+  finally { $('#login-submit').disabled = false; }
+};
+$('#logout').onclick = async () => {
+  if (dirty && !confirm('尚有未保存的修改，确定退出？')) return;
+  $('#logout').disabled = true;
+  try { await apiRequest('/api/admin/logout', 'POST', {}); showLogin(true); status('已安全退出。'); }
+  catch (e) { if (e.status === 401) showLogin(true); status(e.message, true); }
+  finally { $('#logout').disabled = false; }
+};
+$('#security-toggle').onclick = () => showPasswordPanel($('#password-panel').hidden);
+$('#password-form').onsubmit = async e => {
+  e.preventDefault();
+  if (!safeConnection) return status('请通过 HTTPS 安全地址修改密码。', true);
+  if (saving || uploading) return status('请等待当前保存或上传完成。', true);
+  const newPassword = $('#new-password').value;
+  if ([...newPassword].length < 15 || [...newPassword].length > 128) return status('新密码需要 15–128 个字符。', true);
+  if (newPassword !== $('#confirm-password').value) return status('两次输入的新密码不一致。', true);
+  if (dirty && !confirm('修改密码会退出登录，当前未保存的修改将丢失，是否继续？')) return;
+  $('#password-submit').disabled = true; $('#editor').inert = true;
+  try {
+    await apiRequest('/api/admin/password', 'PUT', { currentPassword: $('#current-password').value, newPassword });
+    showLogin(true); status('密码修改成功，请使用新密码重新登录。'); $('#password').focus();
+  } catch (e) { status(e.message, true); }
+  finally { $('#password-submit').disabled = false; $('#editor').inert = false; }
+};
+$('#connection-note').textContent = location.protocol === 'https:' ? '当前通过 HTTPS 安全连接。' : ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) ? '当前为本机管理。公网访问需要 HTTPS 安全连接。' : '请通过 HTTPS 安全地址登录后台。';
 window.addEventListener('beforeunload', e => { if (dirty || uploading) { e.preventDefault(); e.returnValue = ''; } });
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
 function field(parent, obj, key, label, type = 'text', wide = false) {
@@ -35,8 +113,7 @@ function photoPicker(item) {
     message.classList.remove('upload-error'); message.textContent = '正在上传…';
     try {
       let bitmap; try { bitmap = await createImageBitmap(file); } catch { throw Error('图片无法读取，请选择有效的图片文件。'); } finally { bitmap?.close(); }
-      const response = await fetch('/api/admin/images', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': file.type }, body: file });
-      const result = await response.json(); if (!response.ok) throw Error(result.error || '上传失败，请重试');
+      const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
       item.image = result.url; img.src = result.url; caption.textContent = '点击更换照片'; changed(); message.textContent = '上传成功，保存后展示到官网。';
     } catch (e) { fail(e.message || '上传失败，请重试'); }
     finally { uploading = false; $('#save').disabled = false; $('#fields').inert = false; document.querySelectorAll('[data-tab], #logout').forEach(b => b.disabled = false); }
@@ -76,4 +153,5 @@ $('#save').onclick = async () => {
   try { await request('PUT', data); dirty = false; status('保存成功，官网内容已更新。'); } catch (e) { status('保存失败：' + e.message, true); }
   finally { saving = false; $('#save').disabled = false; $('#fields').inert = false; }
 };
-if (token) login();
+$('#login-submit').disabled = true;
+if (safeConnection) apiRequest('/api/admin/session').then(enterSession).catch(e => { if (e.status !== 401) status(e.message, true); }).finally(() => { $('#login-submit').disabled = false; });

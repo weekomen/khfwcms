@@ -31,9 +31,23 @@
         <section id="login">
             <div class="eyebrow">CONTENT MANAGEMENT</div>
             <h1>管理网站内容</h1>
-            <p>使用本机生成的管理密钥登录。密钥存放位置见项目说明。</p>
-            <form id="login-form"><label for="token">管理密钥</label><input id="token" type="password"
-                    autocomplete="current-password" required><button class="button primary">登录后台 →</button></form>
+            <p>使用管理员密码登录。首次登录后，请先设置自己的管理密码。</p>
+            <form id="login-form"><label for="password">管理密码</label><input id="password" type="password"
+                    autocomplete="current-password" maxlength="256" required><button id="login-submit" class="button primary">登录后台 →</button></form>
+            <p id="connection-note" class="login-note"></p>
+        </section>
+        <section id="security" class="security-panel" hidden>
+            <div class="security-heading"><div><h2>账户安全</h2><p id="security-note">请使用独立长密码，不要与他人共用。</p></div>
+                <button id="security-toggle" type="button" aria-expanded="false" aria-controls="password-panel">修改密码</button></div>
+            <div id="password-panel" hidden>
+                <form id="password-form" class="form-grid">
+                    <div><label for="current-password">当前密码</label><input id="current-password" type="password" autocomplete="current-password" maxlength="256" required></div>
+                    <div><label for="new-password">新密码</label><input id="new-password" type="password" autocomplete="new-password" maxlength="256" aria-describedby="password-help" required></div>
+                    <div><label for="confirm-password">确认新密码</label><input id="confirm-password" type="password" autocomplete="new-password" maxlength="256" required></div>
+                    <div class="password-action"><button id="password-submit" class="button primary">保存新密码</button></div>
+                    <p id="password-help">使用 15–128 个字符的独立长密码，可使用密码管理器生成。修改成功后，所有设备都需要重新登录。</p>
+                </form>
+            </div>
         </section>
         <section id="editor" hidden>
             <div class="admin-heading">

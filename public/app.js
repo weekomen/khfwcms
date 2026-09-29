@@ -37,7 +37,9 @@ async function init() {
       const card = el('article', 'service-card'); const number = el('div', 'service-number', '0' + (i + 1) + ' / SERVICE'); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][i % 4]));
       const button = el('button', '', '了解更多'); button.append(el('span', '', '↗')); button.setAttribute('aria-label', `了解${s.title}`);
       button.onclick = () => { const ul = el('ul'); s.features.forEach(f => ul.append(el('li', '', f))); detail([el('div', 'eyebrow', s.category), el('h2', '', s.title), el('p', '', s.description), ul]); };
-      card.append(number, el('h3', '', s.title), el('p', '', s.subtitle), button); $('#service-grid').append(card);
+      const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${s.title}支持内容`);
+      s.features.forEach(feature => features.append(el('li', '', feature)));
+      card.append(number, el('h3', '', s.title), el('p', 'service-subtitle', s.subtitle), el('p', 'service-description', s.description), features, button); $('#service-grid').append(card);
     });
     let teamExpanded = false;
     const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button';
@@ -61,7 +63,7 @@ async function init() {
         const title = el('h3', '', t.name); title.append(el('span', '', '↗')); card.append(portrait, title, el('p', '', t.role));
         card.onclick = () => { const photo = img.cloneNode(); photo.className = 'detail-photo'; detail([photo, el('h2', '', t.name), el('div', 'eyebrow', t.role), el('p', '', t.bio)]); }; $('#team-grid').append(card);
       });
-      document.querySelectorAll('.filters button').forEach(b => { b.classList.toggle('selected', b.textContent === category); b.setAttribute('aria-pressed', String(b.textContent === category)); });
+      document.querySelectorAll('#team-filters button').forEach(b => { b.classList.toggle('selected', b.textContent === category); b.setAttribute('aria-pressed', String(b.textContent === category)); });
       updateTeamVisibility();
     };
     ['全部团队', ...new Set(data.team.map(t => t.category))].forEach(c => { const b = el('button', '', c); b.onclick = () => renderTeam(c); $('#team-filters').append(b); }); renderTeam('全部团队');

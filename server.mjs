@@ -1,19 +1,18 @@
 import http from 'node:http';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateContent } from './validation.mjs';
+import { createAdminAuth } from './auth.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
 const contentPath = path.join(dataDir, 'content.json');
 try { await readFile(contentPath); } catch { await writeFile(contentPath, await readFile(path.join(root, 'data/seed.json'))); }
-let token = process.env.ADMIN_TOKEN;
-if (!token) { try { token = (await readFile(path.join(dataDir, 'admin-token'), 'utf8')).trim(); } catch { token = randomBytes(24).toString('hex'); await writeFile(path.join(dataDir, 'admin-token'), token, { mode: 0o600 }); } }
+const adminAuth = await createAdminAuth({ dataDir });
 let writing = Promise.resolve();
 const mime = { '.pdf': 'application/pdf', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
-function authorized(req) { const input = Buffer.from((req.headers.authorization || '').replace(/^Bearer /, '')); const expected = Buffer.from(token); return input.length === expected.length && timingSafeEqual(input, expected); }
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -21,8 +20,10 @@ const server = http.createServer(async (req, res) => {
   const send = (status, body) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); };
   try {
     const url = new URL(req.url, 'http://localhost');
+    if (url.pathname.startsWith('/api/admin/')) {
+      if (await adminAuth.handle(req, res, url, send)) return;
+    }
     if (url.pathname === '/api/admin/images') {
-      if (!authorized(req)) return send(401, { error: '管理密钥不正确，请重新登录' });
       if (req.method !== 'POST') return send(405, { error: '不支持此操作' });
       const limit = 5 * 1024 * 1024;
       if (Number(req.headers['content-length']) > limit) return send(413, { error: '图片不能超过 5 MB' });
@@ -44,7 +45,6 @@ const server = http.createServer(async (req, res) => {
       return send(405, { error: '不支持此操作' });
     }
     if (url.pathname === '/api/admin/content') {
-      if (!authorized(req)) return send(401, { error: '管理密钥不正确，请重新登录' });
       if (req.method === 'GET') return send(200, JSON.parse(await readFile(contentPath, 'utf8')));
       if (req.method !== 'PUT') return send(405, { error: '不支持此操作' });
       let body = ''; for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 512000) return send(413, { error: '内容过大' }); }
@@ -61,8 +61,13 @@ const server = http.createServer(async (req, res) => {
     const relative = url.pathname === '/' ? 'index.html' : url.pathname === '/admin' ? 'admin.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '');
     const publicRoot = path.join(root, 'public'); const file = path.resolve(publicRoot, relative);
     if (!file.startsWith(publicRoot + path.sep)) return send(403, { error: '无权访问' });
+    const adminPage = file.toLowerCase() === path.join(publicRoot, 'admin.html').toLowerCase();
+    if (adminPage && adminAuth.protectPage(req, res, send)) return;
     const buffer = await readFile(file);
-    res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); res.end(req.method === 'HEAD' ? undefined : buffer);
+    res.writeHead(200, { 'Content-Type': mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': adminPage ? 'no-store' : 'no-cache' }); res.end(req.method === 'HEAD' ? undefined : buffer);
   } catch (e) { send(e.code === 'ENOENT' ? 404 : 500, { error: e.code === 'ENOENT' ? '页面不存在' : '服务暂时不可用' }); }
 });
-server.listen(Number(process.env.PORT || 3000), process.env.HOST || '127.0.0.1', () => console.log(`课后邦官网：http://${process.env.HOST || '127.0.0.1'}:${process.env.PORT || 3000}\n管理后台：/admin\n管理密钥：${process.env.ADMIN_TOKEN ? '由 ADMIN_TOKEN 环境变量设置' : path.join(dataDir, 'admin-token')}`));
+server.headersTimeout = 15000;
+server.requestTimeout = 30000;
+server.maxHeadersCount = 64;
+server.listen(Number(process.env.PORT || 3000), process.env.HOST || '127.0.0.1', () => console.log(`课后邦官网：http://${process.env.HOST || '127.0.0.1'}:${process.env.PORT || 3000}\n管理后台：/admin\n管理凭据保存在本机数据目录；初次登录后必须设置新密码。`));

@@ -1,6 +1,10 @@
 node_modules/
 data/content.json
 data/admin-token
+data/admin-auth.json
+data/admin-auth.json.*
+.env
+.env.*
 data/*.tmp
 data/uploads/
 reference/image*

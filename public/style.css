@@ -318,6 +318,9 @@ h1::first-line {
     padding-bottom: 95px
 }
 
+.services.section { padding-bottom: 60px }
+.team.section { padding-top: 60px }
+
 h2 {
     font-size: 32px;
     line-height: 1.6;
@@ -384,13 +387,13 @@ h2 em {
 .service-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 18px
+    gap: 14px
 }
 
 .service-card {
     border: 1px solid #e5ebf2;
     background: #fff;
-    padding: 30px 25px;
+    padding: 20px;
     transition: transform .2s, border .2s;
     display: flex;
     flex-direction: column
@@ -411,28 +414,66 @@ h2 em {
 }
 
 .service-symbol {
-    font-size: 28px;
+    font-size: 24px;
     color: var(--blue);
-    font-weight: 300
+    font-weight: 300;
+    line-height: 1.2
 }
 
 .service-card h3 {
-    font-size: 21px;
+    font-size: 20px;
     font-weight: 550;
-    margin: 30px 0 9px
+    line-height: 1.5;
+    margin: 12px 0 5px
 }
 
 .service-card p {
     font-size: 13px;
     color: var(--muted);
-    margin: 0 0 25px
+    line-height: 1.8;
+    margin: 0 0 12px
+}
+
+.service-card .service-subtitle {
+    color: var(--blue);
+    font-size: 12px;
+    margin-bottom: 10px
+}
+
+.service-features {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1.65
+}
+
+.service-features li {
+    position: relative;
+    padding-left: 11px;
+    overflow-wrap: anywhere
+}
+
+.service-features li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: .65em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--blue)
 }
 
 .service-card button {
     background: none;
     border: 0;
     border-top: 1px solid var(--line);
-    padding: 17px 0 0;
+    padding: 10px 0 0;
+    min-height: 34px;
     text-align: left;
     color: #46658b;
     font-size: 12px;
@@ -912,6 +953,9 @@ body.modal-open {
         padding-bottom: 58px
     }
 
+    .services.section { padding-bottom: 36px }
+    .team.section { padding-top: 36px }
+
     .about {
         grid-template-columns: 1fr;
         gap: 20px
@@ -939,22 +983,34 @@ body.modal-open {
     }
 
     .service-card {
-        padding: 14px
+        padding: 12px
     }
 
     .service-card h3 {
-        font-size: 18px;
-        margin: 12px 0 6px
+        font-size: 17px;
+        margin: 8px 0 4px
     }
 
     .service-card p {
         font-size: 12px;
         line-height: 1.7;
-        margin: 0 0 12px
+        margin: 0 0 10px
+    }
+
+    .service-card .service-subtitle {
+        font-size: 11px;
+        margin-bottom: 8px
+    }
+
+    .service-features {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        font-size: 11px;
+        margin-bottom: 10px
     }
 
     .service-card button {
-        padding-top: 10px;
+        padding-top: 8px;
         min-height: 34px
     }
 
@@ -1048,6 +1104,10 @@ body.modal-open {
 
     .service-grid {
         grid-template-columns: 1fr
+    }
+
+    .service-features {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
     }
 
     .filters {

@@ -75,6 +75,28 @@ textarea {
     margin-bottom: 20px
 }
 
+.security-panel {
+    border: 1px solid var(--line);
+    background: var(--surface, #fff);
+    padding: 20px;
+    margin-bottom: 24px
+}
+
+.security-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px
+}
+
+.security-heading h2 { margin: 0; font-size: 18px }
+.security-heading p, #password-help { color: var(--muted); font-size: 12px; margin: 6px 0 0 }
+#security-toggle { flex-shrink: 0; color: var(--blue); background: transparent; border: 1px solid var(--line); padding: 8px 14px }
+#password-panel { margin-top: 20px }
+#password-help { grid-column: 1 / -1 }
+.password-action { display: flex; align-items: end }
+#login .login-note { margin: 16px 0 0; font-size: 12px }
+
 .admin-heading {
     display: flex;
     justify-content: space-between;

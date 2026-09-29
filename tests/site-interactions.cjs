@@ -8,6 +8,8 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     const errors=[]; page.on('pageerror',e=>errors.push(e.message));
     await page.route('http://localhost:3199/**',async route => {
       const url = new URL(route.request().url());
+      if (url.pathname === '/api/admin/session') return route.fulfill({status:401,json:{error:'请登录'}});
+      if (url.pathname === '/api/admin/login') return route.fulfill({json:{ok:true,csrfToken:'browser-fixture',passwordChangeRequired:false}});
       if (url.pathname.startsWith('/api/')) return route.fulfill({json:data});
       const file = url.pathname==='/'?'index.html':url.pathname==='/admin'?'admin.html':url.pathname.slice(1);
       await route.fulfill({body:fs.readFileSync(path.join('public',file)),contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png'})[path.extname(file)]||'application/octet-stream'});
@@ -44,7 +46,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.screenshot({path:'reference/hero-office-mobile.png'});
     await page.locator('#platform-grid').scrollIntoViewIfNeeded(); assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.getByRole('button',{name:'放大抖音二维码'}).click(); assert.ok(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth)); await page.keyboard.press('Escape');
-    await page.goto('http://localhost:3199/admin');await page.getByLabel('管理密钥').fill('test');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('button',{name:'课程目录',exact:true}).click();
+    await page.goto('http://localhost:3199/admin');await page.getByLabel('管理密码',{exact:true}).fill('test');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('button',{name:'课程目录',exact:true}).click();
     assert.equal(await page.getByLabel('详细介绍（弹窗）',{exact:true}).count(),55);
     assert.equal(await page.getByLabel('学习内容（每行一项）',{exact:true}).count(),55);
     assert.deepEqual(errors,[]);
