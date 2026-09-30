@@ -292,12 +292,10 @@ export async function createAdminAuth({ dataDir, env = process.env, now = Date.n
       if (context.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
       return false;
     }
-    if (policy.publicOrigin && req.headers.host !== policy.publicHost) {
+    if (policy.publicOrigin) {
       res.writeHead(308, { Location: `${policy.publicOrigin}/admin`, 'Cache-Control': 'no-store' });
       res.end();
-    } else send(403, { error: policy.publicOrigin
-      ? '管理代理配置不匹配，请核对 PUBLIC_ORIGIN、TRUST_PROXY 和代理的 HTTPS/Host 请求头'
-      : '管理登录仅允许本机访问或已配置的 HTTPS 站点；内网穿透请先配置 HTTPS PUBLIC_ORIGIN 和 TRUST_PROXY=loopback，再重启服务' });
+    } else send(403, { error: '管理登录仅允许本机访问或已配置的 HTTPS 站点' });
     return true;
   }
 

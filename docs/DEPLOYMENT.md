@@ -15,20 +15,6 @@
 
 官网统一使用裸域：当前认证只接受一个 `PUBLIC_ORIGIN`，不要填写逗号分隔的多个域名，也不要通过篡改浏览器 `Origin` 来兼容 www 登录。管理员从主域 `/admin` 进入。
 
-### 临时联调：使用 cpolar 的 HTTPS 地址
-
-此方式用于本机演示和调试，不改变正式域名部署。先停掉已运行的 Node 服务，将 cpolar 转发到同机 `127.0.0.1:3000`（自定义端口时保持一致），保留公网 Host，然后在项目根目录运行：
-
-```powershell
-npm run start:tunnel -- https://your-tunnel.cpolar.top
-```
-
-将示例换成当前真实 HTTPS 地址；也接受复制的 `/admin` 地址并自动提取站点来源。启动器保留已有 `PORT`、`DATA_DIR` 和凭据，仅设置公网来源及回环代理信任。不要同时启动第二个进程共享数据目录。通过该 HTTPS 地址登录，使用原管理密码；无需删除认证文件。
-
-隧道必须传递正确 `Host` 和 `X-Forwarded-Proto: https`；如有 `X-Forwarded-Host`，须同样是当前公网域名。不要启用 cpolar 的 `host_header: rewrite`，不要通过将公网 Host 改成 localhost 来绕过校验。报 403 时先检查这些转发信息、启动进程是否更新和域名是否变更；代理元数据不匹配时明确返回 403，不会在同一个 `/admin` 无限跳转。仅将配置写进 `.env` 不会被 Node 自动读取。
-
-该配置只对本次 Node 进程有效。免费/随机地址变更后，用新地址重新启动；回到正式环境时仍使用 systemd 中的 `PUBLIC_ORIGIN=https://kehoubang.cn`。cpolar 默认转发及 Host 重写选项见 [官方文档](https://www.cpolar.com/docs)。
-
 ## 2. 上线前准备与 DNS
 
 准备官网服务器公网 IP、服务器 SSH 权限、域名 DNS 管理权限、证书通知邮箱，以及负责保管 CMS 密码和私有数据的接手人。以下 IP 都需填写实际值，文档不提供或猜测生产 IP。

@@ -42,20 +42,6 @@ Get-Content .\data\admin-token
 
 忘记密码时，需要有服务器文件管理权限：先停止 CMS，确认实际 `DATA_DIR` 并保留内容和上传图片；从服务启动配置中移除 `ADMIN_TOKEN`，仅删除该目录下的 `admin-auth.json` 和 `admin-token`。重新启动会生成新初始密码，随后在后台立即改密。不要删除整个数据目录；认证文件只做私有备份，不上传到 GitHub。
 
-## cpolar 内网穿透访问后台
-
-直接 `npm start` 默认只允许本机管理。经 cpolar 打开 `/admin` 提示“管理登录仅允许本机访问或已配置的 HTTPS 站点”，表示还没有配置公网来源，不是密码错误。
-
-先停止原来的 Node 服务，再用 cpolar 面板显示的实际 HTTPS 地址启动（替换示例域名；也可粘贴带 `/admin` 的地址）：
-
-```powershell
-npm run start:tunnel -- https://your-tunnel.cpolar.top
-```
-
-该命令为当前进程设置 `PUBLIC_ORIGIN`、`TRUST_PROXY=loopback`、`HOST=127.0.0.1`，保留已有 `PORT`、`DATA_DIR` 和管理凭据，不重置密码或内容。cpolar 与 Node 在同一台电脑，隧道指向对应的本机端口（默认 `127.0.0.1:3000`），保留公网 Host，不启用 `-host-header=rewrite`；转发的 `X-Forwarded-Proto` 必须为 `https`，否则仍会拒绝管理请求。
-
-用本次 HTTPS 域名的 `/admin` 登录。随机隧道域名改变后，停止 Node 并用新地址重新执行此命令。此模式只信任一个公网来源，本机 `/admin` 会转到它；恢复纯本机调试时，在没有设置公网环境变量的终端使用 `npm start`。正式部署仍按文档使用 `https://kehoubang.cn`。Node 不自动读取 `.env`，仅编辑环境文件而不由启动器加载不会生效。
-
 ## 内容维护
 
 - 网站设置：品牌、首页文案、公司介绍、电话、邮箱、地址、备案信息。

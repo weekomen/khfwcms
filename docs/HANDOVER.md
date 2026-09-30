@@ -45,12 +45,11 @@
 | `backups/published-content.json`、`backups/uploads/` | 可进入公开仓库的内容快照及配套公开图片 |
 | `scripts/backup-content.mjs` | 生成公开内容快照；使用 `DATA_DIR` 或默认 `data/` |
 | `scripts/create-handoff.mjs` | 从已提交的 Git HEAD 导出白名单源码 ZIP、文件清单与 SHA-256 校验文件 |
-| `scripts/start-tunnel.mjs` | 以明确指定的 HTTPS 地址启动 cpolar 等同机穿透的后台访问；保留数据目录和凭据 |
 | `docs/DEPLOYMENT.md`、`deploy/` | Linux 部署步骤与域名、HTTPS、服务配置模板 |
 | `docs/ACCEPTANCE.md` | 本次版本的部署验收、交接责任及签收记录模板 |
 | `tests/` | API/认证自动测试及独立浏览器检查脚本 |
 
-`package.json` 声明 Node.js ≥20；公开备份脚本使用 `import.meta.dirname`，实际需要 Node.js 20.11 或更新版本。生产运行版本按部署文档统一，不要使用不再受维护的旧运行时。`npm start` 与 `npm run dev` 都只是启动 `node server.mjs`，没有自动重载。临时穿透使用 `npm run start:tunnel -- https://实际公网域名`，不是默认放行任意外网域名；具体条件见 README 的 cpolar 说明。
+`package.json` 声明 Node.js ≥20；公开备份脚本使用 `import.meta.dirname`，实际需要 Node.js 20.11 或更新版本。生产运行版本按部署文档统一，不要使用不再受维护的旧运行时。`npm start` 与 `npm run dev` 都只是启动 `node server.mjs`，没有自动重载。
 
 ## 2. 已实现的官网功能
 
@@ -162,7 +161,7 @@ sha256sum -c khfwcms-handover-xxxxxxxxxxxx.zip.sha256
 npm test
 ```
 
-它运行 `tests/cms.test.mjs` 和 `tests/tunnel.test.mjs`，使用临时数据目录和测试凭据，覆盖内容校验、旧凭据迁移、首次改密、Cookie/CSRF、HTTPS/反代来源、错误代理不循环跳转、穿透启动参数、登录限流、会话过期/撤销、上传限制、草稿隔离、保存和重启持久化、私有文件不可通过静态路径访问。不会修改正式运行数据；不依赖额外 npm 包。
+它运行 `tests/cms.test.mjs`，使用临时数据目录和测试凭据，覆盖内容校验、旧凭据迁移、首次改密、Cookie/CSRF、HTTPS/反代来源、登录限流、会话过期/撤销、上传限制、草稿隔离、保存和重启持久化、私有文件不可通过静态路径访问。不会修改正式运行数据；不依赖额外 npm 包。
 
 可选浏览器检查：
 
