@@ -37,6 +37,14 @@ a.news-row:hover h3 {
     order: 3
 }
 
+.site-body nav {
+    gap: 22px
+}
+
+.site-body nav a {
+    white-space: nowrap
+}
+
 .site-body .theme-control select {
     border: 1px solid var(--line);
     border-radius: 4px;
@@ -140,7 +148,7 @@ a.news-row:hover h3 {
     border-color: #765057
 }
 
-@media(min-width:1001px) and (max-width:1250px) {
+@media(min-width:1201px) and (max-width:1400px) {
     .site-body nav {
         gap: 17px
     }
@@ -162,7 +170,7 @@ a.news-row:hover h3 {
     }
 }
 
-@media(max-width:1000px) {
+@media(max-width:1200px) {
     .site-body header {
         gap: 12px
     }
@@ -187,6 +195,9 @@ a.news-row:hover h3 {
         right: 0;
         background: white;
         height: auto;
+        max-height: calc(100vh - 94px);
+        max-height: calc(100dvh - 94px);
+        overflow-y: auto;
         padding: 20px;
         box-shadow: 0 12px 20px #12274312
     }
@@ -210,7 +221,9 @@ a.news-row:hover h3 {
 
 @media(max-width:760px) {
     .site-body nav {
-        top: 76px
+        top: 76px;
+        max-height: calc(100vh - 76px);
+        max-height: calc(100dvh - 76px)
     }
 
     .site-body .theme-control label {
