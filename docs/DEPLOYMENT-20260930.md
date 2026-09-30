@@ -15,7 +15,7 @@
 
 ## 实际部署
 
-- 独立源码仓库：`/Users/zma/Developer/kehou/khfwcms`，当前无远端，未声称云效同步。
+- 独立源码仓库：`/Users/zma/Developer/kehou/khfwcms`，云效私有仓库 `KHB-Website`：https://codeup.aliyun.com/6a5b2f4ae69c408bf87d66f7/khfwcms。本次源码同步不重新部署线上服务。
 - 运行源码标签：`website-v2026.09.30.1`，提交 `7a71ac6`。Nginx 合并及验收脚本后续独立记录，不移动已部署标签。
 - 源码目录：`/opt/khfwcms/releases/website-v2026.09.30.1`，`/opt/khfwcms/current` 指向该目录。
 - 官方 Node.js `v24.21.0` Linux x64，安装包经官方 SHASUMS256 校验。

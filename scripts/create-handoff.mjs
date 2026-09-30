@@ -120,7 +120,7 @@ export async function createHandoff() {
   });
   const { files } = buildHandoffPlan(entries, file => git('show', `${commit}:${file}`));
   const manifest = {
-    version: 1, project: '课后邦企业官网与 CMS', repository: 'https://github.com/weekomen/khfwcms.git',
+    version: 1, project: '课后邦企业官网与 CMS', repository: 'https://codeup.aliyun.com/6a5b2f4ae69c408bf87d66f7/khfwcms.git',
     sourceCommit: commit, committedAt, archivePrefix: 'khfwcms/',
     scope: 'Exact committed source, deployment documentation, public assets and published content only.',
     excluded: ['Git history', 'live content.json and drafts', 'credentials and active environment files', 'logs and screenshots', 'unreferenced uploads', 'original working files'],
