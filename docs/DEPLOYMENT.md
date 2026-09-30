@@ -42,7 +42,7 @@ dig +short khb.kehoubang.cn A
 
 若裸域目前承载旧站或业务系统，先记录旧 DNS 值、TTL、站点配置和需要保留的路径，与两套系统负责人安排维护窗口。先在新服务器安装官网、迁移内容及下文的在线手册，再切换 @ / www；`khb` 的变更由独立系统负责人按自己的发布步骤实施，并核对登录回调、接口地址和文件链接。不要把整套旧业务的上传目录公开给新官网。
 
-如已能在新入口安装有效官网证书，可在改 DNS 前使用第 8 节的 `curl --resolve` 和测试电脑 hosts 检查新入口；否则本手册的 HTTP webroot 签发需要 @ / www 先到新服务器，应在维护窗口执行，首次签发期间官网返回临时 503。需要无停机切换时，应由运维提前通过服务商支持的 DNS 验证等方式准备证书。新官网、两份手册和独立系统完成各自验收前保留旧服务器与回退记录，验证失败时恢复对应旧 DNS/入口配置。
+如已能在新入口安装有效官网证书，可在改 DNS 前使用第 8 节的 `curl --resolve` 和测试电脑 hosts 检查新入口；否则本手册的 HTTP webroot 签发需要 @ / www 先到新服务器，应在维护窗口执行，首次签发期间官网返回临时 503。需要无停机切换时，应由运维提前通过服务商支持的 DNS 验证等方式准备证书。新官网、三份资料和独立系统完成各自验收前保留旧服务器与回退记录，验证失败时恢复对应旧 DNS/入口配置。
 
 ## 3. 安装运行环境
 
@@ -168,22 +168,23 @@ TRUST_PROXY=loopback
 
 ## 7. 官网 HTTPS：先申请证书，再启用正式配置
 
-### 保留课程手册和一校一案的原地址
+### 保留课程手册、一校一案和公司展册的原地址
 
-官网最新版本的四处资料入口使用下面两个地址；它们与官网共用裸域，并非可以随官网迁移而保持不变的第三方站点。
+官网最新版本的五处资料入口使用下面三个地址；它们与官网共用裸域，并非可以随官网迁移而保持不变的第三方站点。
 
 | 公开地址 | Nginx 模板对应磁盘文件 |
 | --- | --- |
 | `https://kehoubang.cn/profile/upload/pdf/1/index.html` | `/srv/kehoubang-documents/profile/upload/pdf/1/index.html` |
 | `https://kehoubang.cn/profile/upload/pdf/2/index.html` | `/srv/kehoubang-documents/profile/upload/pdf/2/index.html` |
+| `https://kehoubang.cn/profile/upload/pdf/3/index.html` | `/srv/kehoubang-documents/profile/upload/pdf/3/index.html` |
 
-**源码 ZIP 不包含这两个 HTML 阅读器的完整资源。** 请从原托管负责人取得经确认可公开的导出文件：包括两份阅读器的 HTML、JS、CSS、图片、字体、PDF 及共享依赖，保持相对路径结构。现有 `public/assets/course-manual.pdf` 只是单个 PDF，不能代替上述导出包。先在原页面浏览器 Network 中核对完整翻页所请求的路径；若共享依赖在 `/profile/upload/pdf/` 之外，需单独确认公开范围并为必要路径配置托管，不能扩大为公开整个旧业务目录。
+**源码 ZIP 不包含这三个 HTML 阅读器的完整资源。** 请从原托管负责人取得经确认可公开的导出文件：包括三份阅读器的 HTML、JS、CSS、图片、字体、PDF 及共享依赖，保持相对路径结构。现有 `public/assets/course-manual.pdf` 只是单个 PDF，不能代替上述导出包。先在原页面浏览器 Network 中核对完整翻页所请求的路径；若共享依赖在 `/profile/upload/pdf/` 之外，需单独确认公开范围并为必要路径配置托管，不能扩大为公开整个旧业务目录。
 
-以下示例假定核验后的导出目录为 `$HOME/khfwcms-install/manual-export/pdf/`，其中直接包含 `1/`、`2/` 和所需公共资源。只在新建的空目标目录执行；若现有 Nginx 已正确托管这些路径，可保留原配置和路径，再合并官网代理配置。
+以下示例假定核验后的导出目录为 `$HOME/khfwcms-install/manual-export/pdf/`，其中直接包含 `1/`、`2/`、`3/` 和所需公共资源。只在新建的空目标目录执行；若现有 Nginx 已正确托管这些路径，可保留原配置和路径，再合并官网代理配置。
 
 ```bash
 KHB_MANUAL_SOURCE="$HOME/khfwcms-install/manual-export/pdf"
-test -f "$KHB_MANUAL_SOURCE/1/index.html" && test -f "$KHB_MANUAL_SOURCE/2/index.html" || exit 1
+test -f "$KHB_MANUAL_SOURCE/1/index.html" && test -f "$KHB_MANUAL_SOURCE/2/index.html" && test -f "$KHB_MANUAL_SOURCE/3/index.html" || exit 1
 # 模板拒绝跟随符号链接，导出资源应为普通目录和文件。
 test -z "$(find "$KHB_MANUAL_SOURCE" -type l -print -quit)" || exit 1
 sudo install -d -m 0755 /srv/kehoubang-documents/profile/upload
@@ -219,6 +220,9 @@ www 即使只做跳转也需要有效证书，因为 TLS 握手发生在 HTTP �
 
 ```bash
 sudo install -m 0644 /opt/khfwcms/current/deploy/khfwcms-proxy.conf /etc/nginx/snippets/khfwcms-proxy.conf
+# 正式模板使用 HTML 过滤和关闭预压缩静态文件，确认两个模块可用。
+sudo nginx -V 2>&1 | grep -- --with-http_sub_module || exit 1
+sudo nginx -V 2>&1 | grep -- --with-http_gzip_static_module || exit 1
 sudo install -m 0644 /opt/khfwcms/current/deploy/nginx.conf /etc/nginx/sites-available/khfwcms
 sudo nginx -t && sudo systemctl reload nginx
 ```
@@ -228,6 +232,32 @@ sudo nginx -t && sudo systemctl reload nginx
 模板为登录/改密按连接 IP 加 Nginx 限流；应用还保留 5 次失败冷却 15 分钟。应用看到的是本机代理，应用级失败额度会被共享，不能把它当作消除所有拒绝服务攻击的保障。已知管理员 IP 时可由运维对全部后台入口和管理 API 加白名单，注意精确匹配的 login/password location 也必须覆盖。
 
 HSTS 未添加 `includeSubDomains` 或 preload，避免把未知独立业务系统的策略强行改变。
+
+### 已有站点更新：阅读器的“返回官网”按钮
+
+本次源码增加 `public/document-return.js`、`public/document-return.css`。先按代码升级流程发布新版本，确保 `https://kehoubang.cn/document-return.js` 和 `/document-return.css` 均可访问，再将模板中以下指令合并到现有 `/profile/upload/pdf/` 的 location 内，执行 `sudo nginx -t && sudo systemctl reload nginx`。保留原静态目录或已核验上游；**只上传首页不会让独立阅读器出现按钮，不要用模板覆盖现场其他站点。**
+
+```nginx
+gzip_static off;
+sub_filter_once on;
+sub_filter '</body>' '<script defer src="/document-return.js"></script></body>';
+```
+
+`sub_filter` 默认只修改 `text/html`，不修改 PDF、图片、CSS、JS；`gzip_static off` 防止优先返回已压缩的 `.gz` 文件而错过 HTML 替换，正常动态 gzip 可保留。如果实际使用反向代理托管阅读器，同时在该 location 设置 `proxy_set_header Accept-Encoding "";`，并核验上游确实返回未预压缩 HTML。脚本只在 `/profile/upload/pdf/1/`、`2/`、`3/` 的顶层页面显示按钮，在当前阅读标签页返回官网，避免新开一层标签或依赖浏览器后退。手机子页面同样适用。
+
+若目标 Nginx 缺少上述模块，或阅读器 HTML 没有结束 `</body>` 标签，可由阅读器维护人把同一行 `<script defer src="/document-return.js"></script>` 加入每个顶层入口和手机 HTML 页面，改用不含上述三行的原静态配置；脚本重复加载也只生成一个按钮。不要为了这个按钮放宽 CMS 的 CSP。若导出 HTML 有独立的 CSP 或 `<base>` 配置，需确认允许这两个同源资源，且脚本实际从官网加载。
+
+清理 CDN/浏览器中旧阅读器 HTML 的缓存，并检查响应正文确实包含脚本：
+
+```bash
+curl -fsS https://kehoubang.cn/document-return.js >/dev/null
+curl -fsS https://kehoubang.cn/document-return.css >/dev/null
+for KHB_DOCUMENT_ID in 1 2 3; do
+  curl --compressed -fsS "https://kehoubang.cn/profile/upload/pdf/$KHB_DOCUMENT_ID/index.html" | grep -F '/document-return.js' || exit 1
+done
+```
+
+随后在实际桌面/手机阅读器中确认右上角“← 返回官网”可点击，打开资料的新标签页会回到 `https://kehoubang.cn/`，原官网标签保持不变；检查按钮没有遮挡翻页、缩放或菜单。如阅读器使用浏览器全屏，需同时检查全屏和退出后的行为。本地样本验证不能替代这里的真实导出页面验收。
 
 ### 证书续期
 
@@ -253,6 +283,7 @@ curl -I https://kehoubang.cn/
 curl -fsS https://kehoubang.cn/api/content >/dev/null
 curl -fsS https://kehoubang.cn/profile/upload/pdf/1/index.html >/dev/null
 curl -fsS https://kehoubang.cn/profile/upload/pdf/2/index.html >/dev/null
+curl -fsS https://kehoubang.cn/profile/upload/pdf/3/index.html >/dev/null
 sudo ss -ltnp | grep ':3000'
 ```
 
@@ -266,9 +297,10 @@ curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/ >/d
 curl --resolve "www.kehoubang.cn:443:$KHB_WEBSITE_IP" -I 'https://www.kehoubang.cn/admin?check=1'
 curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/profile/upload/pdf/1/index.html >/dev/null
 curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/profile/upload/pdf/2/index.html >/dev/null
+curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/profile/upload/pdf/3/index.html >/dev/null
 ```
 
-上述命令只核对入口响应。还需使用指向新 IP 的测试浏览器，从页眉与产品栏目分别打开两份在线资料，核对新标签页地址、完整翻页、图片和脚本加载，确认无资源 404 或混合内容。手机横屏时导航应可滚动到最后两项。读者实际阅读验收完成后再确认这些链接已迁移。
+上述命令只核对入口响应。还需使用指向新 IP 的测试浏览器，从页眉打开三份在线资料，并检查产品栏目中的课程手册和一校一案入口，核对新标签页地址、完整翻页、图片和脚本加载，确认无资源 404 或混合内容。手机横屏时导航应可滚动到最后两项。读者实际阅读验收完成后再确认这些链接已迁移。
 
 在浏览器验证：证书覆盖两个官网域名、无混合内容、后台可登录和改密、服务卡片无多余详情按钮、手机课程初显 3 门、课程弹窗、团队展开、新闻外链、二维码和夜间模式。上传一张授权的测试图片并保存，再核对官网与重启后数据；涉及上线内容的测试由内容负责人选定条目。
 
@@ -355,7 +387,8 @@ sudo systemctl status khfwcms --no-pager
 | 413 上传失败 | 应用最大 5 MiB，Nginx 模板同为 5m；检查实际图片大小和是否经过更小限制的网关 |
 | 更新代码后内容变旧 | 核对 DATA_DIR 与 current；确认没有导入 seed/公开快照覆盖原数据 |
 | 上传图片 404 | 核对 content.json 中引用与 DATA_DIR/uploads，确保迁移时一并复制且服务用户可读 |
-| 课程手册/一校一案 404 或空白 | 检查 `/srv/kehoubang-documents/profile/upload/pdf/1/`、`2/` 及完整依赖是否迁移；核对专用 Nginx location、MIME 类型和浏览器 Network 错误，不能只复制入口 HTML |
+| 课程手册/一校一案/公司展册 404 或空白 | 检查 `/srv/kehoubang-documents/profile/upload/pdf/1/`、`2/`、`3/` 及完整依赖是否迁移；核对专用 Nginx location、MIME 类型和浏览器 Network 错误，不能只复制入口 HTML |
+| 阅读器无返回官网按钮 | 确认新 JS/CSS 已发布、Nginx 过滤已重载、HTML 响应包含脚本，排查旧缓存、预压缩响应、CSP、缺失结束 body 标签和 iframe 顶层入口 |
 | 证书申请/续期失败 | 检查 A/AAAA/CNAME、80端口、ACME路径、服务商访问限制和证书日志 |
 | 修改密码后需要重登 | 设计行为，全部会话撤销；原初始密码也不再有效 |
 
@@ -366,6 +399,7 @@ sudo systemctl status khfwcms --no-pager
 - [Node.js 官方版本状态](https://nodejs.org/en/about/previous-releases)：选择受维护的 24 LTS；精确补丁版本以服务器安装时为准。
 - [Nginx server_name](https://nginx.org/en/docs/http/server_names.html)、[反向代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)、[请求限速](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html)。
 - [Nginx 静态路径 root](https://nginx.org/en/docs/http/ngx_http_core_module.html#root)、[try_files](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files)：保留在线手册路径并对缺失资源返回 404。
+- [Nginx sub_filter](https://nginx.org/en/docs/http/ngx_http_sub_module.html)、[gzip_static](https://nginx.org/en/docs/http/ngx_http_gzip_static_module.html)：仅为 HTML 响应引入返回官网脚本。
 - [Certbot 使用与续期](https://eff-certbot.readthedocs.io/en/stable/using.html)：webroot 多域证书及部署钩子。
 
 当前交付在 Windows 工作区完成源码和包验证；未连接目标 Linux 主机，未修改 DNS，未申请生产证书，未执行生产 Nginx/systemd 安装。现场需要完成 `nginx -t`、Node.js 24 上的测试、续期演练及验收表。此限制不影响将源码、配置和文档交给部署负责人继续执行。

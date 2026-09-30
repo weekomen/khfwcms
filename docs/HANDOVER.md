@@ -36,6 +36,7 @@
 | `validation.mjs` | 保存内容时的字段、数量、链接和路径校验 |
 | `public/index.html`、`public/app.js` | 官网栏目、团队、服务卡片、新闻链接、二维码与详情弹窗 |
 | `public/courses.js`、`public/courses.css` | 课程分类、默认展示数量、展开收起、课程详情 |
+| `public/document-return.js`、`public/document-return.css` | 阅读器的“返回官网”按钮，由 Nginx 为独立阅读器 HTML 引入 |
 | `public/style.css`、`public/site-theme.css` | 官网布局、响应式样式、夜间模式覆盖 |
 | `public/admin.html`、`public/admin.js`、`public/admin.css`、`public/upload.css` | 登录、改密、栏目编辑、照片上传与保存状态 |
 | `public/theme.js`、`public/theme.css` | 官网和后台共用的主题偏好 |
@@ -54,14 +55,15 @@
 
 - **产品与服务**：服务卡片直接展示名称、副标题、详细介绍和全部服务要点，无“了解更多”弹窗。文字来自 CMS 的 `services`。
 - **课程目录**：交付内容包含 55 门课程，分为美育、益智、科技、劳动四类；分类由实际数据生成。视口宽度 ≤600px 时，每类默认展示 3 门，其余宽度展示 6 门，可展开全部，切换分类时重新收起。详情使用站内弹窗，显示介绍和按行拆分的学习内容。
-- **在线资料入口**：页眉提供“课程手册 / 一校一案”；“从优质课程，到每一次落地”旁提供“全部课程手册”，“课程落地与配套服务”旁提供“一校一案”。课程手册指向 `https://kehoubang.cn/profile/upload/pdf/1/index.html`，一校一案指向 `https://kehoubang.cn/profile/upload/pdf/2/index.html`，均为带 `noopener noreferrer` 的新标签页链接。配置位置为 `public/index.html`，目前不由 CMS 编辑。窄屏导航可展开和滚动访问。
+- **在线资料入口**：页眉提供“课程手册 / 一校一案 / 公司展册”；“从优质课程，到每一次落地”旁提供“全部课程手册”，“课程落地与配套服务”旁提供“一校一案”。课程手册指向 `https://kehoubang.cn/profile/upload/pdf/1/index.html`，一校一案指向 `https://kehoubang.cn/profile/upload/pdf/2/index.html`，公司展册指向 `https://kehoubang.cn/profile/upload/pdf/3/index.html`，均为带 `noopener noreferrer` 的新标签页链接。配置位置为 `public/index.html`，目前不由 CMS 编辑。窄屏导航可展开和滚动访问。
+- **阅读器返回入口**：上述三个阅读器及其手机 HTML 子页面通过 Nginx `sub_filter` 引入独立脚本，右上角显示“← 返回官网”。按钮使用固定官网地址，在当前阅读标签页跳转，不依赖历史记录或原首页标签。脚本只作用于三个资料目录的顶层页面，避免嵌套 iframe 和重复加载生成多个按钮。未改动原阅读器文件；已有站点必须合并部署配置才能启用。真实阅读器的翻页和全屏布局需上线验收。
 - **专业团队**：按分类查看，默认只展示一排，数量按当前网格列数计算，常见桌面 4 人、手机 2 人；可以展开/收起。点击成员查看照片、职称和简介，切换团队分类不会改变课程分类。
 - **公司动态**：仅显示已发布文章，按日期字符串倒序排列。存在有效 HTTPS 原文链接时，在新标签页打开；无链接时显示“文章链接待补充”，不弹出文章详情。后台保存的正文仍可通过公开 API 的已发布文章读取。
 - **联系与主题**：电话和邮箱链接、微信/视频号/快手/抖音二维码放大、返回顶部；官网和后台均支持日间、夜间和跟随系统。偏好保存在当前浏览器同源 `localStorage` 的 `khb-admin-theme`，不涉及认证信息。
 
-首屏照片为 `public/assets/hero-office.jpg`，引用位置在 `public/style.css`；平台名称、提示及二维码路径在 `public/app.js`。这些素材和课程分类配图尚无后台上传入口。课程 `page` 字段仅为兼容旧数据保留，单门课程详情使用弹窗；完整课程手册与一校一案通过上述独立链接打开。`public/assets/course-manual.pdf` 仍属于公开静态文件，但它不是两个在线 HTML 阅读器的完整文件包，不能替代它们的部署。
+首屏照片为 `public/assets/hero-office.jpg`，引用位置在 `public/style.css`；平台名称、提示及二维码路径在 `public/app.js`。这些素材和课程分类配图尚无后台上传入口。课程 `page` 字段仅为兼容旧数据保留，单门课程详情使用弹窗；课程手册、一校一案和公司展册通过上述独立链接打开。`public/assets/course-manual.pdf` 仍属于公开静态文件，但它不是三个在线 HTML 阅读器的完整文件包，不能替代它们的部署。
 
-两份在线资料与官网共用裸域。交接接收方应取得原托管方导出的完整公开阅读器文件（HTML、脚本、样式、图片、字体或 PDF 等依赖），按 [部署文档](DEPLOYMENT.md) 第 7 节保持原访问路径。Nginx 模板为其预留 `/srv/kehoubang-documents/profile/upload/pdf/` 静态目录，Node 与 CMS 不负责生成或管理这些文件；当前源码交接包不含该目录。
+三份在线资料与官网共用裸域。交接接收方应取得原托管方导出的完整公开阅读器文件（HTML、脚本、样式、图片、字体或 PDF 等依赖），按 [部署文档](DEPLOYMENT.md) 第 7 节保持原访问路径。Nginx 模板为其预留 `/srv/kehoubang-documents/profile/upload/pdf/` 静态目录，Node 与 CMS 不负责生成或管理这些文件；当前源码交接包不含该目录。
 
 ## 3. 内容模型与维护
 
@@ -167,8 +169,9 @@ npm test
 | --- | --- |
 | `node tests/browser.cjs` | 启动临时数据服务；验证移动后台初始改密、Cookie、重新登录保留编辑、保存及退出 |
 | `node tests/site-interactions.cjs` | 路由模拟 seed/API；验证 55 门课程弹窗、二维码、返回顶部和移动深色布局；不验证真实 API 或 HTTPS |
+| `node tests/document-navigation.cjs` | 隔离阅读器 HTML 样本，验证三个资料的外链、返回官网、重复加载/iframe 隔离及手机导航；不替代真实阅读器验收 |
 
-两个浏览器脚本需要 Playwright，且当前使用 `channel: 'msedge'`；默认模块路径是开发机 Windows 路径。接手方应通过 `PLAYWRIGHT_PATH` 指向可用的 Playwright 模块，并提供 Microsoft Edge，或调整测试中的浏览器启动配置；它们不是开箱即用的 Linux 无头测试环境，也不是部署或运行网站的依赖。运行前建立 `reference/` 目录，截图仅保存在该忽略目录。脚本中对 55 门课程、每门 3 条学习内容等有固定断言，内容变更后须同步测试数据与预期。
+浏览器脚本需要 Playwright，且当前使用 `channel: 'msedge'`；默认模块路径是开发机 Windows 路径。接手方应通过 `PLAYWRIGHT_PATH` 指向可用的 Playwright 模块，并提供 Microsoft Edge，或调整测试中的浏览器启动配置；它们不是开箱即用的 Linux 无头测试环境，也不是部署或运行网站的依赖。运行前建立 `reference/` 目录，截图仅保存在该忽略目录。课程检查脚本对 55 门课程、每门 3 条学习内容等有固定断言，内容变更后须同步测试数据与预期。
 
 测试通过不代表公网环境验收或渗透测试完成。真实 DNS、证书、`www` 跳转、管理登录、代理头和备份恢复须在目标环境验证；步骤见部署文档，结果填入验收清单。
 

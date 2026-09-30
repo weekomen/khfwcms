@@ -1,0 +1,42 @@
+#khb-return-home {
+    all: initial;
+    box-sizing: border-box;
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    z-index: 2147483647;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid #ffffffb3;
+    border-radius: 24px;
+    background: #0754d6;
+    color: #fff;
+    box-shadow: 0 3px 16px #10274338;
+    font: 500 14px/1.5 "Microsoft YaHei", "PingFang SC", sans-serif;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+#khb-return-home:hover {
+    background: #0644ad;
+}
+
+#khb-return-home:focus-visible {
+    outline: 3px solid #f1aa36;
+    outline-offset: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+    #khb-return-home {
+        background: #1b4e9e;
+        border-color: #7ea8df;
+    }
+
+    #khb-return-home:hover {
+        background: #2463c4;
+    }
+}
