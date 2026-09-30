@@ -14,6 +14,8 @@
 
 域名分工已确认：官网主地址 `https://kehoubang.cn`；`https://www.kehoubang.cn` 保留路径和查询参数跳转到主地址；CMS 位于 `https://kehoubang.cn/admin`。`https://khb.kehoubang.cn` 属于另一个独立业务系统，其代码、运行环境和部署由该系统单独交接，不指向本项目的 Node 服务。
 
+最新版还包含页眉及产品栏目中的“课程手册 / 一校一案”入口，均在新标签页打开。它们位于同一官网域名下的 `/profile/upload/pdf/1/index.html`、`/profile/upload/pdf/2/index.html`；在线阅读器的完整文件没有包含在本源码包中。切换官网服务器前，必须按部署文档第 7 节移交这两份手册及其依赖资源，或保留经核验的原托管入口，不能仅迁移 Node 代码。
+
 ## 启动
 
 生产部署使用仍获安全维护的 Node.js 24 LTS；没有第三方运行依赖，也没有构建步骤，不需要执行 `npm ci`。现有源码兼容较新的 Node.js 20，但 Node.js 20 已结束官方维护，不应作为新服务器的部署版本。[Node.js 官方版本状态](https://nodejs.org/en/about/previous-releases)

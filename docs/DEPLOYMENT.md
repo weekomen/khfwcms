@@ -38,6 +38,12 @@ dig +short kehoubang.cn AAAA
 dig +short khb.kehoubang.cn A
 ```
 
+### 已有域名的切换顺序
+
+若裸域目前承载旧站或业务系统，先记录旧 DNS 值、TTL、站点配置和需要保留的路径，与两套系统负责人安排维护窗口。先在新服务器安装官网、迁移内容及下文的在线手册，再切换 @ / www；`khb` 的变更由独立系统负责人按自己的发布步骤实施，并核对登录回调、接口地址和文件链接。不要把整套旧业务的上传目录公开给新官网。
+
+如已能在新入口安装有效官网证书，可在改 DNS 前使用第 8 节的 `curl --resolve` 和测试电脑 hosts 检查新入口；否则本手册的 HTTP webroot 签发需要 @ / www 先到新服务器，应在维护窗口执行，首次签发期间官网返回临时 503。需要无停机切换时，应由运维提前通过服务商支持的 DNS 验证等方式准备证书。新官网、两份手册和独立系统完成各自验收前保留旧服务器与回退记录，验证失败时恢复对应旧 DNS/入口配置。
+
 ## 3. 安装运行环境
 
 在新的 Ubuntu 服务器执行；若已安装受维护的 Node.js 24 和 Nginx，可核对版本、路径后跳过相应安装。更新已有服务器的软件前遵循该服务器的维护流程。
@@ -162,6 +168,38 @@ TRUST_PROXY=loopback
 
 ## 7. 官网 HTTPS：先申请证书，再启用正式配置
 
+### 保留课程手册和一校一案的原地址
+
+官网最新版本的四处资料入口使用下面两个地址；它们与官网共用裸域，并非可以随官网迁移而保持不变的第三方站点。
+
+| 公开地址 | Nginx 模板对应磁盘文件 |
+| --- | --- |
+| `https://kehoubang.cn/profile/upload/pdf/1/index.html` | `/srv/kehoubang-documents/profile/upload/pdf/1/index.html` |
+| `https://kehoubang.cn/profile/upload/pdf/2/index.html` | `/srv/kehoubang-documents/profile/upload/pdf/2/index.html` |
+
+**源码 ZIP 不包含这两个 HTML 阅读器的完整资源。** 请从原托管负责人取得经确认可公开的导出文件：包括两份阅读器的 HTML、JS、CSS、图片、字体、PDF 及共享依赖，保持相对路径结构。现有 `public/assets/course-manual.pdf` 只是单个 PDF，不能代替上述导出包。先在原页面浏览器 Network 中核对完整翻页所请求的路径；若共享依赖在 `/profile/upload/pdf/` 之外，需单独确认公开范围并为必要路径配置托管，不能扩大为公开整个旧业务目录。
+
+以下示例假定核验后的导出目录为 `$HOME/khfwcms-install/manual-export/pdf/`，其中直接包含 `1/`、`2/` 和所需公共资源。只在新建的空目标目录执行；若现有 Nginx 已正确托管这些路径，可保留原配置和路径，再合并官网代理配置。
+
+```bash
+KHB_MANUAL_SOURCE="$HOME/khfwcms-install/manual-export/pdf"
+test -f "$KHB_MANUAL_SOURCE/1/index.html" && test -f "$KHB_MANUAL_SOURCE/2/index.html" || exit 1
+# 模板拒绝跟随符号链接，导出资源应为普通目录和文件。
+test -z "$(find "$KHB_MANUAL_SOURCE" -type l -print -quit)" || exit 1
+sudo install -d -m 0755 /srv/kehoubang-documents/profile/upload
+sudo test ! -e /srv/kehoubang-documents/profile/upload/pdf || { echo '已有手册目录，请先备份并核对，不覆盖'; exit 1; }
+sudo cp -a "$KHB_MANUAL_SOURCE" /srv/kehoubang-documents/profile/upload/pdf
+sudo chown -R root:root /srv/kehoubang-documents
+sudo find /srv/kehoubang-documents -type d -exec chmod 0755 {} +
+sudo find /srv/kehoubang-documents -type f -exec chmod 0644 {} +
+```
+
+正式 Nginx 模板中的 `location ^~ /profile/upload/pdf/` 从该目录只读提供文件，缺失文件返回 404，不会转入 CMS。所有上层目录须允许 Nginx 用户遍历，保留发行版的 `mime.types` 配置；完整阅读器是否能运行仍须浏览器验收。模板的目录不随官网源码版本切换而删除，应单独备份。
+
+若继续使用原托管服务，运维应使用已核实的独立上游并保留原路径，确认协议、TLS、Host 和所需依赖后替换这一 location。**不能反代到 `https://kehoubang.cn` 自身形成循环，也不能假定独立 `khb` 系统会提供这些文件。** 未取得完整资源或核验原托管路由前，不完成正式域名切换。不要把阅读器直接放进 Node 的 `public/` 后忽略其严格 CSP 对旧阅读器脚本的影响。
+
+### 首次证书与官网入口
+
 DNS 的 @ 和 www 必须先到达官网服务器，80 端口可访问。若已有同名站点配置，先私下备份并合并，不要让同一域名重复定义。`deploy/nginx-bootstrap.conf` 只用于第一次申请官网证书，不代理明文登录。
 
 ```bash
@@ -213,10 +251,24 @@ curl -I 'http://kehoubang.cn/services?check=1'
 curl -I 'https://www.kehoubang.cn/admin?check=1'
 curl -I https://kehoubang.cn/
 curl -fsS https://kehoubang.cn/api/content >/dev/null
+curl -fsS https://kehoubang.cn/profile/upload/pdf/1/index.html >/dev/null
+curl -fsS https://kehoubang.cn/profile/upload/pdf/2/index.html >/dev/null
 sudo ss -ltnp | grep ':3000'
 ```
 
 预期：前两项为 308，Location 指向 `https://kehoubang.cn` 且保留原路径/参数；主站为 200；3000 仅监听 127.0.0.1。带路径跳转仅保证路径保留，不代表 `/services` 是独立页面（官网采用锚点导航）。
+
+新入口已安装有效证书时，可在公开 DNS 切换前指定新 IP 检查（将示例值替换为真实官网 IPv4，不使用 `-k` 跳过证书验证）：
+
+```bash
+KHB_WEBSITE_IP=REPLACE_WITH_WEBSITE_IPV4
+curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/ >/dev/null
+curl --resolve "www.kehoubang.cn:443:$KHB_WEBSITE_IP" -I 'https://www.kehoubang.cn/admin?check=1'
+curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/profile/upload/pdf/1/index.html >/dev/null
+curl --resolve "kehoubang.cn:443:$KHB_WEBSITE_IP" -fsS https://kehoubang.cn/profile/upload/pdf/2/index.html >/dev/null
+```
+
+上述命令只核对入口响应。还需使用指向新 IP 的测试浏览器，从页眉与产品栏目分别打开两份在线资料，核对新标签页地址、完整翻页、图片和脚本加载，确认无资源 404 或混合内容。手机横屏时导航应可滚动到最后两项。读者实际阅读验收完成后再确认这些链接已迁移。
 
 在浏览器验证：证书覆盖两个官网域名、无混合内容、后台可登录和改密、服务卡片无多余详情按钮、手机课程初显 3 门、课程弹窗、团队展开、新闻外链、二维码和夜间模式。上传一张授权的测试图片并保存，再核对官网与重启后数据；涉及上线内容的测试由内容负责人选定条目。
 
@@ -253,6 +305,11 @@ cp /etc/systemd/system/khfwcms.service "$backup_dir/"
 cp /etc/nginx/sites-available/khfwcms "$backup_dir/nginx.conf"
 cp /etc/nginx/snippets/khfwcms-proxy.conf "$backup_dir/"
 (cd "$backup_dir" && sha256sum data.tar.gz > data.tar.gz.sha256)
+# 此维护窗口应同时暂停手册发布，备份完整的独立静态目录。
+if [ -d /srv/kehoubang-documents ]; then
+  tar -C /srv -czf "$backup_dir/documents.tar.gz" kehoubang-documents
+  (cd "$backup_dir" && sha256sum documents.tar.gz > documents.tar.gz.sha256)
+fi
 BACKUP
 ```
 
@@ -261,6 +318,8 @@ BACKUP
 ### 恢复原则
 
 停服后先另存当前数据，校验所选备份的 SHA-256。在全新临时目录解压检查文件清单、JSON 和图片引用，再切换到已核验的恢复目录；不要直接对正在使用的目录执行覆盖解压。恢复 `/var/lib/khfwcms` 后重新设置属主与 0700/0600 权限，确认 systemd 数据路径正确再启动。恢复认证文件会恢复对应密码，但不会恢复旧会话；安全事件后的恢复应让管理员重新设置密码。
+
+在线手册需要另外恢复 `documents.tar.gz` 对应的 `/srv/kehoubang-documents`，校验 SHA-256、目录结构与所有阅读器依赖，恢复 root 属主、目录 0755 和文件 0644，并核对 Nginx 路由。若使用其他静态目录或独立托管，调整备份和恢复范围。它不在 `data.tar.gz` 或源码 ZIP 中，不能随代码回滚省略。
 
 ### 代码升级与回滚
 
@@ -296,6 +355,7 @@ sudo systemctl status khfwcms --no-pager
 | 413 上传失败 | 应用最大 5 MiB，Nginx 模板同为 5m；检查实际图片大小和是否经过更小限制的网关 |
 | 更新代码后内容变旧 | 核对 DATA_DIR 与 current；确认没有导入 seed/公开快照覆盖原数据 |
 | 上传图片 404 | 核对 content.json 中引用与 DATA_DIR/uploads，确保迁移时一并复制且服务用户可读 |
+| 课程手册/一校一案 404 或空白 | 检查 `/srv/kehoubang-documents/profile/upload/pdf/1/`、`2/` 及完整依赖是否迁移；核对专用 Nginx location、MIME 类型和浏览器 Network 错误，不能只复制入口 HTML |
 | 证书申请/续期失败 | 检查 A/AAAA/CNAME、80端口、ACME路径、服务商访问限制和证书日志 |
 | 修改密码后需要重登 | 设计行为，全部会话撤销；原初始密码也不再有效 |
 
@@ -305,6 +365,7 @@ sudo systemctl status khfwcms --no-pager
 
 - [Node.js 官方版本状态](https://nodejs.org/en/about/previous-releases)：选择受维护的 24 LTS；精确补丁版本以服务器安装时为准。
 - [Nginx server_name](https://nginx.org/en/docs/http/server_names.html)、[反向代理模块](https://nginx.org/en/docs/http/ngx_http_proxy_module.html)、[请求限速](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html)。
+- [Nginx 静态路径 root](https://nginx.org/en/docs/http/ngx_http_core_module.html#root)、[try_files](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files)：保留在线手册路径并对缺失资源返回 404。
 - [Certbot 使用与续期](https://eff-certbot.readthedocs.io/en/stable/using.html)：webroot 多域证书及部署钩子。
 
 当前交付在 Windows 工作区完成源码和包验证；未连接目标 Linux 主机，未修改 DNS，未申请生产证书，未执行生产 Nginx/systemd 安装。现场需要完成 `nginx -t`、Node.js 24 上的测试、续期演练及验收表。此限制不影响将源码、配置和文档交给部署负责人继续执行。
