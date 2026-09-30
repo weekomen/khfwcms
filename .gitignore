@@ -12,4 +12,5 @@ reference/contact.jpg
 test-results/
 reference/
 tmp/
+/handoff/
 *.log
