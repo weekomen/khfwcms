@@ -12,7 +12,7 @@ const { once } = require('node:events');
   try {
     child = spawn(process.execPath, ['server.mjs'], { cwd: path.resolve(__dirname, '..'), env: { ...process.env, DATA_DIR: dir, ADMIN_TOKEN: initial, HOST: '127.0.0.1', PORT: String(port), PUBLIC_ORIGIN: '', TRUST_PROXY: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
     await Promise.race([once(child.stdout, 'data'), once(child, 'exit').then(() => { throw Error('Fixture server exited'); }), new Promise((_, reject) => setTimeout(() => reject(Error('Server timeout')), 10000).unref())]);
-    browser = await chromium.launch({ channel: 'msedge', headless: true });
+    browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'chromium', headless: true });
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const page = await context.newPage(), errors = []; page.on('pageerror', e => errors.push(e.message));
     await fs.mkdir('reference', { recursive: true });

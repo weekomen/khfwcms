@@ -14,3 +14,4 @@ reference/
 tmp/
 /handoff/
 *.log
+.local/

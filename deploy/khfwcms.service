@@ -11,11 +11,13 @@ Group=khfwcms
 WorkingDirectory=/opt/khfwcms/current
 EnvironmentFile=/etc/khfwcms/khfwcms.env
 # Verify this absolute path on the target server; do not depend on nvm or shell profiles.
-ExecStart=/usr/local/bin/node /opt/khfwcms/current/server.mjs
+ExecStart=/opt/khfwcms/runtime/node-v24.21.0-linux-x64/bin/node /opt/khfwcms/current/server.mjs
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30
 UMask=0077
+MemoryMax=512M
+CPUQuota=100%
 StateDirectory=khfwcms
 StateDirectoryMode=0700
 NoNewPrivileges=true
