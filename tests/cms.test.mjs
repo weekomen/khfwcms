@@ -198,6 +198,21 @@ test('public HTTPS cookies, strict proxy origin and brute-force protection survi
   assert.equal(securePage.status, 200);
   assert.match(securePage.headers.get('cache-control'), /no-store/);
   assert.match(securePage.headers.get('strict-transport-security'), /max-age=/);
+  const invalidProxyHeaders = [
+    { Host: 'cms.example.test' },
+    { ...proxyHeaders, 'X-Forwarded-Proto': 'http' },
+    { ...proxyHeaders, 'X-Forwarded-Host': 'attacker.example' },
+    { ...proxyHeaders, Forwarded: 'proto=https;host=cms.example.test' }
+  ];
+  for (const headers of invalidProxyHeaders) {
+    const rejectedPage = await api('/admin', { headers });
+    assert.equal(rejectedPage.status, 403);
+    assert.equal(rejectedPage.headers.get('location'), null, 'a bad proxy configuration must not redirect back to the same admin URL');
+    assert.match((await rejectedPage.json()).error, /代理配置不匹配/);
+  }
+  const otherHost = await api('/admin', { headers: { ...proxyHeaders, Host: 'another.example.test' } });
+  assert.equal(otherHost.status, 308);
+  assert.equal(otherHost.headers.get('location'), publicOrigin + '/admin');
   const initial = await login(api, publicOrigin, legacyPassword, proxyHeaders);
   assert.match(initial.setCookie, /;\s*Secure/i);
   assert.equal((await changePassword(api, publicOrigin, initial, legacyPassword, password, proxyHeaders)).status, 200);
@@ -206,6 +221,11 @@ test('public HTTPS cookies, strict proxy origin and brute-force protection survi
   const trusted = await api('/api/admin/session', { headers });
   assert.equal(trusted.status, 200);
   assert.match(trusted.headers.get('strict-transport-security'), /max-age=/i);
+  for (const invalid of invalidProxyHeaders) {
+    const rejectedApi = await api('/api/admin/session', { headers: { ...invalid, Cookie: session.cookie, Origin: publicOrigin } });
+    assert.equal(rejectedApi.status, 403, 'an existing session must not bypass proxy validation');
+    assert.equal(rejectedApi.headers.get('location'), null);
+  }
   assert.equal((await api('/api/admin/session', { headers: { ...headers, 'X-Forwarded-Proto': 'http' } })).status, 403);
   assert.equal((await api('/api/admin/session', { headers: { ...headers, Host: 'attacker.example' } })).status, 403);
   assert.equal((await api('/api/admin/session', { headers: { Cookie: session.cookie } })).status, 403);
