@@ -15,3 +15,5 @@ tmp/
 /handoff/
 *.log
 .local/
+.DS_Store
+__pycache__/

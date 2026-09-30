@@ -36,11 +36,13 @@ additions = '''    # Company website: all legacy API, H5, profile and document l
     location = /api/admin/login {
         client_max_body_size 8k;
         limit_req zone=khfwcms_login burst=5 nodelay;
+        limit_req_status 429;
         INCLUDE_PROXY
     }
     location = /api/admin/password {
         client_max_body_size 8k;
         limit_req zone=khfwcms_login burst=5 nodelay;
+        limit_req_status 429;
         INCLUDE_PROXY
     }
     location ^~ /api/admin/ {
@@ -65,6 +67,13 @@ for asset in sorted((root / 'public').iterdir()):
 old_root = '    location / {\n        try_files $uri $uri/ /index.html;\n    }'
 assert tls.count(old_root) == 1
 apex_tls = tls.replace('server_name kehoubang.cn www.kehoubang.cn;', 'server_name kehoubang.cn;')
+board_location = '    location ^~ /deployment-board/ {\n'
+assert apex_tls.count(board_location) == 1
+apex_tls = apex_tls.replace(board_location, board_location + '''        # Keep the existing absolute menu URL in the new business origin.
+        if ($http_referer ~ "^https://khb\\.kehoubang\\.cn(?:/|$)") {
+            return 302 https://khb.kehoubang.cn$request_uri;
+        }
+''')
 apex_tls = apex_tls.replace(old_root, additions + '''    location / {
         client_max_body_size 5m;
         INCLUDE_PROXY
@@ -82,6 +91,9 @@ server {
 '''
 prefix = original[:original.index(needle)]
 (output / 'edu-feiyue').write_text(prefix + apex_tls + www)
+staging = apex_tls.replace('listen 443 ssl http2 default_server;', 'listen 127.0.0.1:13443 ssl http2;')
+staging = staging.replace('    listen [::]:443 ssl http2 default_server;\n', '')
+(output / 'khfwcms-staging').write_text(staging)
 (output / '60-khfwcms.conf').write_text('limit_req_zone $binary_remote_addr zone=khfwcms_login:10m rate=5r/m;\n')
 (output / 'baseline.sha256').write_text(hashlib.sha256(original.encode()).hexdigest() + '\n')
 print('Rendered business and website sites; live files unchanged.')

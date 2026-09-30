@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "websiteStaticFiles": 33,
+  "news": 2,
+  "courses": 55,
+  "tlsHosts": [
+    "kehoubang.cn",
+    "khb.kehoubang.cn",
+    "class.shouboshi.net",
+    "daoyuanjx.cn",
+    "khb.gengweilai.xyz",
+    "khb.sjsxl.com",
+    "www.kehoubang.cn"
+  ],
+  "wwwRedirect": "path and query preserved",
+  "legacyRoutes": "H5, API, business assets, private deny and manuals checked",
+  "manuals": [
+    {
+      "id": "1",
+      "pages": 39,
+      "verifiedJpegBytes": 60143295,
+      "reader": "vertical scroll; no built-in PDF download link"
+    },
+    {
+      "id": "2",
+      "pages": 20,
+      "verifiedJpegBytes": 15723561,
+      "reader": "vertical scroll; no built-in PDF download link"
+    }
+  ],
+  "businessLogin": "owner confirmed login, common pages and files in this conversation"
+}
