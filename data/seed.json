@@ -118,28 +118,7 @@
       "image": "/assets/image19.webp"
     }
   ],
-  "news": [
-    {
-      "id": "wechat-1",
-      "title": "公众号文章一（待补充原文）",
-      "category": "公司动态",
-      "date": "",
-      "summary": "",
-      "body": "",
-      "source": "https://mp.weixin.qq.com/s/T4i2PflkmRbR71wEUA8DJQ",
-      "published": false
-    },
-    {
-      "id": "wechat-2",
-      "title": "公众号文章二（待补充原文）",
-      "category": "公司动态",
-      "date": "",
-      "summary": "",
-      "body": "",
-      "source": "https://mp.weixin.qq.com/s/a28Yrf2GuPG0B79_4rx4Tw",
-      "published": false
-    }
-  ],
+  "news": [],
   "courses": [
     {
       "category": "美育类",

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs",
-    "test": "node --test tests/cms.test.mjs"
+    "test": "node --test tests/cms.test.mjs",
+    "test:handoff": "node --test tests/handoff.test.mjs"
   },
   "engines": {
     "node": ">=20"

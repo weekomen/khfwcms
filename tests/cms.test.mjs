@@ -10,6 +10,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { validateContent } from '../validation.mjs';
 
 const seed = JSON.parse(await readFile(new URL('../data/seed.json', import.meta.url), 'utf8'));
+// Draft articles are private test fixtures, never part of the shipped seed.
+const draftNews = [1, 2].map(index => ({
+  id: 'test-draft-' + index, title: 'Test draft ' + index, category: 'Testing', date: '2026-09-23',
+  summary: 'Test-only draft', body: 'Test-only unpublished content', source: 'https://example.com/article-' + index, published: false
+}));
+const validationFixture = { ...seed, news: draftNews };
 const legacyPassword = 'test-only-legacy-token';
 const password = 'River lantern walks across 48 hills!';
 const nextPassword = 'Morning clouds rest beside 73 lakes!';
@@ -78,7 +84,7 @@ async function changePassword(api, origin, session, currentPassword, newPassword
 test('content rejects unsafe URLs, assets and duplicate IDs', () => {
   validateContent(seed);
   const invalidCourse = structuredClone(seed); invalidCourse.courses[0].page = 33; assert.throws(() => validateContent(invalidCourse));
-  for (const change of [c => c.news[0].source = 'javascript:alert(1)', c => c.team[0].image = '/../../secret', c => c.news[1].id = c.news[0].id]) { const c = structuredClone(seed); change(c); assert.throws(() => validateContent(c)); }
+  for (const change of [c => c.news[0].source = 'javascript:alert(1)', c => c.team[0].image = '/../../secret', c => c.news[1].id = c.news[0].id]) { const c = structuredClone(validationFixture); change(c); assert.throws(() => validateContent(c)); }
 });
 
 test('legacy login migration, CSRF, CMS publication and persistence, and session revocation', async t => {
@@ -138,6 +144,7 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   content.courses[0].summary = '课程简介保存验证';
   content.courses[0].description = '课程详细介绍保存验证';
   content.courses[0].outline = '学习内容一\n学习内容二';
+  content.news = structuredClone(draftNews);
   content.news[0] = { ...content.news[0], title: '已发布测试文章', published: true, body: '测试内容', date: '2026-09-23' };
   assert.equal((await api('/api/admin/content', { method: 'PUT', headers, body: JSON.stringify(content) })).status, 200);
   const published = await (await api('/api/content')).json();
