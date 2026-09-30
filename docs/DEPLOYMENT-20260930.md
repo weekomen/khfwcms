@@ -39,6 +39,10 @@
 
 证据位于 `verification/20260930/`；`public-probes.json` 是上线后实际 TLS/资源核验，`browser-public.json` 在公网浏览器检查成功后生成。
 
+最终公网浏览器验收已通过：桌面官网、390 像素手机布局、旧 `#/login` 书签跳转；两份手册全部 39 / 20 页图片解码成功且能滚动到末页。截图和 `browser-public.json` 已保存。
+
+配置与回退工具对应 `website-deployment-v2026.09.30.1@af6841e`；运行代码仍为 `website-v2026.09.30.1@7a71ac6`。最终服务、配置哈希和改密结果见 `final-state.json`，不含密码或认证哈希。
+
 ## 备份与回退
 
 私有服务器备份：`/data/backups/edu-feiyue/20260930-company-website-r1`。包含部署前 Nginx/证书、源代码归档、内容备份、运行包指纹、最终候选配置和探针结果。用户改密后另保存 `website-data-after-owner-password.tar.gz`。含凭据的归档只保留在服务器受限目录，不能放入 Git 或交接公开文件。

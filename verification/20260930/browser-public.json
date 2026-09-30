@@ -1,0 +1,17 @@
+{
+  "website": true,
+  "mobile": true,
+  "legacyBookmark": true,
+  "manuals": [
+    {
+      "id": 1,
+      "decodedPages": 39,
+      "scrollToLastPage": true
+    },
+    {
+      "id": 2,
+      "decodedPages": 20,
+      "scrollToLastPage": true
+    }
+  ]
+}

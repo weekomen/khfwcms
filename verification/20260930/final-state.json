@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-09-30T13:35:35.770786+00:00",
+  "runtimeSource": "website-v2026.09.30.1@7a71ac6",
+  "deploymentConfigSource": "website-deployment-v2026.09.30.1@af6841e",
+  "configurationSha256": {
+    "/etc/nginx/sites-available/edu-feiyue": "af0b45ec8b066ce27117c97f4098eb83cdb2130fee135334fa52d949869e0ffc",
+    "/etc/nginx/sites-available/khb-business": "4f6a6198ca1cba18374e37092675689a765d1b832ddcf57214a74b2abb37b2c3",
+    "/etc/nginx/snippets/khfwcms-proxy.conf": "3aa6994e2072df196fcca6f44f1b123945c6227bb9d63f6d5806bc11576ab210",
+    "/etc/nginx/conf.d/60-khfwcms.conf": "96f16cbdb9df99c59cbebf7cc432302d027363b24eeba9530c29e61bc9cd196c"
+  },
+  "ownerPasswordChanged": true,
+  "initialTokenRemoved": true,
+  "renewalDryRun": "passed",
+  "privateFinalBackupExists": true,
+  "stagingListenerRemoved": true,
+  "services": "MainPID=469007\nNRestarts=0\nId=khfwcms.service\nActiveState=active\n\nMainPID=377526\nNRestarts=0\nId=edu-server.service\nActiveState=active\n\nMainPID=377796\nNRestarts=0\nId=edu-server-v4.service\nActiveState=active\n"
+}
