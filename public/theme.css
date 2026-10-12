@@ -1,0 +1,134 @@
+:root {
+    color-scheme: light
+}
+
+.theme-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap
+}
+
+.theme-control label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px
+}
+
+.theme-control select {
+    width: auto;
+    padding: 5px 8px;
+    font-size: 13px;
+    cursor: pointer
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #101722;
+    --ink: #e1e9f5;
+    --muted: #a4b2c6;
+    --line: #344258;
+    --blue: #86b7ff;
+    --surface: #192332;
+    --field: #111c2b
+}
+
+[data-theme="dark"] .admin-body header {
+    background: var(--surface);
+    border-color: var(--line)
+}
+
+[data-theme="dark"] #login,
+[data-theme="dark"] .edit-card,
+[data-theme="dark"] .admin-actions button {
+    background: var(--surface)
+}
+
+[data-theme="dark"] label {
+    color: #b3c7e2
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+    background: var(--field);
+    border-color: #41536c;
+    color: var(--ink)
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px #86b7ff26
+}
+
+[data-theme="dark"] input[type="checkbox"] {
+    accent-color: var(--blue)
+}
+
+[data-theme="dark"] .primary {
+    background: #2965cc;
+    color: #fff
+}
+
+[data-theme="dark"] .primary:hover {
+    background: #3375e3
+}
+
+[data-theme="dark"] .remove {
+    background: #342329;
+    border-color: #765057;
+    color: #ffb1a9
+}
+
+[data-theme="dark"] .add,
+[data-theme="dark"] .photo-button {
+    background: #192b42;
+    border-color: #5476a3
+}
+
+[data-theme="dark"] .photo-button span {
+    background: #223b5b
+}
+
+[data-theme="dark"] .photo-button:hover {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px #86b7ff26
+}
+
+[data-theme="dark"] #status {
+    background: #203751;
+    color: #b5d5ff;
+    border-color: #436389
+}
+
+[data-theme="dark"] #status.error {
+    background: #352328;
+    color: #ffb1a9;
+    border-color: #765057
+}
+
+[data-theme="dark"] .photo-help.upload-error {
+    color: #ffb1a9
+}
+
+@media(max-width:760px) {
+    .admin-body header {
+        height: auto;
+        min-height: 76px;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-top: 14px;
+        padding-bottom: 14px
+    }
+
+    .admin-actions {
+        flex-wrap: wrap;
+        gap: 12px 18px
+    }
+
+    .theme-control {
+        gap: 5px
+    }
+}
