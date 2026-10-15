@@ -87,19 +87,84 @@ $('#password-form').onsubmit = async e => {
 $('#connection-note').textContent = location.protocol === 'https:' ? '当前通过 HTTPS 安全连接。' : ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) ? '当前为本机管理。公网访问需要 HTTPS 安全连接。' : '请通过 HTTPS 安全地址登录后台。';
 window.addEventListener('beforeunload', e => { if (dirty || uploading) { e.preventDefault(); e.returnValue = ''; } });
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
-function field(parent, obj, key, label, type = 'text', wide = false) {
-  const box = el('div', 'form-field' + (wide ? ' wide' : '')); const id = 'f-' + crypto.randomUUID(); const l = el('label', '', label); l.htmlFor = id;
-  const input = el(type === 'textarea' ? 'textarea' : 'input'); input.id = id; if (type !== 'textarea') input.type = type;
-  if (key === 'features') input.value = obj[key].join('\n'); else input.value = obj[key];
-  if (type === 'checkbox') { input.checked = obj[key]; box.classList.add('published-field'); }
-  input.addEventListener('input', () => { obj[key] = type === 'checkbox' ? input.checked : type === 'number' ? Number(input.value) : key === 'features' ? input.value.split('\n').filter(Boolean) : input.value; changed(); });
-  box.append(l, input); parent.append(box);
+const newId = prefix => `${prefix}-${crypto.randomUUID()}`;
+const NAVIGATION_DEFAULTS = [
+  { id: 'home', label: '首页', href: '#home', children: [] },
+  { id: 'about', label: '关于课后邦', href: '#about', children: [
+    { id: 'about-intro', label: '课后邦集团介绍', href: '#about', action: '' },
+    { id: 'brochure', label: '公司展册', href: 'https://kehoubang.cn/profile/upload/pdf/3/index.html', target: 'blank' },
+    { id: 'handbook', label: '课程手册', href: 'https://kehoubang.cn/profile/upload/pdf/1/index.html', target: 'blank' },
+    { id: 'school-plan', label: '一校一案', href: 'https://kehoubang.cn/profile/upload/pdf/2/index.html', target: 'blank' },
+    { id: 'team', label: '核心团队', href: '#team', action: '' }
+  ] },
+  { id: 'business', label: '集团核心业务', href: '#services', action: 'business', children: [
+    { id: 'supply-chain', label: '课后邦供应链', href: '#business-supply-chain', action: 'business', value: 'supply-chain' },
+    { id: 'online-education', label: '线上素质教育', href: '#business-online-education', action: 'business', value: 'online-education' },
+    { id: 'education-street', label: '教育一条街', href: '#business-education-street', action: 'business', value: 'education-street' },
+    { id: 'youth-center', label: '青少年成长中心', href: '#business-youth-center', action: 'business', value: 'youth-center' },
+    { id: 'ai-museum', label: '人工智能科技馆', href: '#business-ai-museum', action: 'business', value: 'ai-museum' }
+  ] },
+  { id: 'courses', label: '课程资源库', href: '#courses', action: 'course-category', children: [
+    { id: 'art', label: '美育类', href: '#courses', action: 'course-category', value: '美育类' },
+    { id: 'puzzle', label: '益智类', href: '#courses', action: 'course-category', value: '益智类' },
+    { id: 'science', label: '科技类', href: '#courses', action: 'course-category', value: '科技类' },
+    { id: 'craft', label: '手工类', href: '#courses', action: 'course-category', value: '手工类' }
+  ] },
+  { id: 'news', label: '新闻资讯', href: '#news', action: 'news-group', children: [
+    { id: 'group-news', label: '集团动态', href: '#news', action: 'news-group', value: 'group' },
+    { id: 'industry-news', label: '行业洞察', href: '#news', action: 'news-group', value: 'industry' }
+  ] },
+  { id: 'venture', label: '智邻创投', href: '#venture', action: 'venture', children: [
+    { id: 'venture-intro', label: '简介', href: '#venture', action: 'venture', value: 'intro' },
+    { id: 'venture-dinner', label: '书院世家年夜饭', href: '#venture', action: 'venture', value: 'dinner' }
+  ] },
+  { id: 'contact', label: '联系我们', href: '#contact', action: 'contact-topic', children: [
+    { id: 'business-contact', label: '商务合作', href: '#contact', action: 'contact-topic', value: 'business' },
+    { id: 'teacher-contact', label: '师资合作', href: '#contact', action: 'contact-topic', value: 'teacher' },
+    { id: 'career-contact', label: '人才招聘', href: '#contact', action: 'contact-topic', value: 'career' },
+    { id: 'contact-info', label: '联系方式', href: '#contact', action: 'contact-topic', value: 'info' }
+  ] }
+];
+const ARRAY_TABS = ['aboutPages', 'businessPages', 'courseCategories', 'courses', 'team', 'newsCategories', 'news', 'venturePages', 'contactTopics', 'services'];
+function ensureDataShape() {
+  data.courses ||= [];
+  ARRAY_TABS.forEach(key => { if (!Array.isArray(data[key])) data[key] = []; });
+  if (!Array.isArray(data.navigation)) data.navigation = structuredClone(NAVIGATION_DEFAULTS);
+  data.navigation.forEach(item => { item.children ||= []; item.id ||= newId('nav'); item.label ??= item.title ?? '新菜单'; item.href ??= '#home'; });
+  data.navigation.forEach(item => item.children.forEach(child => { child.id ||= newId('nav-item'); child.label ??= child.title ?? '新菜单项'; child.href ??= '#home'; }));
+  data.aboutPages.forEach(item => { item.id ||= newId('about'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.link ??= ''; item.target ??= ''; item.order ??= 0; item.published ??= true; });
+  data.businessPages.forEach(item => { item.id ||= newId('business'); item.title ??= '新业务'; item.summary ??= ''; item.body ??= ''; });
+  data.courseCategories.forEach(item => { item.id ||= newId('course-category'); item.title ??= '新分类'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
+  data.newsCategories.forEach(item => { item.id ||= newId('news-category'); item.title ??= '新分类'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
+  data.venturePages.forEach(item => { item.id ||= newId('venture'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.order ??= 0; item.published ??= true; });
+  data.contactTopics.forEach(item => { item.id ||= newId('contact'); item.title ??= '新联系栏目'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
+  data.news.forEach(item => { item.id ||= newId('news'); item.group ??= item.category === '行业洞察' ? 'industry' : 'group'; item.image ??= ''; item.longImage ??= ''; });
+  data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.longImage ??= ''; item.page ??= 0; });
 }
-function photoPicker(item) {
+function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
+  const box = el('div', 'form-field' + (wide ? ' wide' : '')); const id = 'f-' + crypto.randomUUID(); const l = el('label', '', label); l.htmlFor = id;
+  let input;
+  if (type === 'textarea') input = el('textarea');
+  else if (type === 'select') {
+    input = el('select'); (options.choices || []).forEach(choice => { const option = el('option'); option.value = choice.value; option.textContent = choice.label; input.append(option); });
+  } else { input = el('input'); input.type = type; }
+  input.id = id;
+  if (key === 'features') input.value = Array.isArray(obj[key]) ? obj[key].join('\n') : (obj[key] ?? '');
+  else if (type === 'checkbox') input.checked = Boolean(obj[key]);
+  else input.value = obj[key] ?? '';
+  if (type === 'checkbox') { box.classList.add('published-field'); }
+  const update = () => {
+    obj[key] = type === 'checkbox' ? input.checked : type === 'number' ? (input.value === '' ? 0 : Number(input.value)) : key === 'features' ? input.value.split('\n').filter(Boolean) : input.value;
+    changed(); options.onChange?.(obj[key]);
+  };
+  input.addEventListener(type === 'select' || type === 'checkbox' ? 'change' : 'input', update);
+  box.append(l, input); parent.append(box); return input;
+}
+function photoPicker(item, key = 'image', label = '图片') {
   const box = el('div', 'photo-picker'); const button = el('button', 'photo-button'); button.type = 'button';
-  button.setAttribute('aria-label', `上传${item.name}的照片`);
-  const img = el('img'); img.src = item.image; img.alt = item.name;
-  const caption = el('span', '', item.image === '/assets/logo.webp' ? '点击上传照片' : '点击更换照片'); button.append(img, caption);
+  const name = item.name || item.title || '页面'; button.setAttribute('aria-label', `上传${name}${label}`);
+  const img = el('img'); img.src = item[key] || '/assets/logo.webp'; img.alt = `${name}${label}`;
+  const caption = el('span', '', item[key] ? '点击更换' + label : '点击上传' + label); button.append(img, caption);
   const input = el('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true;
   const message = el('p', 'photo-help', '支持 JPG、PNG、WebP，单张不超过 5 MB'); message.setAttribute('role', 'status');
   button.onclick = () => input.click();
@@ -114,14 +179,83 @@ function photoPicker(item) {
     try {
       let bitmap; try { bitmap = await createImageBitmap(file); } catch { throw Error('图片无法读取，请选择有效的图片文件。'); } finally { bitmap?.close(); }
       const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
-      item.image = result.url; img.src = result.url; caption.textContent = '点击更换照片'; changed(); message.textContent = '上传成功，保存后展示到官网。';
+      item[key] = result.url; img.src = result.url; caption.textContent = '点击更换' + label; changed(); message.textContent = '上传成功，保存后展示到官网。';
     } catch (e) { fail(e.message || '上传失败，请重试'); }
     finally { uploading = false; $('#save').disabled = false; $('#fields').inert = false; document.querySelectorAll('[data-tab], #logout').forEach(b => b.disabled = false); }
   };
   box.append(button, input, message); return box;
 }
+const targetChoices = [{ value: '', label: '本窗口打开' }, { value: 'blank', label: '新窗口打开' }];
+const actionChoices = [{ value: '', label: '普通链接' }, { value: 'business', label: '集团核心业务' }, { value: 'course-category', label: '课程分类' }, { value: 'news-group', label: '新闻分组' }, { value: 'venture', label: '智邻创投' }, { value: 'contact-topic', label: '联系栏目' }];
+function renderNavigation(target) {
+  target.append(el('p', 'admin-note', '维护官网的七个一级菜单及下拉二级菜单。数组顺序就是官网显示顺序；链接、打开方式和动作均可编辑。'));
+  data.navigation.forEach((item, index) => {
+    const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const remove = el('button', 'remove', '删除');
+    remove.onclick = () => { if (confirm(`确定删除“${item.label || '新菜单'}”？保存后生效。`)) { data.navigation.splice(index, 1); changed(); render(); } };
+    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${item.label || '新菜单'}`), remove); card.append(heading);
+    const grid = el('div', 'form-grid'); field(grid, item, 'id', '菜单 ID'); field(grid, item, 'label', '菜单名称'); field(grid, item, 'href', '链接地址'); field(grid, item, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(grid, item, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(grid, item, 'value', '动作参数'); card.append(grid);
+    const childHead = el('div', 'nested-heading'); childHead.append(el('h3', '', '二级菜单')); card.append(childHead);
+    item.children.forEach((child, childIndex) => {
+      const childCard = el('div', 'nested-card'); const childGrid = el('div', 'form-grid'); const childRemove = el('button', 'remove', '删除此项');
+      childRemove.type = 'button'; childRemove.onclick = () => { item.children.splice(childIndex, 1); changed(); render(); };
+      const childTitle = el('div', 'nested-card-heading'); childTitle.append(el('strong', '', `${String(childIndex + 1).padStart(2, '0')} / ${child.label || '新菜单项'}`), childRemove); childCard.append(childTitle);
+      field(childGrid, child, 'id', '菜单项 ID'); field(childGrid, child, 'label', '显示名称'); field(childGrid, child, 'href', '链接地址'); field(childGrid, child, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(childGrid, child, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(childGrid, child, 'value', '动作参数'); childCard.append(childGrid); card.append(childCard);
+    });
+    const addChild = el('button', 'add nested-add', '+ 新增二级菜单'); addChild.type = 'button'; addChild.onclick = () => { item.children.push({ id: newId('nav-item'), label: '新菜单项', href: '#home', target: '', action: '', value: '' }); changed(); render(); }; card.append(addChild); target.append(card);
+  });
+  const add = el('button', 'add', '+ 新增一级菜单'); add.onclick = () => { data.navigation.push({ id: newId('nav'), label: '新一级菜单', href: '#home', target: '', action: '', value: '', children: [] }); changed(); render(); }; target.append(add);
+}
+function collectionFields(collection, item) {
+  if (collection === 'aboutPages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['link', '外部链接'], ['target', '打开方式', 'select', false, { choices: targetChoices }], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'businessPages') return [['id', '业务 ID'], ['title', '业务名称'], ['summary', '业务摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
+  if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
+  if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
+  if (collection === 'newsCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'news') return [['id', '文章 ID'], ['title', '文章标题'], ['group', '资讯分组', 'select', false, { choices: [{ value: 'group', label: '集团动态' }, { value: 'industry', label: '行业洞察' }] }], ['category', '文章分类'], ['date', '发布日期', 'date'], ['source', '公众号原文链接（行业洞察可填写）', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  return [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
+}
+function collectionDefault(collection) {
+  if (collection === 'aboutPages') return { id: newId('about'), title: '新页面', summary: '', body: '', link: '', target: '', order: 0, published: false };
+  if (collection === 'businessPages') return { id: newId('business'), title: '新业务', summary: '', body: '', image: '/assets/logo.webp', longImage: '' };
+  if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.webp', longImage: '', order: 0, published: true };
+  if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, longImage: '' };
+  if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.webp' };
+  if (collection === 'newsCategories') return { id: newId('news-category'), title: '新分类', description: '', order: 0, published: false };
+  if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
+  if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.webp', longImage: '', order: 0, published: false };
+  if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
+  return { title: '新服务', subtitle: '', description: '', category: '课程服务', features: [] };
+}
+function renderCollection(target, collection) {
+  const notes = {
+    aboutPages: '编辑“关于课后邦”下的集团介绍、公司展册、课程手册、一校一案和核心团队页面。',
+    businessPages: '维护集团核心业务五大板块；图片支持直接选择本机文件上传，上传后点击保存。',
+    courseCategories: '维护课程资源库的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
+    courses: '维护课程卡片、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
+    team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
+    newsCategories: '维护新闻资讯的“集团动态”和“行业洞察”分类。',
+    news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
+    venturePages: '编辑智邻创投的简介、书院世家年夜饭等页面。',
+    contactTopics: '编辑联系我们下的商务合作、师资合作、人才招聘和联系方式栏目。',
+    services: '兼容旧版本的产品与服务字段；新官网请优先编辑“集团核心业务”。'
+  };
+  target.append(el('p', 'admin-note', notes[collection] || '维护栏目内容。'));
+  data[collection].forEach((item, index) => {
+    const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
+    remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { data[collection].splice(index, 1); changed(); render(); } };
+    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`), remove); card.append(heading);
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['longImage', '课程长图']] : collection === 'news' ? [['image', '文章封面'], ['longImage', '文章长图']] : [];
+    imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
+    const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
+  });
+  const labels = { aboutPages: '页面', businessPages: '业务', courseCategories: '课程分类', courses: '课程', team: '成员', newsCategories: '新闻分类', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
+  const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
+}
 function render() {
-  data.courses ||= [];
+  ensureDataShape();
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('selected', b.dataset.tab === tab));
   const target = $('#fields'); target.replaceChildren();
   if (tab === 'site') {
@@ -129,24 +263,8 @@ function render() {
     const card = el('div', 'edit-card'); const grid = el('div', 'form-grid');
     [['name', '品牌名称'], ['tagline', '品牌说明'], ['headline', '首页标题（换行显示）', 'textarea'], ['intro', '首页简介', 'textarea'], ['about', '公司介绍', 'textarea', true], ['phone', '合作电话'], ['email', '合作邮箱', 'email'], ['address', '公司地址'], ['filing', '备案信息']].forEach(([k, l, t, w]) => field(grid, data.site, k, l, t, w)); card.append(grid); target.append(card); return;
   }
-  target.append(el('p', 'admin-note', tab === 'news' ? '未勾选发布的文章仅保存在后台。补齐公众号标题、日期和正文后，再勾选发布并保存。正文使用纯文本，自动保留换行。' : tab === 'team' ? '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。' : '维护业务介绍与服务内容，每行填写一个服务要点。'));
-  if (tab === 'courses') { target.replaceChildren(); target.append(el('p', 'course-page-note', '维护课程卡片和详情弹窗。详细介绍支持换行，学习内容每行填写一项。')); }
-  data[tab].forEach((item, index) => {
-    const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const remove = el('button', 'remove', '删除'); remove.onclick = () => { if (confirm(`确定删除“${item.name || item.title || '新内容'}”？保存后生效。`)) { data[tab].splice(index, 1); changed(); render(); } };
-    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${item.name || item.title || '新内容'}`), remove); card.append(heading);
-    if (tab === 'team') card.append(photoPicker(item));
-    const grid = el('div', 'form-grid'); let fields;
-    if (tab === 'services') fields = [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
-    if (tab === 'courses') { item.description ??= ''; item.outline ??= ''; fields = [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true]]; }
-    if (tab === 'team') fields = [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
-    if (tab === 'news') fields = [['title', '文章标题'], ['category', '文章分类'], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
-    fields.forEach(([k, l, t, w]) => field(grid, item, k, l, t, w)); card.append(grid); target.append(card);
-  });
-  const add = el('button', 'add', '+ 新增' + ({ services: '服务', team: '成员', news: '文章', courses: '课程' })[tab]); add.onclick = () => {
-    const defaults = { services: { title: '新服务', subtitle: '', description: '', category: '课程服务', features: [] }, team: { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.webp' }, news: { id: crypto.randomUUID(), title: '新文章', category: '公司动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', published: false } };
-    defaults.courses = { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0 };
-    data[tab].push(defaults[tab]); changed(); render(); $('#fields').lastElementChild.previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }; target.append(add);
+  if (tab === 'navigation') return renderNavigation(target);
+  if (ARRAY_TABS.includes(tab)) return renderCollection(target, tab);
 }
 $('#save').onclick = async () => {
   if (saving || uploading) return; saving = true; $('#save').disabled = true; $('#fields').inert = true; status('正在保存…');

@@ -111,9 +111,12 @@ textarea {
 
 .admin-tabs {
     display: flex;
-    gap: 30px;
+    gap: 22px;
     border-bottom: 1px solid var(--line);
-    margin: 20px 0 30px
+    margin: 20px 0 30px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    white-space: nowrap
 }
 
 .admin-tabs button {
@@ -134,6 +137,51 @@ textarea {
     background: white;
     border: 1px solid var(--line);
     margin-bottom: 20px
+}
+
+.compat-tab {
+    margin-left: auto !important;
+    color: var(--muted) !important;
+    font-size: 12px
+}
+
+.nested-heading {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--line);
+    margin-top: 24px;
+    padding-top: 18px
+}
+
+.nested-heading h3 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--ink)
+}
+
+.nested-card {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    padding: 16px;
+    margin-top: 12px
+}
+
+.nested-card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    color: var(--ink)
+}
+
+.nested-card .form-grid {
+    gap: 14px
+}
+
+.nested-add {
+    margin-top: 14px;
+    padding: 10px 14px
 }
 
 .edit-card h2 {
@@ -235,8 +283,12 @@ button:disabled {
     }
 
     .admin-tabs {
-        gap: 20px;
+        gap: 16px;
         font-size: 13px
+    }
+
+    .compat-tab {
+        margin-left: 0 !important
     }
 
     .form-grid {

@@ -22,12 +22,61 @@
     <header><a class="brand" href="#home"><img src="/assets/logo.webp" alt="课后邦标志"><span><b>课后邦</b><small>KEHOU
                     BANG</small></span></a><button class="menu-toggle" aria-expanded="false" aria-controls="nav"
             aria-label="展开导航">☰</button>
-        <nav id="nav"><a class="active" href="#home">首页</a><a href="#about">关于课后邦</a><a href="#services">产品与服务</a><a
-                href="#team">专业团队</a><a href="#news">公司动态</a><a
-                href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer"
-                aria-label="课程手册（新标签页打开）">课程手册</a><a
-                href="https://kehoubang.cn/profile/upload/pdf/2/index.html" target="_blank" rel="noopener noreferrer"
-                aria-label="一校一案（新标签页打开）">一校一案</a></nav>
+        <nav id="nav" aria-label="主导航">
+            <a class="nav-link active" href="#home">首页</a>
+            <div class="nav-group" data-nav-group data-nav-key="about">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-about">关于课后邦 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-about" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#about">课后邦集团介绍</a>
+                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/3/index.html" target="_blank" rel="noopener noreferrer">公司展册 <span aria-hidden="true">↗</span></a>
+                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer">课程手册 <span aria-hidden="true">↗</span></a>
+                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/2/index.html" target="_blank" rel="noopener noreferrer">一校一案 <span aria-hidden="true">↗</span></a>
+                    <a class="nav-sublink" role="menuitem" href="#team">核心团队</a>
+                </div>
+            </div>
+            <div class="nav-group" data-nav-group data-nav-key="business">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-business">集团核心业务 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-business" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#page-business-supply">课后邦供应链</a>
+                    <a class="nav-sublink" role="menuitem" href="#page-business-online">线上素质教育</a>
+                    <a class="nav-sublink" role="menuitem" href="#page-business-street">教育一条街</a>
+                    <a class="nav-sublink" role="menuitem" href="#page-business-youth">青少年成长中心</a>
+                    <a class="nav-sublink" role="menuitem" href="#page-business-ai">人工智能科技馆</a>
+                </div>
+            </div>
+            <div class="nav-group" data-nav-group data-nav-key="courses">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-courses">课程资源库 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-courses" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="美育类">美育类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="益智类">益智类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="科技类">科技类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="手工类">手工类</a>
+                </div>
+            </div>
+            <div class="nav-group" data-nav-group data-nav-key="news">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-news">新闻资讯 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-news" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#news" data-news-category="集团动态">集团动态</a>
+                    <a class="nav-sublink" role="menuitem" href="#news" data-news-category="行业洞察">行业洞察</a>
+                </div>
+            </div>
+            <div class="nav-group" data-nav-group data-nav-key="venture">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-invest">智邻创投 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-invest" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#page-invest-intro">简介</a>
+                    <a class="nav-sublink" role="menuitem" href="#page-invest-meal">书院世家年夜饭</a>
+                </div>
+            </div>
+            <div class="nav-group" data-nav-group data-nav-key="contact">
+                <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-contact">联系我们 <span aria-hidden="true">⌄</span></button>
+                <div class="nav-dropdown" id="nav-contact" role="menu">
+                    <a class="nav-sublink" role="menuitem" href="#contact" data-contact-topic="商务合作">商务合作</a>
+                    <a class="nav-sublink" role="menuitem" href="#contact" data-contact-topic="师资合作">师资合作</a>
+                    <a class="nav-sublink" role="menuitem" href="#contact" data-contact-topic="人才招聘">人才招聘</a>
+                    <a class="nav-sublink" role="menuitem" href="#contact" data-contact-topic="联系方式">联系方式</a>
+                </div>
+            </div>
+        </nav>
         <div class="site-actions">
             <div class="theme-control"><label for="theme-select">外观</label><select id="theme-select">
                     <option value="system">跟随系统</option>
@@ -88,6 +137,18 @@
                 <div class="service-grid" id="service-grid"></div>
             </div>
         </section>
+        <section class="managed-pages section" id="managed-pages" hidden>
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <div class="eyebrow">OUR BUSINESS / 业务板块</div>
+                        <h2>把每一份教育愿景，落到真实场景</h2>
+                    </div>
+                    <p>支持集团业务、投资项目与合作内容持续更新</p>
+                </div>
+                <div id="managed-pages-list"></div>
+            </div>
+        </section>
         <section class="section wrap team" id="team">
             <div class="section-head">
                 <div>
@@ -107,6 +168,7 @@
                         <h2>看见我们的每一步</h2>
                     </div><span class="muted">记录成长，也分享教育的思考</span>
                 </div>
+                <div class="filters news-filters" id="news-filters" aria-label="新闻分类"></div>
                 <div id="news-list"></div>
             </div>
         </section>

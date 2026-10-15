@@ -21,12 +21,20 @@ export const requiredFiles = [
 ];
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
 const knownFields = {
-  root: ['site', 'services', 'courses', 'team', 'news'],
+  root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics'],
   site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
-  courses: ['title', 'category', 'summary', 'description', 'outline', 'page'],
+  courses: ['title', 'category', 'summary', 'description', 'outline', 'page', 'longImage'],
   team: ['name', 'role', 'bio', 'category', 'image'],
-  news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published']
+  news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published', 'group', 'image', 'longImage'],
+  navigation: ['id', 'label', 'href', 'children', 'target', 'action', 'value'],
+  navigationChild: ['id', 'label', 'href', 'target', 'action', 'value'],
+  aboutPages: ['id', 'title', 'summary', 'body', 'link', 'target', 'order', 'published', 'image', 'longImage'],
+  businessPages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
+  courseCategories: ['id', 'title', 'description', 'image', 'longImage', 'order', 'published'],
+  newsCategories: ['id', 'title', 'description', 'order', 'published'],
+  venturePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
+  contactTopics: ['id', 'title', 'description', 'order', 'published']
 };
 export function validatePublicData(content, label) {
   validateContent(content);
@@ -35,8 +43,12 @@ export function validatePublicData(content, label) {
   };
   checkKeys(content, knownFields.root, 'root');
   checkKeys(content.site, knownFields.site, 'site');
-  for (const collection of ['services', 'courses', 'team', 'news']) {
+  for (const collection of ['services', 'courses', 'team', 'news', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics']) {
     for (const [index, item] of (content[collection] || []).entries()) checkKeys(item, knownFields[collection], `${collection}[${index}]`);
+  }
+  for (const [index, item] of (content.navigation || []).entries()) {
+    checkKeys(item, knownFields.navigation, `navigation[${index}]`);
+    for (const [childIndex, child] of (item.children || []).entries()) checkKeys(child, knownFields.navigationChild, `navigation[${index}].children[${childIndex}]`);
   }
   if (content.news.some(article => !article.published)) throw new Error(`${label} 含未发布文章，停止打包。`);
 }
@@ -52,6 +64,23 @@ export function isAllowedPath(file, referencedUploads = new Set()) {
   if (asset) return !uploadName.test(asset[1]) && !/(?:^|[-_.])(admin-token|admin-auth|secret|credential|screenshot|clipboard)(?:[-_.]|$)/i.test(asset[1]);
   const upload = /^backups\/uploads\/([^/]+)$/.exec(file);
   return !!upload && uploadName.test(upload[1]) && referencedUploads.has(upload[1]);
+}
+const imageCollections = [
+  ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
+  ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
+  ['courses', ['longImage']], ['venturePages', ['image', 'longImage']]
+];
+function imageReferences(content) {
+  const references = [];
+  for (const [collection, fields] of imageCollections) {
+    for (const item of content[collection] || []) for (const field of fields) {
+      if (typeof item[field] === 'string' && item[field]) references.push(item[field]);
+    }
+  }
+  return references;
+}
+function referencedUploadsIn(content) {
+  return new Set(imageReferences(content).map(value => path.posix.basename(value)).filter(name => uploadName.test(name)));
 }
 function validateEnvironmentExample(bytes) {
   const allowed = new Set(['NODE_ENV', 'HOST', 'PORT', 'DATA_DIR', 'PUBLIC_ORIGIN', 'TRUST_PROXY']);
@@ -72,7 +101,7 @@ export function buildHandoffPlan(entries, readCommitted) {
   const seed = JSON.parse(readCommitted('data/seed.json').toString('utf8'));
   validatePublicData(snapshot, '公开快照');
   validatePublicData(seed, '初始化内容');
-  const referencedUploads = new Set(snapshot.team.map(member => path.posix.basename(member.image)).filter(name => uploadName.test(name)));
+  const referencedUploads = referencedUploadsIn(snapshot);
   const selected = entries.filter(entry => isAllowedPath(entry.path, referencedUploads)).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   const names = new Set();
   const folded = new Set();
@@ -83,10 +112,10 @@ export function buildHandoffPlan(entries, readCommitted) {
   }
   for (const file of requiredFiles) if (!names.has(file)) throw new Error(`交接文件尚未提交：${file}`);
   for (const content of [seed, snapshot]) {
-    for (const member of content.team) {
-      const name = path.posix.basename(member.image);
-      const file = uploadName.test(name) ? `backups/uploads/${name}` : `public${member.image}`;
-      if (!names.has(file)) throw new Error(`公开团队图片缺失：${file}`);
+    for (const reference of imageReferences(content)) {
+      const name = path.posix.basename(reference);
+      const file = uploadName.test(name) ? `backups/uploads/${name}` : `public${reference}`;
+      if (!names.has(file)) throw new Error(`公开图片缺失：${file}`);
     }
   }
   const files = selected.map(entry => {

@@ -9,7 +9,20 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
 const contentPath = path.join(dataDir, 'content.json');
-try { await readFile(contentPath); } catch { await writeFile(contentPath, await readFile(path.join(root, 'data/seed.json'))); }
+const seedPath = path.join(root, 'data/seed.json');
+const seedContent = JSON.parse(await readFile(seedPath, 'utf8'));
+validateContent(seedContent);
+const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics'];
+function withDefaultCollections(content) {
+  for (const key of defaultCollections) {
+    // This is an in-memory migration for old content.json files. It never
+    // writes the seed over an existing runtime file; the administrator must
+    // explicitly save the returned object before the new collections persist.
+    if (content[key] === undefined && seedContent[key] !== undefined) content[key] = structuredClone(seedContent[key]);
+  }
+  return content;
+}
+try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });
 let writing = Promise.resolve();
 const mime = { '.pdf': 'application/pdf', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
@@ -41,11 +54,15 @@ const server = http.createServer(async (req, res) => {
       return send(201, { url: `/assets/${name}` });
     }
     if (url.pathname === '/api/content') {
-      if (req.method === 'GET') { const content = JSON.parse(await readFile(contentPath, 'utf8')); content.news = content.news.filter(n => n.published); return send(200, content); }
+      if (req.method === 'GET') {
+        const content = withDefaultCollections(JSON.parse(await readFile(contentPath, 'utf8')));
+        content.news = (content.news || []).filter(n => n.published);
+        return send(200, content);
+      }
       return send(405, { error: '不支持此操作' });
     }
     if (url.pathname === '/api/admin/content') {
-      if (req.method === 'GET') return send(200, JSON.parse(await readFile(contentPath, 'utf8')));
+      if (req.method === 'GET') return send(200, withDefaultCollections(JSON.parse(await readFile(contentPath, 'utf8'))));
       if (req.method !== 'PUT') return send(405, { error: '不支持此操作' });
       let body = ''; for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 512000) return send(413, { error: '内容过大' }); }
       let content; try { content = JSON.parse(body); validateContent(content); } catch (e) { return send(400, { error: e.message }); }

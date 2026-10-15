@@ -1,18 +1,79 @@
-const $ = s => document.querySelector(s);
-const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const $ = selector => document.querySelector(selector);
+const el = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
 const dialog = $('#detail');
-function detail(nodes) { $('#detail-content').replaceChildren(...nodes); const heading = $('#detail-content').querySelector('h2'); if (heading) { heading.id = 'detail-title'; dialog.setAttribute('aria-labelledby', 'detail-title'); } dialog.showModal(); dialog.scrollTop = 0; document.body.classList.add('modal-open'); }
+
+function detail(nodes) {
+  $('#detail-content').replaceChildren(...nodes);
+  const heading = $('#detail-content').querySelector('h2');
+  if (heading) { heading.id = 'detail-title'; dialog.setAttribute('aria-labelledby', 'detail-title'); }
+  dialog.showModal(); dialog.scrollTop = 0; document.body.classList.add('modal-open');
+}
 dialog.addEventListener('close', () => document.body.classList.remove('modal-open'));
 $('.dialog-close').onclick = () => dialog.close();
-dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
-$('.menu-toggle').onclick = () => { const open = $('#nav').classList.toggle('open'); $('.menu-toggle').setAttribute('aria-expanded', String(open)); };
-document.querySelectorAll('nav a').forEach(a => a.addEventListener('click', () => { $('#nav').classList.remove('open'); $('.menu-toggle').setAttribute('aria-expanded', 'false'); }));
-const observer = new IntersectionObserver(entries => { for (const entry of entries) if (entry.isIntersecting) document.querySelectorAll('nav a').forEach(a => { const active = a.hash === '#' + entry.target.id; a.classList.toggle('active', active); if (active) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); }); }, { rootMargin: '-20% 0px -55% 0px' });
-document.querySelectorAll('main section[id]').forEach(s => observer.observe(s));
+dialog.addEventListener('click', event => {
+  if (event.target === dialog) {
+    const rect = dialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+  }
+});
+
+const nav = $('#nav');
+const menuToggle = $('.menu-toggle');
+const closeNav = () => {
+  nav.classList.remove('open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+  nav.querySelectorAll('[data-nav-parent]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+  nav.querySelectorAll('.nav-group.open').forEach(group => group.classList.remove('open'));
+};
+menuToggle.onclick = () => {
+  const open = nav.classList.toggle('open');
+  menuToggle.setAttribute('aria-expanded', String(open));
+};
+nav.querySelectorAll('[data-nav-parent]').forEach(button => button.addEventListener('click', event => {
+  event.preventDefault();
+  const group = button.closest('[data-nav-group]');
+  const open = group.classList.toggle('open');
+  nav.querySelectorAll('[data-nav-group].open').forEach(other => {
+    if (other !== group) { other.classList.remove('open'); other.querySelector('[data-nav-parent]')?.setAttribute('aria-expanded', 'false'); }
+  });
+  button.setAttribute('aria-expanded', String(open));
+  if (group.dataset.navKey === 'contact') document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}));
+function handleNavLink(event, link) {
+  const courseCategory = link.dataset.courseCategory;
+  if (courseCategory && window.selectCourseCategory) { event.preventDefault(); window.selectCourseCategory(courseCategory); }
+  const newsCategory = link.dataset.newsCategory;
+  if (newsCategory && window.selectNewsCategory) { event.preventDefault(); window.selectNewsCategory(newsCategory); }
+  const topic = link.dataset.contactTopic;
+  if (topic) window.selectContactTopic?.(topic);
+  if (link.target !== '_blank') closeNav();
+}
+nav.addEventListener('click', event => {
+  const link = event.target.closest('a');
+  if (link && nav.contains(link)) handleNavLink(event, link);
+});
+document.addEventListener('click', event => { if (!nav.contains(event.target) && !menuToggle.contains(event.target)) closeNav(); });
+
+const observer = new IntersectionObserver(entries => {
+  for (const entry of entries) if (entry.isIntersecting) {
+    const hash = '#' + entry.target.id;
+    document.querySelectorAll('nav .nav-link').forEach(link => {
+      const active = link.hash === hash;
+      link.classList.toggle('active', active);
+      if (active) link.setAttribute('aria-current', 'location'); else link.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('[data-nav-group]').forEach(group => {
+      group.classList.toggle('active', [...group.querySelectorAll('a')].some(link => link.hash === hash));
+    });
+  }
+}, { rootMargin: '-20% 0px -55% 0px' });
+document.querySelectorAll('main section[id]').forEach(section => observer.observe(section));
+
 const backToTop = $('#back-to-top');
 const updateBackToTop = () => { backToTop.hidden = window.scrollY < 450; };
 window.addEventListener('scroll', updateBackToTop, { passive: true }); updateBackToTop();
 backToTop.onclick = () => { window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); $('.brand').focus({ preventScroll: true }); };
+
 const platforms = [
   { name: '微信', image: '/assets/qr-wechat.jpg', note: '使用微信扫码' },
   { name: '视频号', image: '/assets/qr-channels.jpg', note: '课后邦教育科技集团' },
@@ -21,62 +82,171 @@ const platforms = [
 ];
 platforms.forEach(platform => {
   const button = el('button', 'platform-card'); button.type = 'button'; button.setAttribute('aria-label', `放大${platform.name}二维码`);
-  const img = el('img', 'platform-qr'); img.src = platform.image; img.alt = `${platform.name}二维码`; img.loading = 'lazy';
-  button.append(img, el('strong', '', platform.name), el('span', '', platform.note), el('small', '', '点击放大扫码'));
+  const image = el('img', 'platform-qr'); image.src = platform.image; image.alt = `${platform.name}二维码`; image.loading = 'lazy';
+  button.append(image, el('strong', '', platform.name), el('span', '', platform.note), el('small', '', '点击放大扫码'));
   button.onclick = () => { const large = el('img', 'qr-large'); large.src = platform.image; large.alt = `${platform.name}二维码原图`; detail([el('h2', '', platform.name), el('p', '', platform.note), large]); };
   $('#platform-grid').append(button);
 });
+
+const asList = value => Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
+const safeSlug = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '') || 'page';
+const pageText = page => page.body ?? page.content ?? page.description ?? page.summary ?? '';
+const pageImage = page => page.image ?? page.longImage ?? page.cover ?? '';
+const makeParagraphs = text => String(text || '').split(/\n\s*\n|\n/).map(value => value.trim()).filter(Boolean).map(value => el('p', '', value));
+
+const defaultPages = [
+  { group: 'businessPages', slug: 'business-supply', title: '课后邦供应链', summary: '连接优质课程、师资与服务资源，为学校和合作伙伴提供稳定的课程供应与交付支持。', body: '从资源筛选、课程研发到交付保障，课后邦供应链持续完善服务标准，让每一门好课程都能稳定抵达真实课堂。', bullets: ['课程资源整合与评估', '师资与交付标准建设', '区域项目协同支持'] },
+  { group: 'businessPages', slug: 'business-online', title: '线上素质教育', summary: '以线上内容和数字化工具，延伸课后学习场景。', body: '围绕孩子的兴趣成长与家庭陪伴，提供可持续的线上课程、内容运营和学习支持，帮助优质教育资源跨越地域抵达更多家庭。', bullets: ['线上课程内容', '学习陪伴服务', '数字化运营支持'] },
+  { group: 'businessPages', slug: 'business-street', title: '教育一条街', summary: '汇聚多元教育服务，打造开放共享的成长空间。', body: '教育一条街连接学校、家庭、机构和社区，把课程体验、文化活动与成长服务放在更贴近生活的场景中。', bullets: ['课程体验与展示', '社区教育活动', '多方资源共建'] },
+  { group: 'businessPages', slug: 'business-youth', title: '青少年成长中心', summary: '关注每个年龄阶段的成长需要，提供综合实践与发展支持。', body: '以青少年成长为核心，融合素质课程、实践活动和成长指导，帮助孩子发现兴趣、建立自信、拓展视野。', bullets: ['兴趣发展课程', '实践与研学活动', '成长陪伴与指导'] },
+  { group: 'businessPages', slug: 'business-ai', title: '人工智能科技馆', summary: '让孩子在真实体验中认识科技、理解人工智能。', body: '以人工智能、机器人和科学实践为主题，打造可参与、可探索、可分享的科技教育空间，培养面向未来的创造力。', bullets: ['AI 科普体验', '机器人与编程实践', '科技主题活动'] },
+  { group: 'venturePages', slug: 'invest-intro', title: '智邻创投简介', summary: '发现教育与成长领域的长期价值，连接更多创新伙伴。', body: '智邻创投关注教育、科技与社区成长的交叉机会，以长期主义支持有创造力的团队与项目。', bullets: ['教育创新项目', '科技与内容融合', '伙伴共创与成长'] },
+  { group: 'venturePages', slug: 'invest-meal', title: '书院世家年夜饭', summary: '一场连接社区、文化与亲情的年度相聚。', body: '书院世家年夜饭以团聚为起点，将地方文化、社区交流和家庭记忆融入年度活动，让每一次相聚都留下温暖的故事。', bullets: ['社区文化交流', '家庭团聚活动', '城市美好生活'] }
+];
+const pageAliases = {
+  '课后邦供应链': 'business-supply', '线上素质教育': 'business-online', '教育一条街': 'business-street',
+  '青少年成长中心': 'business-youth', '人工智能科技馆': 'business-ai', '简介': 'invest-intro', '智邻创投简介': 'invest-intro', '书院世家年夜饭': 'invest-meal'
+};
+
+function renderManagedPages(data) {
+  const root = $('#managed-pages-list');
+  const custom = [
+    ...asList(data.businessPages).map(page => ({ ...page, _pageGroup: 'businessPages' })),
+    ...asList(data.venturePages).map(page => ({ ...page, _pageGroup: 'venturePages' })),
+    ...asList(data.aboutPages).map(page => ({ ...page, _pageGroup: 'aboutPages' }))
+  ];
+  const businessSlugs = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
+  const ventureSlugs = { intro: 'invest-intro', 'new-year-dinner': 'invest-meal' };
+  const pageSlug = page => {
+    const raw = page.slug || page.key || page.id || pageAliases[page.title || page.name];
+    if (page._pageGroup === 'businessPages') return businessSlugs[raw] || (String(raw).startsWith('business-') ? raw : `business-${safeSlug(raw)}`);
+    if (page._pageGroup === 'venturePages') return ventureSlugs[raw] || (String(raw).startsWith('invest-') ? raw : `invest-${safeSlug(raw)}`);
+    return safeSlug(raw);
+  };
+  const bySlug = new Map();
+  custom.forEach(page => { const slug = pageSlug(page); if (slug) bySlug.set(slug, { ...page, slug }); });
+  const pages = defaultPages.map(page => ({ ...page, ...(bySlug.get(page.slug) || {}) }));
+  custom.forEach(page => {
+    const slug = pageSlug(page);
+    if (slug && !pages.some(item => item.slug === slug)) pages.push({ ...page, slug, title: page.title || page.name || '未命名页面' });
+  });
+  root.replaceChildren();
+  pages.forEach(page => {
+    const article = el('article', 'managed-page'); article.id = `page-${safeSlug(page.slug)}`;
+    const body = el('div', 'managed-page-copy');
+    body.append(el('div', 'eyebrow', page.eyebrow || 'KEHOU BANG / 内容页面'), el('h3', '', page.title || page.name || '未命名页面'));
+    if (page.summary || page.subtitle) body.append(el('p', 'managed-page-summary', page.summary || page.subtitle));
+    makeParagraphs(pageText(page)).forEach(paragraph => body.append(paragraph));
+    asList(page.sections).forEach(section => {
+      if (section.heading || section.title) body.append(el('h4', '', section.heading || section.title));
+      makeParagraphs(section.body ?? section.content ?? section.text).forEach(paragraph => body.append(paragraph));
+    });
+    const bullets = asList(page.bullets || page.features || page.items);
+    if (bullets.length) { const list = el('ul', 'managed-page-list'); bullets.forEach(item => list.append(el('li', '', typeof item === 'string' ? item : item.title || item.name || item.text || ''))); body.append(list); }
+    const image = pageImage(page);
+    if (image) { const figure = el('figure', 'managed-page-visual'); const img = el('img'); img.src = image; img.alt = page.imageAlt || page.title || ''; img.loading = 'lazy'; figure.append(img); article.append(figure); }
+    article.append(body); root.append(article);
+  });
+  $('#managed-pages').hidden = pages.length === 0;
+}
+
+function normalizeNewsCategory(value) {
+  return ({ '公司动态': '集团动态', '企业动态': '集团动态', '行业资讯': '行业洞察', '政策解读': '行业洞察' })[value] || value;
+}
+let renderNewsList = () => {};
+window.selectNewsCategory = category => renderNewsList(normalizeNewsCategory(category));
+
+function renderNews(data) {
+  const list = $('#news-list'); const filter = $('#news-filters');
+  const categories = asList(data.newsCategories).map(item => typeof item === 'string' ? item : item.label || item.name || item.title).filter(Boolean);
+  const available = [...new Set([...categories.map(normalizeNewsCategory), '集团动态', '行业洞察'])];
+  let selected = '';
+  const drawFilters = () => {
+    filter.replaceChildren();
+    ['全部资讯', ...available].forEach(category => { const button = el('button', '', category); button.type = 'button'; button.classList.toggle('selected', (!selected && category === '全部资讯') || selected === category); button.setAttribute('aria-pressed', String((!selected && category === '全部资讯') || selected === category)); button.onclick = () => { selected = category === '全部资讯' ? '' : category; renderNewsList(selected); }; filter.append(button); });
+  };
+  renderNewsList = category => {
+    selected = normalizeNewsCategory(category || ''); drawFilters(); list.replaceChildren();
+    const news = asList(data.news).filter(item => !selected || normalizeNewsCategory(item.category) === selected).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    if (!news.length) { const empty = el('div', 'news-empty'); empty.append(el('span', '', '↗'), el('div', '', '暂无该分类资讯，新的故事正在发生。')); list.append(empty); return; }
+    news.forEach(item => {
+      let source; try { const url = new URL(item.source || item.url); if (url.protocol === 'https:') source = url.href; } catch { }
+      const industry = item.group === 'industry' || normalizeNewsCategory(item.category) === '行业洞察';
+      const href = source && industry ? source : `/article.html?id=${encodeURIComponent(item.id)}`;
+      const row = el('a', 'news-row'); row.href = href; row.target = '_blank'; row.rel = 'noopener noreferrer'; row.setAttribute('aria-label', `${item.title}（在新标签页打开）`);
+      const copy = el('div');
+      if (item.image) { const thumb = el('img', 'news-thumb'); thumb.src = item.image; thumb.alt = ''; thumb.loading = 'lazy'; copy.append(thumb); }
+      copy.append(el('h3', '', item.title), el('p', '', item.summary || ''));
+      if (!item.body && !source) copy.append(el('small', 'muted', '文章内容待补充'));
+      row.append(el('time', '', item.date || ''), copy, el('span', '', '↗'));
+      list.append(row);
+    });
+  };
+  drawFilters(); renderNewsList('');
+}
+
+function applyNavigationData(data) {
+  const items = asList(data.navigation);
+  const home = items.find(item => (item.key || item.id) === 'home' || item.label === '首页');
+  if (home) {
+    const homeLink = nav.querySelector('.nav-link');
+    homeLink.textContent = home.label || home.title || '首页';
+    homeLink.href = home.href || '#home';
+    if (home.target === 'blank' || home.target === '_blank') { homeLink.target = '_blank'; homeLink.rel = 'noopener noreferrer'; }
+  }
+  const pageHash = child => {
+    const value = child.href || child.url || '';
+    if (!/^\/content-page\.html/i.test(value)) return value || `#page-${safeSlug(child.slug || child.key || child.label)}`;
+    try {
+      const parsed = new URL(value, location.origin); const type = parsed.searchParams.get('type'); const id = parsed.searchParams.get('id');
+      const business = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
+      const venture = { intro: 'invest-intro', 'new-year-dinner': 'invest-meal' };
+      return `#page-${(type === 'business' ? business[id] : type === 'venture' ? venture[id] : '') || safeSlug(id)}`;
+    } catch { return '#managed-pages'; }
+  };
+  items.forEach(item => {
+    const rawKey = item.key || item.id || safeSlug(item.label || item.title);
+    const key = ({ 'core-business': 'business', 'group-business': 'business', 'product-service': 'business', 'resource-library': 'courses', 'course-library': 'courses', 'news-information': 'news', 'zhi-lin': 'venture', 'contact-us': 'contact' })[rawKey] || rawKey;
+    const group = [...nav.querySelectorAll('[data-nav-group]')].find(candidate => candidate.dataset.navKey === key || candidate.querySelector('.nav-parent')?.textContent.trim().startsWith(item.label || item.title || '\u0000'));
+    if (!group) return;
+    const label = item.label || item.title; if (label) group.querySelector('.nav-parent').firstChild.textContent = label + ' ';
+    const children = asList(item.children || item.items || item.submenu); if (!children.length) return;
+    const dropdown = group.querySelector('.nav-dropdown'); dropdown.replaceChildren();
+    children.forEach(child => {
+      const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageHash(child);
+      if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
+      if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
+      if (child.action === 'contact-topic') { link.dataset.contactTopic = ({ business: '商务合作', teachers: '师资合作', careers: '人才招聘', info: '联系方式' })[child.value] || child.value || child.label; link.href = '#contact'; }
+      if (child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      dropdown.append(link);
+    });
+  });
+}
+window.selectContactTopic = topic => { const heading = $('#contact-topic'); if (heading) heading.textContent = topic; };
+
 async function init() {
   try {
-    const response = await fetch('/api/content'); if (!response.ok) throw Error(); const data = await response.json(); const { site } = data;
-    document.title = `${site.name}｜${site.tagline}`; $('.brand b').textContent = site.name;
-    $('#headline').textContent = site.headline; $('#intro').textContent = site.intro; $('#about-copy').textContent = site.about;
-    $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name} 版权所有`; $('#filing').textContent = site.filing;
-    window.renderCourses(data.courses || [], detail);
-    data.services.forEach((s, i) => {
-      const card = el('article', 'service-card'); const number = el('div', 'service-number', '0' + (i + 1) + ' / SERVICE'); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][i % 4]));
-      const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${s.title}支持内容`);
-      s.features.forEach(feature => features.append(el('li', '', feature)));
-      card.append(number, el('h3', '', s.title), el('p', 'service-subtitle', s.subtitle), el('p', 'service-description', s.description), features); $('#service-grid').append(card);
+    const response = await fetch('/api/content'); if (!response.ok) throw Error();
+    const data = await response.json(); const site = data.site || {};
+    document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
+    $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || ''; $('#about-copy').textContent = site.about || '';
+    $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';
+    applyNavigationData(data); renderManagedPages(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
+    asList(data.services).forEach((service, index) => {
+      const card = el('article', 'service-card'); const number = el('div', 'service-number', `0${index + 1} / SERVICE`); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][index % 4]));
+      const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${service.title || '服务'}支持内容`); asList(service.features).forEach(feature => features.append(el('li', '', feature)));
+      card.append(number, el('h3', '', service.title || ''), el('p', 'service-subtitle', service.subtitle || ''), el('p', 'service-description', service.description || ''), features); $('#service-grid').append(card);
     });
-    let teamExpanded = false;
-    const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button';
-    teamToggle.setAttribute('aria-controls', 'team-grid');
-    $('#team-grid').after(teamToggle);
-    const updateTeamVisibility = () => {
-      const cards = [...$('#team-grid').children];
-      const columns = getComputedStyle($('#team-grid')).gridTemplateColumns.split(' ').length;
-      cards.forEach((card, i) => { card.hidden = !teamExpanded && i >= columns; });
-      teamToggle.hidden = cards.length <= columns;
-      teamToggle.textContent = teamExpanded ? '收起团队 ↑' : `展开更多团队（${cards.length - columns}） ↓`;
-      teamToggle.setAttribute('aria-expanded', String(teamExpanded));
-    };
-    teamToggle.onclick = () => { teamExpanded = !teamExpanded; updateTeamVisibility(); };
-    new ResizeObserver(updateTeamVisibility).observe($('#team-grid'));
-    const renderTeam = category => {
-      teamExpanded = false;
-      $('#team-grid').replaceChildren();
-      data.team.filter(t => category === '全部团队' || t.category === category).forEach(t => {
-        const card = el('button', 'person'); const portrait = el('div', 'portrait'); const img = el('img'); img.src = t.image; img.alt = t.name; img.loading = 'lazy'; portrait.append(img);
-        const title = el('h3', '', t.name); title.append(el('span', '', '↗')); card.append(portrait, title, el('p', '', t.role));
-        card.onclick = () => { const photo = img.cloneNode(); photo.className = 'detail-photo'; detail([photo, el('h2', '', t.name), el('div', 'eyebrow', t.role), el('p', '', t.bio)]); }; $('#team-grid').append(card);
-      });
-      document.querySelectorAll('#team-filters button').forEach(b => { b.classList.toggle('selected', b.textContent === category); b.setAttribute('aria-pressed', String(b.textContent === category)); });
-      updateTeamVisibility();
-    };
-    ['全部团队', ...new Set(data.team.map(t => t.category))].forEach(c => { const b = el('button', '', c); b.onclick = () => renderTeam(c); $('#team-filters').append(b); }); renderTeam('全部团队');
-    if (!data.news.length) {
-      const empty = el('div', 'news-empty'); const copy = el('div'); copy.append(el('h3', '', '更多故事，正在发生'), el('p', '', '公司动态与项目资讯将在这里持续更新。')); empty.append(el('span', '', '↗'), copy); $('#news-list').append(empty);
-    }
-    data.news.sort((a, b) => b.date.localeCompare(a.date)).forEach(n => {
-      let source; try { const url = new URL(n.source); if (url.protocol === 'https:') source = url.href; } catch { }
-      const row = el(source ? 'a' : 'article', 'news-row');
-      if (source) { row.href = source; row.target = '_blank'; row.rel = 'noopener noreferrer'; row.setAttribute('aria-label', `${n.title}（在新标签页打开）`); }
-      const copy = el('div'); copy.append(el('h3', '', n.title), el('p', '', n.summary));
-      if (!source) copy.append(el('small', 'muted', '文章链接待补充'));
-      row.append(el('time', '', n.date), copy, el('span', '', source ? '↗' : '')); $('#news-list').append(row);
-    });
+    let teamExpanded = false; const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button'; teamToggle.setAttribute('aria-controls', 'team-grid'); $('#team-grid').after(teamToggle);
+    const updateTeamVisibility = () => { const cards = [...$('#team-grid').children]; const columns = Math.max(1, getComputedStyle($('#team-grid')).gridTemplateColumns.split(' ').length); cards.forEach((card, index) => { card.hidden = !teamExpanded && index >= columns; }); teamToggle.hidden = cards.length <= columns; teamToggle.textContent = teamExpanded ? '收起团队 ↑' : `展开更多团队（${Math.max(0, cards.length - columns)}） ↓`; teamToggle.setAttribute('aria-expanded', String(teamExpanded)); };
+    teamToggle.onclick = () => { teamExpanded = !teamExpanded; updateTeamVisibility(); }; new ResizeObserver(updateTeamVisibility).observe($('#team-grid'));
+    const renderTeam = category => { teamExpanded = false; $('#team-grid').replaceChildren(); asList(data.team).filter(person => category === '全部团队' || person.category === category).forEach(person => { const card = el('button', 'person'); const portrait = el('div', 'portrait'); const image = el('img'); image.src = person.image; image.alt = person.name; image.loading = 'lazy'; portrait.append(image); card.append(portrait, el('h3', '', person.name), el('p', '', person.role)); card.onclick = () => detail([image.cloneNode(), el('h2', '', person.name), el('div', 'eyebrow', person.role), el('p', '', person.bio)]); $('#team-grid').append(card); }); document.querySelectorAll('#team-filters button').forEach(button => { const active = button.textContent === category; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active)); }); updateTeamVisibility(); };
+    ['全部团队', ...new Set(asList(data.team).map(person => person.category).filter(Boolean))].forEach(category => { const button = el('button', '', category); button.type = 'button'; button.onclick = () => renderTeam(category); $('#team-filters').append(button); }); renderTeam('全部团队');
+    renderNews(data);
     const contact = $('#contact-info'); contact.append(el('div', 'contact-info-label', '期待与您携手，共建优质教育服务'));
+    const topics = asList(data.contactTopics).map(item => typeof item === 'string' ? item : item.label || item.title || item.name).filter(Boolean);
+    if (topics.length) { const topicList = el('div', 'contact-topics'); topics.forEach(topic => { const button = el('button', '', topic); button.type = 'button'; button.onclick = () => window.selectContactTopic(topic); topicList.append(button); }); contact.append(topicList); }
+    const topicHeading = el('strong', '', '合作咨询'); topicHeading.id = 'contact-topic'; contact.append(topicHeading);
     if (site.phone) { const phone = el('a', 'contact-line', site.phone); phone.href = 'tel:' + site.phone.replace(/[^+\d-]/g, ''); contact.append(phone); }
     if (site.email) { const email = el('a', 'contact-line', site.email); email.href = 'mailto:' + site.email; contact.append(email); }
     if (site.address) contact.append(el('p', '', site.address));
