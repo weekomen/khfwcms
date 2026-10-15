@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>课后邦｜内容管理</title>
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin.css">
+    <link rel="stylesheet" href="/upload.css">
+    <link rel="stylesheet" href="/theme.css">
+    <link rel="stylesheet" href="/courses.css">
+    <script src="/cms-defaults.js"></script>
+    <script src="/admin.js" defer></script>
+</head>
+
+<body class="admin-body">
+    <header><a class="brand" href="/"><img src="/assets/logo.webp" alt="课后邦"><span><b>内容管理</b><small>KEHOU BANG
+                    CMS</small></span></a>
+        <div class="admin-actions">
+            <div class="theme-control"><label for="theme-select">外观</label><select id="theme-select">
+                    <option value="system">跟随系统</option>
+                    <option value="light">日间模式</option>
+                    <option value="dark">夜间模式</option>
+                </select></div><a href="/" target="_blank" rel="noopener">预览官网 ↗</a><button id="logout"
+                hidden>退出登录</button>
+        </div>
+    </header>
+    <main class="admin-wrap">
+        <section id="login">
+            <div class="eyebrow">CONTENT MANAGEMENT</div>
+            <h1>管理网站内容</h1>
+            <p>使用管理员密码登录。首次登录后，请先设置自己的管理密码。</p>
+            <form id="login-form"><label for="password">管理密码</label><input id="password" type="password"
+                    autocomplete="current-password" maxlength="256" required><button id="login-submit" class="button primary">登录后台 →</button></form>
+            <p id="connection-note" class="login-note"></p>
+        </section>
+        <section id="security" class="security-panel" hidden>
+            <div class="security-heading"><div><h2>账户安全</h2><p id="security-note">请使用独立长密码，不要与他人共用。</p></div>
+                <button id="security-toggle" type="button" aria-expanded="false" aria-controls="password-panel">修改密码</button></div>
+            <div id="password-panel" hidden>
+                <form id="password-form" class="form-grid">
+                    <div><label for="current-password">当前密码</label><input id="current-password" type="password" autocomplete="current-password" maxlength="256" required></div>
+                    <div><label for="new-password">新密码</label><input id="new-password" type="password" autocomplete="new-password" maxlength="256" aria-describedby="password-help" required></div>
+                    <div><label for="confirm-password">确认新密码</label><input id="confirm-password" type="password" autocomplete="new-password" maxlength="256" required></div>
+                    <div class="password-action"><button id="password-submit" class="button primary">保存新密码</button></div>
+                    <p id="password-help">使用 15–128 个字符的独立长密码，可使用密码管理器生成。修改成功后，所有设备都需要重新登录。</p>
+                </form>
+            </div>
+        </section>
+        <section id="editor" hidden>
+            <div class="admin-heading">
+                <div>
+                    <div class="eyebrow">WORKSPACE / 内容工作台</div>
+                    <h1>把每一次成长，分享出去。</h1>
+                </div><button id="save" class="button primary">保存并更新官网 ↗</button>
+            </div>
+            <div class="admin-tabs" role="navigation" aria-label="内容栏目"><button data-tab="site"
+                    class="selected">网站设置</button><button data-tab="navigation">一级导航</button><button
+                    data-tab="services">集团核心业务卡片</button><button data-tab="businessPages">五大业务页面</button><button
+                    data-tab="courseCategories">课程分类长图</button><button data-tab="courses">课程目录</button><button
+                    data-tab="team">核心团队</button><button data-tab="news">新闻资讯</button><button
+                    data-tab="venturePages">智邻创投</button><button data-tab="contactTopics">联系我们主题</button></div>
+            <div id="fields"></div>
+        </section>
+        <p id="status" role="status" aria-live="polite"></p>
+    </main>
+</body>
+
+</html>
