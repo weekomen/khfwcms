@@ -3,11 +3,17 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
   const aliases = { '劳动类': '手工类', '手工': '手工类' };
   const canonical = value => aliases[value] || value;
-  const suppliedCategories = Array.isArray(options.categories) ? options.categories.map(item => typeof item === 'string' ? item : item.label || item.name || item.title).filter(Boolean) : [];
+  const suppliedCategoryItems = Array.isArray(options.categories) ? options.categories : [];
+  const suppliedCategories = suppliedCategoryItems.map(item => typeof item === 'string' ? item : item.label || item.name || item.title).filter(Boolean);
   const categoryOrder = ['美育类', '益智类', '科技类', '手工类'];
   const categories = [...new Set([...categoryOrder, ...suppliedCategories.map(canonical), ...courses.map(course => canonical(course.category)).filter(Boolean)])];
   if (!courses.length) { root.hidden = true; window.selectCourseCategory = () => {}; return; }
   const images = { '美育类': 'aesthetic', '益智类': 'puzzle', '科技类': 'technology', '手工类': 'labor', '劳动类': 'labor' };
+  const normalizeImage = value => typeof value === 'string' && value.trim() ? value.trim() : '';
+  const categoryCovers = new Map(suppliedCategoryItems.map(item => {
+    if (!item || typeof item !== 'object') return ['', ''];
+    return [canonical(item.label || item.name || item.title), normalizeImage(item.image || item.cover)];
+  }).filter(([category]) => category));
   const descriptions = { '美育类': '在表达、阅读与艺术创作中，发现兴趣，感受美。', '益智类': '在游戏、推理与对弈中，练习观察，探索思考的方法。', '科技类': '从科学实验到人工智能，在动手探索中认识科技。', '手工类': '在生活实践、手工创作与非遗体验中，感受劳动的价值。' };
   let selected = categories.find(category => courses.some(course => canonical(course.category) === category)) || categories[0];
   let expanded = false;
@@ -18,7 +24,7 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   const toggle = make('button', 'team-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-controls', 'course-grid');
   const count = make('p', 'course-count'); count.setAttribute('role', 'status');
   const footer = make('div', 'course-footer'); footer.append(make('p', 'muted', '点击课程详情，即可了解课程介绍与学习内容。'));
-  const normalizeImage = value => typeof value === 'string' && value ? value : '';
+  const categoryFallbackCover = category => categoryCovers.get(category) || (images[category] ? `/assets/course-${images[category]}.webp` : '');
   function render() {
     const matches = courses.filter(course => canonical(course.category) === selected);
     const previewCount = mobile.matches ? 3 : 6;
@@ -29,17 +35,35 @@ window.renderCourses = (courses, showDetail, options = {}) => {
     grid.replaceChildren();
     matches.slice(0, expanded ? matches.length : previewCount).forEach(course => {
       const card = make('article', 'course-card');
-      const longImage = normalizeImage(course.longImage || course.image || course.cover);
-      if (longImage) { const thumb = make('img', 'course-thumb'); thumb.src = longImage; thumb.alt = course.title || ''; thumb.loading = 'lazy'; card.append(thumb); }
+      // The cover is a separate, short image chosen for the course card.  Keep
+      // `image` as a migration fallback, but never use the long detail image as
+      // a thumbnail: tall posters become unreadably small when cropped here.
+      const cover = normalizeImage(course.cover || course.image) || categoryFallbackCover(selected);
+      const longImage = normalizeImage(course.longImage);
+      if (cover) { const thumb = make('img', 'course-thumb'); thumb.src = cover; thumb.alt = course.title || ''; thumb.loading = 'lazy'; thumb.decoding = 'async'; card.append(thumb); }
       card.append(make('h4', '', course.title), make('p', '', course.summary || ''));
       const button = make('button', 'text-link course-detail-button', '查看课程详情 →'); button.type = 'button'; button.setAttribute('aria-label', `查看${course.title}课程详情`);
       button.onclick = () => {
         const title = make('h2', '', course.title); title.id = 'course-dialog-title';
         const nodes = [make('div', 'eyebrow', canonical(course.category) + ' / 课程介绍'), title];
-        if (longImage) { const image = make('img', 'course-long-image'); image.src = longImage; image.alt = course.title || ''; nodes.push(image); }
+        if (cover) {
+          const coverImage = make('img', 'course-detail-cover'); coverImage.src = cover; coverImage.alt = `${course.title || ''}课程封面`; coverImage.loading = 'eager'; coverImage.decoding = 'async';
+          nodes.push(coverImage);
+        }
+        if (longImage) {
+          const figure = make('figure', 'course-long-image-wrap');
+          const link = make('a', 'course-long-image-link'); link.href = longImage; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.title = '打开课程长图原图';
+          const image = make('img', 'course-long-image'); image.src = longImage; image.alt = `${course.title || ''}课程介绍长图`; image.loading = 'eager'; image.decoding = 'async';
+          link.append(image); figure.append(link, make('figcaption', 'course-image-caption', '点击图片查看清晰原图')); nodes.push(figure);
+        }
         nodes.push(make('p', 'course-description', course.description || course.summary || ''));
         const outline = String(course.outline || '').split('\n').map(line => line.trim()).filter(Boolean);
         if (outline.length) { const list = make('ul', 'course-outline'); outline.forEach(line => list.append(make('li', '', line))); nodes.push(make('h3', 'course-detail-heading', '学习内容'), list); }
+        const detailDialog = document.getElementById('detail');
+        if (detailDialog) {
+          detailDialog.classList.add('course-detail-dialog');
+          detailDialog.addEventListener('close', () => detailDialog.classList.remove('course-detail-dialog'), { once: true });
+        }
         showDetail(nodes);
       };
       card.append(button); grid.append(card);

@@ -20,6 +20,10 @@ function withDefaultCollections(content) {
     // explicitly save the returned object before the new collections persist.
     if (content[key] === undefined && seedContent[key] !== undefined) content[key] = structuredClone(seedContent[key]);
   }
+  // Older runtime files did not have a separate course cover. Keep those
+  // files readable while exposing the new field to the admin editor; the
+  // administrator can explicitly save it when a cover is selected.
+  for (const course of content.courses || []) if (course && typeof course === 'object') course.cover ??= '';
   return content;
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }

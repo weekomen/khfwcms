@@ -174,7 +174,7 @@ function ensureDataShape() {
   data.venturePages.forEach(item => { item.id ||= newId('venture'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.order ??= 0; item.published ??= true; });
   data.contactTopics.forEach(item => { item.id ||= newId('contact'); item.title ??= '新联系栏目'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
   data.news.forEach(item => { item.id ||= newId('news'); item.group ??= item.category === '行业洞察' ? 'industry' : 'group'; item.image ??= ''; item.longImage ??= ''; });
-  data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.longImage ??= ''; item.page ??= 0; });
+  data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
 }
 function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
   const box = el('div', 'form-field' + (wide ? ' wide' : '')); const id = 'f-' + crypto.randomUUID(); const l = el('label', '', label); l.htmlFor = id;
@@ -256,7 +256,7 @@ function collectionDefault(collection) {
   if (collection === 'aboutPages') return { id: newId('about'), title: '新页面', summary: '', body: '', link: '', target: '', order: 0, published: false };
   if (collection === 'businessPages') return { id: newId('business'), title: '新业务', summary: '', body: '', image: '/assets/logo.webp', longImage: '' };
   if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.webp', longImage: '', order: 0, published: true };
-  if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, longImage: '' };
+  if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, cover: '', longImage: '' };
   if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.webp' };
   if (collection === 'newsCategories') return { id: newId('news-category'), title: '新分类', description: '', order: 0, published: false };
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
@@ -269,7 +269,7 @@ function renderCollection(target, collection) {
     aboutPages: '编辑“关于课后邦”下的集团介绍、公司展册、课程手册、一校一案和核心团队页面。',
     businessPages: '维护集团核心业务五大板块；图片支持直接选择本机文件上传，上传后点击保存。',
     courseCategories: '维护课程资源库的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
-    courses: '维护课程卡片、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
+    courses: '维护课程卡片、独立封面、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
     newsCategories: '维护新闻资讯的“集团动态”和“行业洞察”分类。',
     news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
@@ -282,7 +282,7 @@ function renderCollection(target, collection) {
     const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
     remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { data[collection].splice(index, 1); changed(); render(); } };
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`), remove); card.append(heading);
-    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['longImage', '课程长图']] : collection === 'news' ? [['image', '文章封面'], ['longImage', '文章长图']] : [];
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : collection === 'news' ? [['image', '文章封面'], ['longImage', '文章长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
   });

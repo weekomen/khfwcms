@@ -35,12 +35,14 @@ async function temporaryDirectory(t) {
 
 test('handoff allowlist excludes credentials, work files and unused uploads while retaining the safe environment example', () => {
   const data = fixture();
-  const upload = `upload-${'a'.repeat(32)}.png`;
+  const coverUpload = `upload-${'a'.repeat(32)}.png`;
+  const detailUpload = `upload-${'c'.repeat(32)}.webp`;
   const stale = `upload-${'b'.repeat(32)}.jpg`;
   const snapshot = structuredClone(minimalContent);
-  snapshot.team.push({ name: 'Public member', role: '', bio: '', category: '', image: '/assets/' + upload });
+  snapshot.courses.push({ title: 'Public course', category: '美育类', summary: '', page: 0, cover: '/assets/' + coverUpload, longImage: '/assets/' + detailUpload });
   data.blobs.set('backups/published-content.json', Buffer.from(JSON.stringify(snapshot)));
-  data.blobs.set('backups/uploads/' + upload, Buffer.from('public image fixture'));
+  data.blobs.set('backups/uploads/' + coverUpload, Buffer.from('public cover fixture'));
+  data.blobs.set('backups/uploads/' + detailUpload, Buffer.from('public detail fixture'));
   const forbidden = [
     'data/content.json', 'data/admin-token', 'data/admin-auth.json', '.env', 'deploy/production.env',
     'deploy/khfwcms.env', 'deploy/private.key', 'docs/source.pptx', 'docs/clipboard.txt',
@@ -51,7 +53,8 @@ test('handoff allowlist excludes credentials, work files and unused uploads whil
   const plan = buildHandoffPlan(data.entries(), data.read);
   const included = new Set(plan.files.map(file => file.path));
   assert.ok(included.has('deploy/khfwcms.env.example'));
-  assert.ok(included.has('backups/uploads/' + upload));
+  assert.ok(included.has('backups/uploads/' + coverUpload));
+  assert.ok(included.has('backups/uploads/' + detailUpload));
   for (const file of forbidden) assert.equal(included.has(file), false, file);
   for (const file of ['/absolute.txt', 'C:\\secret', 'docs/../README.md', 'docs//README.md', 'docs/file\nname.md']) assert.equal(isAllowedPath(file), false);
 });

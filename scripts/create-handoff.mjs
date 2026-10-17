@@ -24,7 +24,7 @@ const knownFields = {
   root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics'],
   site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
-  courses: ['title', 'category', 'summary', 'description', 'outline', 'page', 'longImage'],
+  courses: ['title', 'category', 'summary', 'description', 'outline', 'page', 'cover', 'longImage'],
   team: ['name', 'role', 'bio', 'category', 'image'],
   news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published', 'group', 'image', 'longImage'],
   navigation: ['id', 'label', 'href', 'children', 'target', 'action', 'value'],
@@ -68,7 +68,7 @@ export function isAllowedPath(file, referencedUploads = new Set()) {
 const imageCollections = [
   ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
   ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
-  ['courses', ['longImage']], ['venturePages', ['image', 'longImage']]
+  ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']]
 ];
 function imageReferences(content) {
   const references = [];

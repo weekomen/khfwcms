@@ -8,7 +8,7 @@ await mkdir(path.join(root, 'backups/uploads'), { recursive: true });
 const imageCollections = [
   ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
   ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
-  ['courses', ['longImage']], ['venturePages', ['image', 'longImage']]
+  ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']]
 ];
 const uploadNames = new Set();
 for (const [collection, fields] of imageCollections) for (const item of content[collection] || []) for (const field of fields) {

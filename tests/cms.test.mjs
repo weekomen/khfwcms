@@ -83,8 +83,18 @@ async function changePassword(api, origin, session, currentPassword, newPassword
 
 test('content rejects unsafe URLs, assets and duplicate IDs', () => {
   validateContent(seed);
+  const courseImages = structuredClone(seed);
+  courseImages.courses[0].cover = '/assets/course-cover.webp';
+  courseImages.courses[0].longImage = '/assets/course-detail.webp';
+  assert.doesNotThrow(() => validateContent(courseImages));
   const invalidCourse = structuredClone(seed); invalidCourse.courses[0].page = 33; assert.throws(() => validateContent(invalidCourse));
-  for (const change of [c => c.news[0].source = 'javascript:alert(1)', c => c.team[0].image = '/../../secret', c => c.news[1].id = c.news[0].id]) { const c = structuredClone(validationFixture); change(c); assert.throws(() => validateContent(c)); }
+  for (const change of [
+    c => c.news[0].source = 'javascript:alert(1)',
+    c => c.team[0].image = '/../../secret',
+    c => c.courses[0].cover = '/uploads/course-cover.webp',
+    c => c.courses[0].longImage = 'javascript:alert(1)',
+    c => c.news[1].id = c.news[0].id
+  ]) { const c = structuredClone(validationFixture); change(c); assert.throws(() => validateContent(c)); }
 });
 
 test('legacy login migration, CSRF, CMS publication and persistence, and session revocation', async t => {
@@ -141,6 +151,8 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   assert.equal((await (await api('/api/content')).json()).news.length, 0);
   const content = await (await api('/api/admin/content', { headers })).json();
   content.team[0].image = uploaded.url;
+  content.courses[0].cover = uploaded.url;
+  content.courses[0].longImage = '/assets/image5.webp';
   content.courses[0].summary = '课程简介保存验证';
   content.courses[0].description = '课程详细介绍保存验证';
   content.courses[0].outline = '学习内容一\n学习内容二';
@@ -165,6 +177,8 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   const persisted = await (await api('/api/content')).json();
   assert.equal(persisted.news[0].title, '已发布测试文章');
   assert.equal(persisted.team[0].image, uploaded.url);
+  assert.equal(persisted.courses[0].cover, uploaded.url);
+  assert.equal(persisted.courses[0].longImage, '/assets/image5.webp');
   assert.equal(persisted.courses[0].summary, '课程简介保存验证');
   assert.equal(persisted.courses[0].description, '课程详细介绍保存验证');
   assert.equal(persisted.courses[0].outline, '学习内容一\n学习内容二');
