@@ -232,10 +232,15 @@ function applyNavigationData(data) {
       return `#page-${(type === 'business' ? business[id] : type === 'venture' ? venture[id] : '') || safeSlug(id)}`;
     } catch { return '#managed-pages'; }
   };
-  items.forEach(item => {
+  const navGroups = [...nav.querySelectorAll('[data-nav-group]')];
+  items.forEach((item, itemIndex) => {
     const rawKey = item.key || item.id || safeSlug(item.label || item.title);
     const key = ({ 'core-business': 'business', 'group-business': 'business', 'product-service': 'business', 'resource-library': 'courses', 'course-library': 'courses', 'news-information': 'news', 'zhi-lin': 'venture', 'contact-us': 'contact' })[rawKey] || rawKey;
-    const group = [...nav.querySelectorAll('[data-nav-group]')].find(candidate => candidate.dataset.navKey === key || candidate.querySelector('.nav-parent')?.textContent.trim().startsWith(item.label || item.title || '\u0000'));
+    // Keep edited CMS menus connected to the fixed seven-section shell even
+    // when an editor changes both a root ID and its display label.  The CMS
+    // documents array order, so index-1 is a safe final fallback (home has no
+    // .nav-group element).
+    const group = navGroups.find(candidate => candidate.dataset.navKey === key || candidate.querySelector('.nav-parent')?.textContent.trim().startsWith(item.label || item.title || '\u0000')) || (itemIndex > 0 ? navGroups[itemIndex - 1] : null);
     if (!group) return;
     const label = item.label || item.title; if (label) group.querySelector('.nav-parent').firstChild.textContent = label + ' ';
     // 联系我们只保留联系方式入口；旧内容文件中可能仍有历史合作/招聘子项，
