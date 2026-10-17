@@ -274,7 +274,7 @@ function renderCollection(target, collection) {
     newsCategories: '维护新闻资讯的“集团动态”和“行业洞察”分类。',
     news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
     venturePages: '编辑智邻创投的简介、书院世家年夜饭等页面。',
-    contactTopics: '编辑联系我们下的商务合作、师资合作、人才招聘和联系方式栏目。',
+    contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。',
     services: '兼容旧版本的产品与服务字段；新官网请优先编辑“集团核心业务”。'
   };
   target.append(el('p', 'admin-note', notes[collection] || '维护栏目内容。'));
