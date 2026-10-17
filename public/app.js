@@ -206,7 +206,7 @@ function renderNews(data) {
 
 function applyNavigationData(data) {
   const items = asList(data.navigation);
-  const home = items.find(item => (item.key || item.id) === 'home' || item.label === '首页');
+  const home = items.find(item => (item.key || item.id) === 'home' || item.label === '首页') || items[0];
   if (home) {
     const homeLink = nav.querySelector('.nav-link');
     homeLink.textContent = home.label || home.title || '首页';
