@@ -796,30 +796,6 @@
       "href": "#contact",
       "children": [
         {
-          "id": "contact-business",
-          "label": "商务合作",
-          "href": "#contact",
-          "target": "",
-          "action": "contact-topic",
-          "value": "business"
-        },
-        {
-          "id": "contact-teachers",
-          "label": "师资合作",
-          "href": "#contact",
-          "target": "",
-          "action": "contact-topic",
-          "value": "teachers"
-        },
-        {
-          "id": "contact-careers",
-          "label": "人才招聘",
-          "href": "#contact",
-          "target": "",
-          "action": "contact-topic",
-          "value": "careers"
-        },
-        {
           "id": "contact-info",
           "label": "联系方式",
           "href": "#contact",

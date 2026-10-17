@@ -5,7 +5,7 @@ const safeConnection = location.protocol === 'https:' || ['localhost', '127.0.0.
 // Remove credentials left by older versions; authentication uses an HttpOnly cookie.
 try { sessionStorage.removeItem('khb-token'); } catch { }
 const status = (message, error = false) => { $('#status').textContent = message; $('#status').classList.toggle('error', error); };
-const changed = () => { dirty = true; status('有未保存的修改'); };
+const changed = () => { dirty = true; status('有未保存的修改'); syncAdminTabLabels(); };
 function showLogin(clear = false) {
   csrfToken = ''; $('#login').hidden = false; $('#editor').hidden = true; $('#security').hidden = true; $('#logout').hidden = true;
   $('#password-form').reset();
@@ -119,13 +119,48 @@ const NAVIGATION_DEFAULTS = [
     { id: 'venture-dinner', label: '书院世家年夜饭', href: '#venture', action: 'venture', value: 'dinner' }
   ] },
   { id: 'contact', label: '联系我们', href: '#contact', action: 'contact-topic', children: [
-    { id: 'business-contact', label: '商务合作', href: '#contact', action: 'contact-topic', value: 'business' },
-    { id: 'teacher-contact', label: '师资合作', href: '#contact', action: 'contact-topic', value: 'teacher' },
-    { id: 'career-contact', label: '人才招聘', href: '#contact', action: 'contact-topic', value: 'career' },
     { id: 'contact-info', label: '联系方式', href: '#contact', action: 'contact-topic', value: 'info' }
   ] }
 ];
 const ARRAY_TABS = ['aboutPages', 'businessPages', 'courseCategories', 'courses', 'team', 'newsCategories', 'news', 'venturePages', 'contactTopics', 'services'];
+const NAV_TAB_ROOTS = {
+  aboutPages: 'about',
+  businessPages: 'business',
+  courseCategories: 'courses',
+  newsCategories: 'news',
+  venturePages: 'venture',
+  contactTopics: 'contact'
+};
+const NAV_ROOT_INDEX = { about: 1, business: 2, courses: 3, news: 4, venture: 5, contact: 6 };
+const NAV_ROOT_ALIASES = {
+  about: new Set(['about', 'about-us', '关于课后邦']),
+  business: new Set(['business', 'core-business', 'group-business', 'product-service', '集团核心业务', '产品与服务']),
+  courses: new Set(['courses', 'course-library', 'resource-library', '课程资源库', '课程手册']),
+  news: new Set(['news', 'news-information', 'company-news', '公司动态', '新闻资讯']),
+  venture: new Set(['venture', 'zhi-lin', 'zhilin', '智邻创投', '智邻精英汇']),
+  contact: new Set(['contact', 'contact-us', '联系我们'])
+};
+function findNavigationRoot(rootKey) {
+  const aliases = NAV_ROOT_ALIASES[rootKey] || new Set([rootKey]);
+  const navigation = Array.isArray(data?.navigation) ? data.navigation : data?.navigation && typeof data.navigation === 'object' ? Object.values(data.navigation) : [];
+  const match = navigation.find(item => {
+    const values = [item.id, item.key, item.slug, item.label, item.title].map(value => String(value || '').trim().toLowerCase());
+    return values.some(value => aliases.has(value));
+  });
+  // Keep the CMS tabs useful when an editor also changes an internal menu ID.
+  // The seven top-level items have a stable documented order, so use it only
+  // as a fallback after the explicit ID/key/label match.
+  return match || navigation[NAV_ROOT_INDEX[rootKey]];
+}
+function syncAdminTabLabels() {
+  if (!data || !Array.isArray(data.navigation)) return;
+  document.querySelectorAll('[data-tab]').forEach(button => {
+    const rootKey = NAV_TAB_ROOTS[button.dataset.tab];
+    if (!rootKey) return;
+    const root = findNavigationRoot(rootKey);
+    if (root?.label || root?.title) button.textContent = root.label || root.title;
+  });
+}
 function ensureDataShape() {
   data.courses ||= [];
   ARRAY_TABS.forEach(key => { if (!Array.isArray(data[key])) data[key] = []; });
@@ -256,6 +291,7 @@ function renderCollection(target, collection) {
 }
 function render() {
   ensureDataShape();
+  syncAdminTabLabels();
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('selected', b.dataset.tab === tab));
   const target = $('#fields'); target.replaceChildren();
   if (tab === 'site') {

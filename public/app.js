@@ -46,6 +46,18 @@ function handleNavLink(event, link) {
   if (newsCategory && window.selectNewsCategory) { event.preventDefault(); window.selectNewsCategory(newsCategory); }
   const topic = link.dataset.contactTopic;
   if (topic) window.selectContactTopic?.(topic);
+  // Core team is a section on the home page.  Handle it explicitly so the
+  // dynamically rebuilt menu scrolls reliably after the dropdown closes.
+  if (link.dataset.teamLink === 'true' || link.hash === '#team') {
+    event.preventDefault();
+    closeNav();
+    const team = document.querySelector('#team');
+    if (team) {
+      history.replaceState(null, '', '#team');
+      team.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }
+    return;
+  }
   if (link.target !== '_blank') closeNav();
 }
 nav.addEventListener('click', event => {
@@ -148,6 +160,13 @@ function renderManagedPages(data) {
     article.append(body); root.append(article);
   });
   $('#managed-pages').hidden = pages.length === 0;
+  // A managed page can be opened in a new tab with a hash.  Its article is
+  // created asynchronously after /api/content returns, so perform the hash
+  // scroll again once the DOM exists.
+  const hash = decodeURIComponent(location.hash.replace(/^#/, ''));
+  if (hash && hash.startsWith('page-')) {
+    requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView({ behavior: 'auto', block: 'start' }));
+  }
 }
 
 function normalizeNewsCategory(value) {
@@ -194,13 +213,22 @@ function applyNavigationData(data) {
     homeLink.href = home.href || '#home';
     if (home.target === 'blank' || home.target === '_blank') { homeLink.target = '_blank'; homeLink.rel = 'noopener noreferrer'; }
   }
+  const business = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
+  const venture = { intro: 'invest-intro', 'venture-intro': 'invest-intro', 'new-year-dinner': 'invest-meal', 'venture-dinner': 'invest-meal', dinner: 'invest-meal' };
   const pageHash = child => {
     const value = child.href || child.url || '';
+    const raw = String(child.value || child.slug || child.key || child.id || child.label || '').trim();
+    if (child.action === 'business') {
+      const slug = business[raw] || (raw.startsWith('business-') ? raw : `business-${safeSlug(raw)}`);
+      return `#page-${slug}`;
+    }
+    if (child.action === 'venture') {
+      const slug = venture[raw] || (raw.startsWith('invest-') ? raw : `invest-${safeSlug(raw)}`);
+      return `#page-${slug}`;
+    }
     if (!/^\/content-page\.html/i.test(value)) return value || `#page-${safeSlug(child.slug || child.key || child.label)}`;
     try {
       const parsed = new URL(value, location.origin); const type = parsed.searchParams.get('type'); const id = parsed.searchParams.get('id');
-      const business = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
-      const venture = { intro: 'invest-intro', 'new-year-dinner': 'invest-meal' };
       return `#page-${(type === 'business' ? business[id] : type === 'venture' ? venture[id] : '') || safeSlug(id)}`;
     } catch { return '#managed-pages'; }
   };
@@ -210,14 +238,24 @@ function applyNavigationData(data) {
     const group = [...nav.querySelectorAll('[data-nav-group]')].find(candidate => candidate.dataset.navKey === key || candidate.querySelector('.nav-parent')?.textContent.trim().startsWith(item.label || item.title || '\u0000'));
     if (!group) return;
     const label = item.label || item.title; if (label) group.querySelector('.nav-parent').firstChild.textContent = label + ' ';
-    const children = asList(item.children || item.items || item.submenu); if (!children.length) return;
+    // 联系我们只保留联系方式入口；旧内容文件中可能仍有历史合作/招聘子项，
+    // 前台统一过滤掉，避免升级已有站点时把旧按钮重新显示出来。
+    const children = asList(item.children || item.items || item.submenu).filter(child => {
+      if (key !== 'contact') return true;
+      const value = String(child.value || child.id || child.label || child.title || '').trim().toLowerCase();
+      return value === 'info' || value === 'contact-info' || value === '联系方式';
+    }); if (!children.length) return;
     const dropdown = group.querySelector('.nav-dropdown'); dropdown.replaceChildren();
     children.forEach(child => {
       const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageHash(child);
       if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
       if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
       if (child.action === 'contact-topic') { link.dataset.contactTopic = ({ business: '商务合作', teachers: '师资合作', careers: '人才招聘', info: '联系方式' })[child.value] || child.value || child.label; link.href = '#contact'; }
-      if (child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') link.dataset.teamLink = 'true';
+      // Business and venture entries are managed pages.  Open them in a new
+      // tab even when older content records did not store target="blank".
+      const managedPage = child.action === 'business' || child.action === 'venture' || /^#page-(business|invest)-/.test(link.hash);
+      if (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);
     });
   });
@@ -244,8 +282,14 @@ async function init() {
     ['全部团队', ...new Set(asList(data.team).map(person => person.category).filter(Boolean))].forEach(category => { const button = el('button', '', category); button.type = 'button'; button.onclick = () => renderTeam(category); $('#team-filters').append(button); }); renderTeam('全部团队');
     renderNews(data);
     const contact = $('#contact-info'); contact.append(el('div', 'contact-info-label', '期待与您携手，共建优质教育服务'));
-    const topics = asList(data.contactTopics).map(item => typeof item === 'string' ? item : item.label || item.title || item.name).filter(Boolean);
-    if (topics.length) { const topicList = el('div', 'contact-topics'); topics.forEach(topic => { const button = el('button', '', topic); button.type = 'button'; button.onclick = () => window.selectContactTopic(topic); topicList.append(button); }); contact.append(topicList); }
+    // 兼容旧数据中的商务合作、师资合作和人才招聘记录，但官网只展示联系方式。
+    const infoRecord = asList(data.contactTopics).find(item => {
+      if (typeof item === 'string') return item === '联系方式';
+      const value = String(item.id || item.key || item.label || item.title || item.name || '').trim().toLowerCase();
+      return value === 'info' || value === 'contact-info' || value === '联系方式';
+    });
+    const infoTopic = typeof infoRecord === 'string' ? infoRecord : infoRecord?.label || infoRecord?.title || infoRecord?.name || '联系方式';
+    const topicList = el('div', 'contact-topics'); const button = el('button', '', infoTopic); button.type = 'button'; button.onclick = () => window.selectContactTopic(infoTopic); topicList.append(button); contact.append(topicList);
     const topicHeading = el('strong', '', '合作咨询'); topicHeading.id = 'contact-topic'; contact.append(topicHeading);
     if (site.phone) { const phone = el('a', 'contact-line', site.phone); phone.href = 'tel:' + site.phone.replace(/[^+\d-]/g, ''); contact.append(phone); }
     if (site.email) { const email = el('a', 'contact-line', site.email); email.href = 'mailto:' + site.email; contact.append(email); }

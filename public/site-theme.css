@@ -239,6 +239,10 @@ a.news-row:hover h3 {
     background: var(--bg)
 }
 
+.site-body #team {
+    scroll-margin-top: 110px
+}
+
 .managed-pages[hidden] {
     display: none
 }
@@ -250,6 +254,7 @@ a.news-row:hover h3 {
 }
 
 .managed-page {
+    scroll-margin-top: 110px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(190px, 38%);
     gap: 26px;
