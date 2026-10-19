@@ -40,6 +40,12 @@ nav.querySelectorAll('[data-nav-parent]').forEach(button => button.addEventListe
   if (group.dataset.navKey === 'contact') document.querySelector('#contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }));
 function handleNavLink(event, link) {
+  if (link.dataset.managedPage === 'true') {
+    event.preventDefault();
+    closeNav();
+    window.open(link.href, '_blank', 'noopener,noreferrer');
+    return;
+  }
   const courseCategory = link.dataset.courseCategory;
   if (courseCategory && window.selectCourseCategory) { event.preventDefault(); window.selectCourseCategory(courseCategory); }
   const newsCategory = link.dataset.newsCategory;
@@ -260,6 +266,7 @@ function applyNavigationData(data) {
       // Business and venture entries are managed pages.  Open them in a new
       // tab even when older content records did not store target="blank".
       const managedPage = child.action === 'business' || child.action === 'venture' || /^#page-(business|invest)-/.test(link.hash);
+      if (managedPage) link.dataset.managedPage = 'true';
       if (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);
     });
