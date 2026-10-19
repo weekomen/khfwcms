@@ -221,22 +221,29 @@ function applyNavigationData(data) {
   }
   const business = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
   const venture = { intro: 'invest-intro', 'venture-intro': 'invest-intro', 'new-year-dinner': 'invest-meal', 'venture-dinner': 'invest-meal', dinner: 'invest-meal' };
-  const pageHash = child => {
+  const managedPageUrl = (type, rawValue) => {
+    const raw = String(rawValue || '').trim();
+    const map = type === 'business' ? business : venture;
+    const normalized = pageAliases[raw] || raw;
+    const legacy = map[normalized] || normalized;
+    const idMap = type === 'business'
+      ? { 'business-supply': 'supply-chain', 'business-online': 'online-education', 'business-street': 'education-street', 'business-youth': 'youth-center', 'business-ai': 'ai-museum' }
+      : { 'invest-intro': 'intro', 'invest-meal': 'new-year-dinner' };
+    const id = idMap[legacy] || legacy.replace(/^(business|invest)-/, '') || safeSlug(raw);
+    return `/content-page.html?type=${type}&id=${encodeURIComponent(id)}`;
+  };
+  const pageUrl = child => {
     const value = child.href || child.url || '';
     const raw = String(child.value || child.slug || child.key || child.id || child.label || '').trim();
     if (child.action === 'business') {
-      const slug = business[raw] || (raw.startsWith('business-') ? raw : `business-${safeSlug(raw)}`);
-      return `#page-${slug}`;
+      if (/^\/content-page\.html/i.test(value)) return value;
+      return managedPageUrl('business', raw);
     }
     if (child.action === 'venture') {
-      const slug = venture[raw] || (raw.startsWith('invest-') ? raw : `invest-${safeSlug(raw)}`);
-      return `#page-${slug}`;
+      if (/^\/content-page\.html/i.test(value)) return value;
+      return managedPageUrl('venture', raw);
     }
-    if (!/^\/content-page\.html/i.test(value)) return value || `#page-${safeSlug(child.slug || child.key || child.label)}`;
-    try {
-      const parsed = new URL(value, location.origin); const type = parsed.searchParams.get('type'); const id = parsed.searchParams.get('id');
-      return `#page-${(type === 'business' ? business[id] : type === 'venture' ? venture[id] : '') || safeSlug(id)}`;
-    } catch { return '#managed-pages'; }
+    return value || `#page-${safeSlug(child.slug || child.key || child.label)}`;
   };
   const navGroups = [...nav.querySelectorAll('[data-nav-group]')];
   items.forEach((item, itemIndex) => {
@@ -258,14 +265,14 @@ function applyNavigationData(data) {
     }); if (!children.length) return;
     const dropdown = group.querySelector('.nav-dropdown'); dropdown.replaceChildren();
     children.forEach(child => {
-      const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageHash(child);
+      const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageUrl(child);
       if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
       if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
       if (child.action === 'contact-topic') { link.dataset.contactTopic = ({ business: '商务合作', teachers: '师资合作', careers: '人才招聘', info: '联系方式' })[child.value] || child.value || child.label; link.href = '#contact'; }
       if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') link.dataset.teamLink = 'true';
       // Business and venture entries are managed pages.  Open them in a new
       // tab even when older content records did not store target="blank".
-      const managedPage = child.action === 'business' || child.action === 'venture' || /^#page-(business|invest)-/.test(link.hash);
+      const managedPage = child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.href);
       if (managedPage) link.dataset.managedPage = 'true';
       if (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);
