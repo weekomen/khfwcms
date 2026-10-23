@@ -286,7 +286,7 @@ async function init() {
     const response = await fetch('/api/content'); if (!response.ok) throw Error();
     const data = await response.json(); const site = data.site || {};
     document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
-    $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || ''; $('#about-copy').textContent = site.about || '';
+    $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || '';
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';
     applyNavigationData(data); renderManagedPages(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
     asList(data.services).forEach((service, index) => {

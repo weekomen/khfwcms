@@ -686,8 +686,8 @@
         {
           "id": "about-intro",
           "label": "课后邦集团介绍",
-          "href": "#about",
-          "target": "",
+          "href": "/content-page.html?type=about&id=about-intro",
+          "target": "blank",
           "action": ""
         },
         {
@@ -867,8 +867,8 @@
       "title": "课后邦集团介绍",
       "summary": "聚焦素质教育与课后服务，让每一份教育陪伴更有温度。",
       "body": "课后邦聚焦素质教育与课后服务，汇聚教育、设计、技术、运营与市场等多领域人才。我们围绕课程资源整合、师资培养与数字化平台建设，为课程落地提供持续支持，让教育服务更有温度、更有品质。",
-      "link": "#about",
-      "target": "",
+      "link": "/content-page.html?type=about&id=about-intro",
+      "target": "blank",
       "order": 1,
       "published": true
     },
