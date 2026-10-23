@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/theme.css">
     <link rel="stylesheet" href="/site-theme.css">
+    <link rel="stylesheet" href="/courses.css">
+    <script src="/courses.js" defer></script>
     <script src="/app.js" defer></script>
 </head>
 
@@ -45,10 +47,10 @@
             <div class="nav-group" data-nav-group data-nav-key="courses">
                 <button class="nav-parent" type="button" data-nav-parent aria-expanded="false" aria-controls="nav-courses">课程资源库 <span aria-hidden="true">⌄</span></button>
                 <div class="nav-dropdown" id="nav-courses" role="menu">
-                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer">美育类 <span aria-hidden="true">↗</span></a>
-                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer">益智类 <span aria-hidden="true">↗</span></a>
-                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer">科技类 <span aria-hidden="true">↗</span></a>
-                    <a class="nav-sublink" role="menuitem" href="https://kehoubang.cn/profile/upload/pdf/1/index.html" target="_blank" rel="noopener noreferrer">手工类 <span aria-hidden="true">↗</span></a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="美育类">美育类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="益智类">益智类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="科技类">科技类</a>
+                    <a class="nav-sublink" role="menuitem" href="#services" data-course-category="手工类">手工类</a>
                 </div>
             </div>
             <div class="nav-group" data-nav-group data-nav-key="news">
@@ -87,7 +89,7 @@
                 <div class="eyebrow"><span></span> 用心做教育 · 陪伴每一份成长</div>
                 <h1 id="headline">让课后时光，<br>生长更多可能。</h1>
                 <p id="intro"></p>
-                <div class="hero-actions"><a class="button primary" href="#about">了解课后邦 <span>↗</span></a><a
+                <div class="hero-actions"><a class="button primary" href="#services">探索我们的服务 <span>↗</span></a><a
                         class="text-link" href="#about">认识课后邦 <span>→</span></a></div>
                 <div class="hero-note"><span>EDUCATION WITH POSSIBILITY</span><span>向下探索 ↓</span></div>
             </div>
@@ -108,6 +110,28 @@
                 <p id="about-copy"></p>
                 <div class="about-tags"><span>课程资源</span><span>教学保障</span><span>技术支持</span><span>运营协同</span></div><a
                     class="text-link" href="#team">认识我们的团队 <span>↗</span></a>
+            </div>
+        </section>
+        <section class="services section" id="services">
+            <div class="wrap">
+                <div class="section-head">
+                    <div>
+                        <div class="eyebrow">OUR SERVICES / 产品与服务</div>
+                        <div class="heading-with-link">
+                            <h2>从优质课程，到每一次落地</h2>
+                            <a class="document-link" href="https://kehoubang.cn/profile/upload/pdf/1/index.html"
+                                target="_blank" rel="noopener noreferrer" aria-label="全部课程手册（新标签页打开）">全部课程手册 <span aria-hidden="true">↗</span></a>
+                        </div>
+                    </div>
+                    <p>围绕教育服务的每个环节<br>提供专业、持续的支持</p>
+                </div>
+                <div id="course-catalog"></div>
+                <div class="heading-with-link support-heading-row">
+                    <h3 class="support-heading">课程落地与配套服务</h3>
+                    <a class="document-link" href="https://kehoubang.cn/profile/upload/pdf/2/index.html"
+                        target="_blank" rel="noopener noreferrer" aria-label="一校一案（新标签页打开）">一校一案 <span aria-hidden="true">↗</span></a>
+                </div>
+                <div class="service-grid" id="service-grid"></div>
             </div>
         </section>
         <section class="managed-pages section" id="managed-pages" hidden>
