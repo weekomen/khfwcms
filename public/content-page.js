@@ -13,7 +13,54 @@ const showError = () => {
   const message = document.createElement('p'); message.className = 'content-page-summary'; message.textContent = '该页面可能已下线或尚未发布，请返回官网重新选择。';
   card.append(title, message); root.replaceChildren(card);
 };
-const render = data => {
+const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
+const openLightbox = (photos, startIndex) => {
+  const dialog = make('dialog', 'event-lightbox');
+  const frame = make('div', 'event-lightbox-frame');
+  const close = make('button', 'event-lightbox-close', '关闭'); close.type = 'button'; close.setAttribute('aria-label', '关闭大图');
+  const previous = make('button', 'event-lightbox-nav event-lightbox-prev', '‹'); previous.type = 'button'; previous.setAttribute('aria-label', '上一张');
+  const next = make('button', 'event-lightbox-nav event-lightbox-next', '›'); next.type = 'button'; next.setAttribute('aria-label', '下一张');
+  const image = make('img', 'event-lightbox-image');
+  const caption = make('div', 'event-lightbox-caption');
+  const tools = make('div', 'event-lightbox-tools');
+  const download = make('a', 'event-lightbox-download', '下载图片'); download.setAttribute('download', '');
+  const fullscreen = make('button', 'event-lightbox-fullscreen', '全屏'); fullscreen.type = 'button';
+  tools.append(download, fullscreen); frame.append(close, previous, next, image, caption, tools); dialog.append(frame); document.body.append(dialog);
+  let index = startIndex;
+  const update = () => {
+    const photo = photos[(index + photos.length) % photos.length]; index = (index + photos.length) % photos.length;
+    image.src = photo.src; image.alt = photo.filename || ''; caption.textContent = `${index + 1} / ${photos.length}${photo.tag ? ` · ${photo.tag}` : ''}${photo.filename ? ` · ${photo.filename}` : ''}`; download.href = photo.src; download.download = photo.filename || `photo-${photo.id}.jpg`;
+  };
+  close.onclick = () => dialog.close(); previous.onclick = () => { index -= 1; update(); }; next.onclick = () => { index += 1; update(); };
+  fullscreen.onclick = () => frame.requestFullscreen?.();
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') { index -= 1; update(); } if (event.key === 'ArrowRight') { index += 1; update(); } if (event.key === 'Escape') dialog.close(); });
+  dialog.addEventListener('close', () => dialog.remove(), { once: true }); update(); dialog.showModal();
+};
+const renderEventGallery = async (card, page) => {
+  const response = await fetch('/assets/events/manifest.json'); if (!response.ok) return;
+  const manifest = await response.json(); const event = manifest[page.id]; if (!event) return;
+  const hero = card.querySelector('.content-page-figure .content-page-image');
+  if (hero && event.cover) { hero.src = event.cover; hero.alt = event.title || page.title || ''; }
+  const gallery = make('section', 'event-gallery'); gallery.setAttribute('aria-labelledby', 'event-gallery-title');
+  const heading = make('div', 'event-gallery-heading'); const title = make('h2', '', '现场照片'); title.id = 'event-gallery-title';
+  const meta = make('div', 'event-gallery-meta'); [event.date, event.place, `${event.photos.length} 张照片`, `${event.views || 0} 次浏览`].filter(Boolean).forEach(value => meta.append(make('span', '', value)));
+  heading.append(make('div', 'eyebrow', 'PHOTO LIVE / 现场相册'), title, make('p', 'event-gallery-subtitle', event.subtitle || '记录每一次相聚的温度与笑容。'), meta); gallery.append(heading);
+  const toolbar = make('div', 'event-gallery-toolbar'); const search = make('input', 'event-gallery-search'); search.type = 'search'; search.placeholder = '搜索照片名称'; search.setAttribute('aria-label', '搜索照片名称');
+  const select = make('select', 'event-gallery-filter'); select.setAttribute('aria-label', '按标签筛选'); const allTags = make('option', '', '全部标签'); allTags.value = ''; select.append(allTags); (event.tags || []).forEach(tag => select.append(Object.assign(make('option', '', tag.name), { value: tag.name })));
+  const status = make('span', 'event-gallery-status'); toolbar.append(search, select, status); gallery.append(toolbar);
+  const grid = make('div', 'event-gallery-grid'); const more = make('button', 'event-gallery-more', '加载更多照片'); more.type = 'button'; gallery.append(grid, more); card.append(gallery);
+  let filtered = event.photos; let shown = 0; const pageSize = 80;
+  const draw = reset => {
+    if (reset) { shown = 0; grid.replaceChildren(); }
+    const query = search.value.trim().toLowerCase(); const tag = select.value;
+    filtered = event.photos.filter(photo => (!tag || photo.tag === tag) && (!query || `${photo.filename} ${photo.tag}`.toLowerCase().includes(query)));
+    const next = filtered.slice(shown, shown + pageSize); next.forEach(photo => { const button = make('button', 'event-photo-card'); button.type = 'button'; button.setAttribute('aria-label', `查看${photo.filename || '照片'}`); const image = make('img', 'event-photo-thumb'); image.src = photo.thumb || photo.src; image.alt = photo.filename || ''; image.loading = 'lazy'; image.decoding = 'async'; button.append(image); if (photo.tag) button.append(make('span', 'event-photo-tag', photo.tag)); button.onclick = () => openLightbox(filtered, filtered.indexOf(photo)); grid.append(button); }); shown += next.length; status.textContent = `显示 ${shown} / ${filtered.length} 张`;
+    more.hidden = shown >= filtered.length; more.textContent = shown >= filtered.length ? '已显示全部照片' : `加载更多（剩余 ${filtered.length - shown}）`;
+  };
+  search.addEventListener('input', () => draw(true)); select.addEventListener('change', () => draw(true)); more.onclick = () => draw(false); draw(true);
+};
+const render = async data => {
   const collection = type === 'venture' ? data.venturePages : type === 'about' ? data.aboutPages : data.businessPages;
   const id = aliases[requestedId] || requestedId;
   const page = asList(collection).find(item => String(item.id || item.slug || '') === id) || asList(collection).find(item => String(item.title || item.name || '') === requestedId);
@@ -29,8 +76,7 @@ const render = data => {
       const link = document.createElement('a'); link.href = `/content-page.html?type=venture&id=${item.id}`; link.textContent = item.label; link.className = item.id === page.id ? 'selected' : ''; if (item.id !== page.id) link.setAttribute('aria-label', `查看${item.label}`); switcher.append(link);
     });
     card.append(switcher);
-    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '进入照片直播页，可浏览活动照片并使用原页面提供的筛选、搜索、下载与分享功能。'; card.append(liveNote);
-    if (page.externalLink) { const action = document.createElement('a'); action.className = 'event-action'; action.href = page.externalLink; action.target = '_blank'; action.rel = 'noopener noreferrer'; action.textContent = '打开照片直播 ↗'; card.append(action); }
+    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '活动照片已导入官网本地相册，支持标签筛选、名称搜索、缩略图浏览、大图查看、全屏和下载。'; card.append(liveNote);
   }
   const image = page.image || page.cover;
   if (image) { const figure = document.createElement('figure'); figure.className = 'content-page-figure'; const node = document.createElement('img'); node.className = 'content-page-image'; node.src = image; node.alt = page.imageAlt || page.title || ''; node.loading = 'eager'; figure.append(node); card.append(figure); }
@@ -41,5 +87,6 @@ const render = data => {
   card.append(body);
   if (page.longImage) { const figure = document.createElement('figure'); figure.className = 'content-page-figure content-page-long-figure'; const node = document.createElement('img'); node.className = 'content-page-image'; node.src = page.longImage; node.alt = `${page.title || ''}长图`; node.loading = 'lazy'; figure.append(node); card.append(figure); }
   root.replaceChildren(card);
+  if (type === 'venture' && String(page.id || '').startsWith('new-year-dinner')) await renderEventGallery(card, page);
 };
 fetch('/api/content').then(response => { if (!response.ok) throw Error(); return response.json(); }).then(render).catch(showError);

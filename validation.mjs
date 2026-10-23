@@ -150,9 +150,9 @@ function validateNavigation(navigation) {
 }
 
 function pageRecords(value, max, fields, options = {}) {
-  const { image = false, longImage = false, externalLink = false, idLabel = '页面编号' } = options;
+  const { image = false, longImage = false, idLabel = '页面编号' } = options;
   list(value, max, options.listLabel || '页面列表');
-  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), ...(externalLink ? ['externalLink'] : []), 'order', 'published']);
+  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), 'order', 'published']);
   const ids = new Set();
   for (const item of value) {
     object(item, options.itemLabel || '页面项目'); keys(item, allowed, options.itemLabel || '页面项目');
@@ -160,7 +160,6 @@ function pageRecords(value, max, fields, options = {}) {
     for (const field of fields) text(item[field], field === 'body' ? 50000 : 10000, `${idLabel}.${field}`);
     if (image) optionalAsset(item.image, '页面图片');
     if (longImage) optionalAsset(item.longImage, '页面长图');
-    if (externalLink && item.externalLink !== undefined) href(item.externalLink, '页面外部链接');
     optionalInteger(item.order, 0, 999, `${idLabel}排序`);
     if (item.published !== undefined && typeof item.published !== 'boolean') throw Error(`${idLabel}发布状态无效`);
   }
@@ -223,6 +222,6 @@ export function validateContent(content) {
   if (c.businessPages !== undefined) pageRecords(c.businessPages, 20, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '业务页面', itemLabel: '业务页面' });
   if (c.courseCategories !== undefined) pageRecords(c.courseCategories, 12, ['title', 'description'], { image: true, longImage: true, listLabel: '课程分类', itemLabel: '课程分类' });
   if (c.newsCategories !== undefined) validateNewsCategories(c.newsCategories);
-  if (c.venturePages !== undefined) pageRecords(c.venturePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, externalLink: true, listLabel: '创投页面', itemLabel: '创投页面' });
+  if (c.venturePages !== undefined) pageRecords(c.venturePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '创投页面', itemLabel: '创投页面' });
   if (c.contactTopics !== undefined) pageRecords(c.contactTopics, 12, ['title', 'description'], { image: false, longImage: false, listLabel: '联系主题', itemLabel: '联系主题' });
 }
