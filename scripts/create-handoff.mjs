@@ -17,6 +17,7 @@ export const requiredFiles = [
   'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
   'public/index.html', 'public/app.js', 'public/style.css', 'public/site-theme.css', 'public/courses.js', 'public/courses.css',
   'public/admin.html', 'public/admin.js', 'public/admin.css', 'public/upload.css', 'public/theme.js', 'public/theme.css',
+  'public/assets/events/manifest.json',
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md', ...[...supportFiles].filter(file => file.startsWith('deploy/') || file.startsWith('scripts/'))
 ];
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
@@ -60,6 +61,9 @@ export function isAllowedPath(file, referencedUploads = new Set()) {
   if (rootFiles.has(file) || supportFiles.has(file)) return true;
   if (/^public\/[a-zA-Z0-9_-]+\.(html|css|js)$/.test(file)) return true;
   if (file === 'public/assets/course-manual.pdf') return true;
+  if (file === 'public/assets/events/manifest.json') return true;
+  const eventImage = /^public\/assets\/events\/(?:[a-zA-Z0-9_.-]+\/)+[a-zA-Z0-9_.-]+\.(png|jpe?g|webp|svg|gif|ico|avif)$/i.exec(file);
+  if (eventImage) return !/(?:^|[-_.])(admin-token|admin-auth|secret|credential|screenshot|clipboard)(?:[-_.]|$)/i.test(path.posix.basename(file));
   const asset = /^public\/assets\/([a-zA-Z0-9_.-]+\.(png|jpe?g|webp|svg|gif|ico))$/.exec(file);
   if (asset) return !uploadName.test(asset[1]) && !/(?:^|[-_.])(admin-token|admin-auth|secret|credential|screenshot|clipboard)(?:[-_.]|$)/i.test(asset[1]);
   const upload = /^backups\/uploads\/([^/]+)$/.exec(file);
