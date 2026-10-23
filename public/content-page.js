@@ -15,27 +15,66 @@ const showError = () => {
 };
 const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
 const openLightbox = (photos, startIndex) => {
+  if (!photos.length) return;
   const dialog = make('dialog', 'event-lightbox');
   const frame = make('div', 'event-lightbox-frame');
   const close = make('button', 'event-lightbox-close', '关闭'); close.type = 'button'; close.setAttribute('aria-label', '关闭大图');
   const previous = make('button', 'event-lightbox-nav event-lightbox-prev', '‹'); previous.type = 'button'; previous.setAttribute('aria-label', '上一张');
   const next = make('button', 'event-lightbox-nav event-lightbox-next', '›'); next.type = 'button'; next.setAttribute('aria-label', '下一张');
+  const stage = make('div', 'event-lightbox-stage'); stage.tabIndex = 0; stage.setAttribute('aria-label', '大图滚动区域');
   const image = make('img', 'event-lightbox-image');
   const caption = make('div', 'event-lightbox-caption');
   const tools = make('div', 'event-lightbox-tools');
+  const autoplay = make('button', 'event-lightbox-autoplay', '自动播放'); autoplay.type = 'button'; autoplay.setAttribute('aria-pressed', 'false'); autoplay.setAttribute('aria-label', '自动播放照片');
+  const scroll = make('button', 'event-lightbox-scroll', '滚动大图'); scroll.type = 'button'; scroll.setAttribute('aria-pressed', 'false');
   const download = make('a', 'event-lightbox-download', '下载图片'); download.setAttribute('download', '');
   const fullscreen = make('button', 'event-lightbox-fullscreen', '全屏'); fullscreen.type = 'button';
-  tools.append(download, fullscreen); frame.append(close, previous, next, image, caption, tools); dialog.append(frame); document.body.append(dialog);
+  const thumbPrevious = make('button', 'event-lightbox-thumbs-nav event-lightbox-thumbs-prev', '‹'); thumbPrevious.type = 'button'; thumbPrevious.setAttribute('aria-label', '向左滚动缩略图');
+  const thumbNext = make('button', 'event-lightbox-thumbs-nav event-lightbox-thumbs-next', '›'); thumbNext.type = 'button'; thumbNext.setAttribute('aria-label', '向右滚动缩略图');
+  const thumbs = make('div', 'event-lightbox-thumbs'); thumbs.setAttribute('aria-label', '照片缩略图列表');
+  const thumbsWrap = make('div', 'event-lightbox-thumbs-wrap'); thumbsWrap.append(thumbPrevious, thumbs, thumbNext);
+  const thumbNodes = photos.map((photo, photoIndex) => {
+    const button = make('button', 'event-lightbox-thumb'); button.type = 'button'; button.setAttribute('aria-label', `查看第${photoIndex + 1}张照片`); button.dataset.index = String(photoIndex);
+    const thumb = make('img', '', ''); thumb.src = photo.thumb || photo.src; thumb.alt = ''; thumb.loading = 'lazy'; thumb.decoding = 'async'; button.append(thumb); button.onclick = () => { index = photoIndex; update(); restartAutoplay(); }; thumbs.append(button); return button;
+  });
+  stage.append(image); tools.append(autoplay, scroll, download, fullscreen); frame.append(close, previous, next, stage, caption, tools, thumbsWrap); dialog.append(frame); document.body.append(dialog);
   let index = startIndex;
+  let scrollMode = false;
+  let playing = false;
+  let autoplayTimer = 0;
+  const autoplayInterval = 3500;
+  const setScrollMode = enabled => {
+    scrollMode = Boolean(enabled); stage.classList.toggle('is-scroll', scrollMode); scroll.setAttribute('aria-pressed', String(scrollMode)); scroll.textContent = scrollMode ? '适应窗口' : '滚动大图';
+    stage.scrollTo({ top: 0, left: 0 }); if (scrollMode) stage.focus({ preventScroll: true });
+  };
+  const setAutoplayState = () => {
+    autoplay.textContent = playing ? '暂停播放' : '自动播放'; autoplay.setAttribute('aria-pressed', String(playing)); autoplay.setAttribute('aria-label', playing ? '暂停自动播放' : '自动播放照片');
+  };
+  const stopAutoplay = () => {
+    if (autoplayTimer) window.clearInterval(autoplayTimer);
+    autoplayTimer = 0; playing = false; setAutoplayState();
+  };
+  const startAutoplay = () => {
+    if (photos.length < 2) return;
+    if (autoplayTimer) window.clearInterval(autoplayTimer);
+    playing = true; setAutoplayState(); autoplayTimer = window.setInterval(() => { index += 1; update(); }, autoplayInterval);
+  };
+  const restartAutoplay = () => { if (playing) startAutoplay(); };
+  const move = offset => { index += offset; update(); restartAutoplay(); };
   const update = () => {
     const photo = photos[(index + photos.length) % photos.length]; index = (index + photos.length) % photos.length;
     image.src = photo.src; image.alt = photo.filename || ''; caption.textContent = `${index + 1} / ${photos.length}${photo.tag ? ` · ${photo.tag}` : ''}${photo.filename ? ` · ${photo.filename}` : ''}`; download.href = photo.src; download.download = photo.filename || `photo-${photo.id}.jpg`;
+    thumbNodes.forEach((node, photoIndex) => { const active = photoIndex === index; node.classList.toggle('selected', active); if (active) { node.setAttribute('aria-current', 'true'); node.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); } else node.removeAttribute('aria-current'); });
+    setScrollMode(Number(photo.height) > Number(photo.width) * 1.25);
   };
-  close.onclick = () => dialog.close(); previous.onclick = () => { index -= 1; update(); }; next.onclick = () => { index += 1; update(); };
+  autoplay.onclick = () => (playing ? stopAutoplay() : startAutoplay());
+  close.onclick = () => dialog.close(); previous.onclick = () => move(-1); next.onclick = () => move(1); scroll.onclick = () => setScrollMode(!scrollMode);
+  thumbPrevious.onclick = () => thumbs.scrollBy({ left: -Math.max(thumbs.clientWidth * .75, 240), behavior: 'smooth' }); thumbNext.onclick = () => thumbs.scrollBy({ left: Math.max(thumbs.clientWidth * .75, 240), behavior: 'smooth' });
   fullscreen.onclick = () => frame.requestFullscreen?.();
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-  dialog.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') { index -= 1; update(); } if (event.key === 'ArrowRight') { index += 1; update(); } if (event.key === 'Escape') dialog.close(); });
-  dialog.addEventListener('close', () => dialog.remove(), { once: true }); update(); dialog.showModal();
+  dialog.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') move(-1); if (event.key === 'ArrowRight') move(1); if (event.key === 'Escape') dialog.close(); });
+  stage.addEventListener('keydown', event => { if (!scrollMode) return; if (event.key === 'PageDown' || event.key === ' ') { event.preventDefault(); stage.scrollBy({ top: stage.clientHeight * .82, behavior: 'smooth' }); } if (event.key === 'PageUp') { event.preventDefault(); stage.scrollBy({ top: -stage.clientHeight * .82, behavior: 'smooth' }); } if (event.key === 'Home') { event.preventDefault(); stage.scrollTo({ top: 0, behavior: 'smooth' }); } if (event.key === 'End') { event.preventDefault(); stage.scrollTo({ top: stage.scrollHeight, behavior: 'smooth' }); } });
+  dialog.addEventListener('close', () => { stopAutoplay(); dialog.remove(); }, { once: true }); setAutoplayState(); update(); dialog.showModal();
 };
 const renderEventGallery = async (card, page) => {
   const response = await fetch('/assets/events/manifest.json'); if (!response.ok) return;
@@ -76,7 +115,7 @@ const render = async data => {
       const link = document.createElement('a'); link.href = `/content-page.html?type=venture&id=${item.id}`; link.textContent = item.label; link.className = item.id === page.id ? 'selected' : ''; if (item.id !== page.id) link.setAttribute('aria-label', `查看${item.label}`); switcher.append(link);
     });
     card.append(switcher);
-    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '活动照片已导入官网本地相册，支持标签筛选、名称搜索、缩略图浏览、大图查看、全屏和下载。'; card.append(liveNote);
+    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '活动照片已导入官网本地相册，支持标签筛选、名称搜索、缩略图浏览、自动播放、滚动大图、全屏和下载。'; card.append(liveNote);
   }
   const image = page.image || page.cover;
   if (image) { const figure = document.createElement('figure'); figure.className = 'content-page-figure'; const node = document.createElement('img'); node.className = 'content-page-image'; node.src = image; node.alt = page.imageAlt || page.title || ''; node.loading = 'eager'; figure.append(node); card.append(figure); }
