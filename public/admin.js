@@ -248,7 +248,7 @@ function collectionFields(collection, item) {
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
   if (collection === 'newsCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'news') return [['id', '文章 ID'], ['title', '文章标题'], ['group', '资讯分组', 'select', false, { choices: [{ value: 'group', label: '集团动态' }, { value: 'industry', label: '行业洞察' }] }], ['category', '文章分类'], ['date', '发布日期', 'date'], ['source', '公众号原文链接（行业洞察可填写）', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['externalLink', '照片直播或外部页面链接', 'url'], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   return [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
 }
@@ -260,7 +260,7 @@ function collectionDefault(collection) {
   if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.png' };
   if (collection === 'newsCategories') return { id: newId('news-category'), title: '新分类', description: '', order: 0, published: false };
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
-  if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
+  if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', externalLink: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
   if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
   return { title: '新服务', subtitle: '', description: '', category: '课程服务', features: [] };
 }

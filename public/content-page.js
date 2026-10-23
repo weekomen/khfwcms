@@ -23,6 +23,15 @@ const render = data => {
   const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'venture' ? 'ZHILIN VENTURE / 智邻创投' : 'CORE BUSINESS / 集团核心业务';
   const title = document.createElement('h1'); title.textContent = page.title || page.name || '内容介绍'; card.append(eyebrow, title);
   if (page.summary || page.subtitle) { const summary = document.createElement('p'); summary.className = 'content-page-summary'; summary.textContent = page.summary || page.subtitle; card.append(summary); }
+  if (type === 'venture' && String(page.id || '').startsWith('new-year-dinner')) {
+    const switcher = document.createElement('nav'); switcher.className = 'event-switcher'; switcher.setAttribute('aria-label', '年夜饭年份');
+    [{ id: 'new-year-dinner-2026', label: '2026书院世家年夜饭' }, { id: 'new-year-dinner', label: '2025书院世家年夜饭' }].forEach(item => {
+      const link = document.createElement('a'); link.href = `/content-page.html?type=venture&id=${item.id}`; link.textContent = item.label; link.className = item.id === page.id ? 'selected' : ''; if (item.id !== page.id) link.setAttribute('aria-label', `查看${item.label}`); switcher.append(link);
+    });
+    card.append(switcher);
+    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '进入照片直播页，可浏览活动照片并使用原页面提供的筛选、搜索、下载与分享功能。'; card.append(liveNote);
+    if (page.externalLink) { const action = document.createElement('a'); action.className = 'event-action'; action.href = page.externalLink; action.target = '_blank'; action.rel = 'noopener noreferrer'; action.textContent = '打开照片直播 ↗'; card.append(action); }
+  }
   const image = page.image || page.cover;
   if (image) { const figure = document.createElement('figure'); figure.className = 'content-page-figure'; const node = document.createElement('img'); node.className = 'content-page-image'; node.src = image; node.alt = page.imageAlt || page.title || ''; node.loading = 'eager'; figure.append(node); card.append(figure); }
   const body = document.createElement('div'); body.className = 'content-page-body-copy'; body.append(...paragraphs(page.body || page.content || page.description));
