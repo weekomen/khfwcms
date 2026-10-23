@@ -723,7 +723,7 @@
     {
       "id": "business",
       "label": "集团核心业务",
-      "href": "#services",
+      "href": "#about",
       "children": [
         {
           "id": "supply-chain",
@@ -765,12 +765,12 @@
     {
       "id": "courses",
       "label": "课程资源库",
-      "href": "#course-catalog",
+      "href": "https://kehoubang.cn/profile/upload/pdf/1/index.html",
       "children": [
         {
           "id": "aesthetic",
           "label": "美育类",
-          "href": "#course-catalog",
+          "href": "https://kehoubang.cn/profile/upload/pdf/1/index.html",
           "target": "",
           "action": "course-category",
           "value": "美育类"
@@ -778,7 +778,7 @@
         {
           "id": "puzzle",
           "label": "益智类",
-          "href": "#course-catalog",
+          "href": "https://kehoubang.cn/profile/upload/pdf/1/index.html",
           "target": "",
           "action": "course-category",
           "value": "益智类"
@@ -786,7 +786,7 @@
         {
           "id": "technology",
           "label": "科技类",
-          "href": "#course-catalog",
+          "href": "https://kehoubang.cn/profile/upload/pdf/1/index.html",
           "target": "",
           "action": "course-category",
           "value": "科技类"
@@ -794,7 +794,7 @@
         {
           "id": "craft",
           "label": "手工类",
-          "href": "#course-catalog",
+          "href": "https://kehoubang.cn/profile/upload/pdf/1/index.html",
           "target": "",
           "action": "course-category",
           "value": "手工类"

@@ -1,5 +1,6 @@
 window.renderCourses = (courses, showDetail, options = {}) => {
   const root = document.getElementById('course-catalog');
+  if (!root) { window.selectCourseCategory = () => {}; return; }
   const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
   const aliases = { '劳动类': '手工类', '手工': '手工类' };
   const canonical = value => aliases[value] || value;

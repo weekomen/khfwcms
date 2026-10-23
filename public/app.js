@@ -266,7 +266,7 @@ function applyNavigationData(data) {
     const dropdown = group.querySelector('.nav-dropdown'); dropdown.replaceChildren();
     children.forEach(child => {
       const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageUrl(child);
-      if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
+      if (child.action === 'course-category') { link.href = 'https://kehoubang.cn/profile/upload/pdf/1/index.html'; link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
       if (child.action === 'contact-topic') { link.dataset.contactTopic = ({ business: '商务合作', teachers: '师资合作', careers: '人才招聘', info: '联系方式' })[child.value] || child.value || child.label; link.href = '#contact'; }
       if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') link.dataset.teamLink = 'true';
@@ -288,12 +288,7 @@ async function init() {
     document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
     $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || ''; $('#about-copy').textContent = site.about || '';
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';
-    applyNavigationData(data); renderManagedPages(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
-    asList(data.services).forEach((service, index) => {
-      const card = el('article', 'service-card'); const number = el('div', 'service-number', `0${index + 1} / SERVICE`); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][index % 4]));
-      const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${service.title || '服务'}支持内容`); asList(service.features).forEach(feature => features.append(el('li', '', feature)));
-      card.append(number, el('h3', '', service.title || ''), el('p', 'service-subtitle', service.subtitle || ''), el('p', 'service-description', service.description || ''), features); $('#service-grid').append(card);
-    });
+    applyNavigationData(data); renderManagedPages(data);
     let teamExpanded = false; const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button'; teamToggle.setAttribute('aria-controls', 'team-grid'); $('#team-grid').after(teamToggle);
     const updateTeamVisibility = () => { const cards = [...$('#team-grid').children]; const columns = Math.max(1, getComputedStyle($('#team-grid')).gridTemplateColumns.split(' ').length); cards.forEach((card, index) => { card.hidden = !teamExpanded && index >= columns; }); teamToggle.hidden = cards.length <= columns; teamToggle.textContent = teamExpanded ? '收起团队 ↑' : `展开更多团队（${Math.max(0, cards.length - columns)}） ↓`; teamToggle.setAttribute('aria-expanded', String(teamExpanded)); };
     teamToggle.onclick = () => { teamExpanded = !teamExpanded; updateTeamVisibility(); }; new ResizeObserver(updateTeamVisibility).observe($('#team-grid'));
