@@ -198,7 +198,7 @@ function field(parent, obj, key, label, type = 'text', wide = false, options = {
 function photoPicker(item, key = 'image', label = '图片') {
   const box = el('div', 'photo-picker'); const button = el('button', 'photo-button'); button.type = 'button';
   const name = item.name || item.title || '页面'; button.setAttribute('aria-label', `上传${name}${label}`);
-  const img = el('img'); img.src = item[key] || '/assets/logo.webp'; img.alt = `${name}${label}`;
+  const img = el('img'); img.src = item[key] || '/assets/logo.png'; img.alt = `${name}${label}`;
   const caption = el('span', '', item[key] ? '点击更换' + label : '点击上传' + label); button.append(img, caption);
   const input = el('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true;
   const message = el('p', 'photo-help', '支持 JPG、PNG、WebP，单张不超过 5 MB'); message.setAttribute('role', 'status');
@@ -254,13 +254,13 @@ function collectionFields(collection, item) {
 }
 function collectionDefault(collection) {
   if (collection === 'aboutPages') return { id: newId('about'), title: '新页面', summary: '', body: '', link: '', target: '', order: 0, published: false };
-  if (collection === 'businessPages') return { id: newId('business'), title: '新业务', summary: '', body: '', image: '/assets/logo.webp', longImage: '' };
-  if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.webp', longImage: '', order: 0, published: true };
+  if (collection === 'businessPages') return { id: newId('business'), title: '新业务', summary: '', body: '', image: '/assets/logo.png', longImage: '' };
+  if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.png', longImage: '', order: 0, published: true };
   if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, cover: '', longImage: '' };
-  if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.webp' };
+  if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.png' };
   if (collection === 'newsCategories') return { id: newId('news-category'), title: '新分类', description: '', order: 0, published: false };
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
-  if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.webp', longImage: '', order: 0, published: false };
+  if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
   if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
   return { title: '新服务', subtitle: '', description: '', category: '课程服务', features: [] };
 }
