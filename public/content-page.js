@@ -77,23 +77,38 @@ const openLightbox = (photos, startIndex) => {
   dialog.addEventListener('close', () => { stopAutoplay(); dialog.remove(); }, { once: true }); setAutoplayState(); update(); dialog.showModal();
 };
 const renderEventGallery = async (card, page) => {
-  const response = await fetch('/assets/events/manifest.json'); if (!response.ok) return;
-  const manifest = await response.json(); const event = manifest[page.id]; if (!event) return;
+  const note = card.querySelector('.event-note');
+  let event;
+  try {
+    const response = await fetch('/assets/events/manifest.json'); if (!response.ok) throw Error('相册清单不可用');
+    const manifest = await response.json(); event = manifest[page.id] || { photos: [] };
+  } catch {
+    if (note) note.textContent = '现场照片暂时无法加载，请稍后再试。';
+    return;
+  }
+  const photos = Array.isArray(event.photos) ? event.photos : [];
   const hero = card.querySelector('.content-page-figure .content-page-image');
   if (hero && event.cover) { hero.src = event.cover; hero.alt = event.title || page.title || ''; }
   const gallery = make('section', 'event-gallery'); gallery.setAttribute('aria-labelledby', 'event-gallery-title');
   const heading = make('div', 'event-gallery-heading'); const title = make('h2', '', '现场照片'); title.id = 'event-gallery-title';
-  const meta = make('div', 'event-gallery-meta'); [event.date, event.place, `${event.photos.length} 张照片`, `${event.views || 0} 次浏览`].filter(Boolean).forEach(value => meta.append(make('span', '', value)));
-  heading.append(make('div', 'eyebrow', 'PHOTO LIVE / 现场相册'), title, make('p', 'event-gallery-subtitle', event.subtitle || '记录每一次相聚的温度与笑容。'), meta); gallery.append(heading);
+  const meta = make('div', 'event-gallery-meta'); [event.date, event.place, `${photos.length} 张照片`, photos.length && event.views ? `${event.views} 次浏览` : ''].filter(Boolean).forEach(value => meta.append(make('span', '', value)));
+  heading.append(make('div', 'eyebrow', 'PHOTO LIVE / 现场相册'), title, make('p', 'event-gallery-subtitle', event.subtitle || (photos.length ? '记录每一次相聚的温度与笑容。' : '活动影像将在发布后更新。')), meta); gallery.append(heading);
+  if (!photos.length) {
+    if (note) note.textContent = '现场照片尚未上传，更新后会在这里展示。';
+    gallery.append(make('p', 'event-gallery-empty', '现场照片待更新'));
+    card.append(gallery);
+    return;
+  }
+  if (note) note.textContent = '活动照片已导入官网本地相册，支持标签筛选、名称搜索、缩略图浏览、自动播放、滚动大图、全屏和下载。';
   const toolbar = make('div', 'event-gallery-toolbar'); const search = make('input', 'event-gallery-search'); search.type = 'search'; search.placeholder = '搜索照片名称'; search.setAttribute('aria-label', '搜索照片名称');
   const select = make('select', 'event-gallery-filter'); select.setAttribute('aria-label', '按标签筛选'); const allTags = make('option', '', '全部标签'); allTags.value = ''; select.append(allTags); (event.tags || []).forEach(tag => select.append(Object.assign(make('option', '', tag.name), { value: tag.name })));
   const status = make('span', 'event-gallery-status'); toolbar.append(search, select, status); gallery.append(toolbar);
   const grid = make('div', 'event-gallery-grid'); const more = make('button', 'event-gallery-more', '加载更多照片'); more.type = 'button'; gallery.append(grid, more); card.append(gallery);
-  let filtered = event.photos; let shown = 0; const pageSize = 80;
+  let filtered = photos; let shown = 0; const pageSize = 80;
   const draw = reset => {
     if (reset) { shown = 0; grid.replaceChildren(); }
     const query = search.value.trim().toLowerCase(); const tag = select.value;
-    filtered = event.photos.filter(photo => (!tag || photo.tag === tag) && (!query || `${photo.filename} ${photo.tag}`.toLowerCase().includes(query)));
+    filtered = photos.filter(photo => (!tag || photo.tag === tag) && (!query || `${photo.filename} ${photo.tag}`.toLowerCase().includes(query)));
     const next = filtered.slice(shown, shown + pageSize); next.forEach(photo => { const button = make('button', 'event-photo-card'); button.type = 'button'; button.setAttribute('aria-label', `查看${photo.filename || '照片'}`); const image = make('img', 'event-photo-thumb'); image.src = photo.thumb || photo.src; image.alt = photo.filename || ''; image.loading = 'lazy'; image.decoding = 'async'; button.append(image); if (photo.tag) button.append(make('span', 'event-photo-tag', photo.tag)); button.onclick = () => openLightbox(filtered, filtered.indexOf(photo)); grid.append(button); }); shown += next.length; status.textContent = `显示 ${shown} / ${filtered.length} 张`;
     more.hidden = shown >= filtered.length; more.textContent = shown >= filtered.length ? '已显示全部照片' : `加载更多（剩余 ${filtered.length - shown}）`;
   };
@@ -106,16 +121,16 @@ const render = async data => {
   if (!page) return showError();
   document.title = `课后邦｜${page.title || page.name || '内容介绍'}`;
   const card = document.createElement('article'); card.className = 'content-page-card';
-  const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'venture' ? 'ZHILIN VENTURE / 智邻创投' : 'CORE BUSINESS / 集团核心业务';
+  const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'venture' ? 'ZHILIN / 智邻精英汇' : 'CORE BUSINESS / 集团核心业务';
   const title = document.createElement('h1'); title.textContent = page.title || page.name || '内容介绍'; card.append(eyebrow, title);
   if (page.summary || page.subtitle) { const summary = document.createElement('p'); summary.className = 'content-page-summary'; summary.textContent = page.summary || page.subtitle; card.append(summary); }
   if (type === 'venture' && String(page.id || '').startsWith('new-year-dinner')) {
     const switcher = document.createElement('nav'); switcher.className = 'event-switcher'; switcher.setAttribute('aria-label', '年夜饭年份');
-    [{ id: 'new-year-dinner-2026', label: '2026书院世家年夜饭' }, { id: 'new-year-dinner', label: '2025书院世家年夜饭' }].forEach(item => {
-      const link = document.createElement('a'); link.href = `/content-page.html?type=venture&id=${item.id}`; link.textContent = item.label; link.className = item.id === page.id ? 'selected' : ''; if (item.id !== page.id) link.setAttribute('aria-label', `查看${item.label}`); switcher.append(link);
+    asList(data.venturePages).filter(item => /^new-year-dinner(?:-\d{4})?$/.test(String(item.id || '')) && item.published !== false).sort((a, b) => (Number(String(a.id).match(/-(\d{4})$/)?.[1]) || 2025) - (Number(String(b.id).match(/-(\d{4})$/)?.[1]) || 2025)).forEach(item => {
+      const link = document.createElement('a'); link.href = `/content-page.html?type=venture&id=${encodeURIComponent(item.id)}`; link.textContent = item.title || '书院世家年夜饭'; link.className = item.id === page.id ? 'selected' : ''; if (item.id === page.id) link.setAttribute('aria-current', 'page'); else link.setAttribute('aria-label', `查看${link.textContent}`); switcher.append(link);
     });
     card.append(switcher);
-    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '活动照片已导入官网本地相册，支持标签筛选、名称搜索、缩略图浏览、自动播放、滚动大图、全屏和下载。'; card.append(liveNote);
+    const liveNote = document.createElement('p'); liveNote.className = 'event-note'; liveNote.textContent = '正在加载现场照片…'; card.append(liveNote);
   }
   const image = page.image || page.cover;
   if (image) { const figure = document.createElement('figure'); figure.className = 'content-page-figure'; const node = document.createElement('img'); node.className = 'content-page-image'; node.src = image; node.alt = page.imageAlt || page.title || ''; node.loading = 'eager'; figure.append(node); card.append(figure); }

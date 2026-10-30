@@ -14,7 +14,9 @@ const uploadNames = new Set();
 for (const [collection, fields] of imageCollections) for (const item of content[collection] || []) for (const field of fields) {
   if (typeof item[field] !== 'string') continue;
   const name = path.basename(item[field]);
-  if (/^upload-[a-f0-9]{32}\.(png|jpg|webp)$/.test(name)) uploadNames.add(name);
+  if (!/^upload-[a-f0-9]{32}\.(png|jpg|webp)$/.test(name)) continue;
+  if (collection === 'team') uploadNames.add(name);
+  else item[field] = '';
 }
 for (const name of uploadNames) {
   await copyFile(path.join(dataDir, 'uploads', name), path.join(root, 'backups/uploads', name));

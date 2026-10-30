@@ -2,7 +2,7 @@
   "new-year-dinner-2026": {
     "id": "new-year-dinner-2026",
     "orderId": "202601231723235078",
-    "title": "2026书院世家年夜饭",
+    "title": "2026年书院世家别墅区年夜饭",
     "subtitle": "邻睦风亦暖 家和人宜康 迎新2026书院世家别墅业主团圆年夜饭",
     "date": "2026年1月24日",
     "place": "武汉 · 盛宴·青菱湖酒楼",
@@ -4565,7 +4565,7 @@
   "new-year-dinner": {
     "id": "new-year-dinner",
     "orderId": "202501041904226753",
-    "title": "2025书院世家年夜饭",
+    "title": "2025年书院世家别墅区年夜饭",
     "subtitle": "迎新2025书院世家别墅业主团圆年夜饭",
     "date": "",
     "place": "",
@@ -9995,5 +9995,16 @@
         "createdAt": "1736439485553"
       }
     ]
+  },
+  "new-year-dinner-2027": {
+    "id": "new-year-dinner-2027",
+    "title": "2027年书院世家别墅区年夜饭",
+    "subtitle": "现场照片将在活动后更新。",
+    "date": "2027年",
+    "place": "",
+    "views": 0,
+    "cover": "",
+    "tags": [],
+    "photos": []
   }
 }

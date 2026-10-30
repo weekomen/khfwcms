@@ -5,8 +5,8 @@ const root = path.resolve(import.meta.dirname, '..');
 const outputRoot = path.join(root, 'public/assets/events');
 const pageSize = 100;
 const events = [
-  { id: 'new-year-dinner-2026', orderId: '202601231723235078', title: '2026书院世家年夜饭' },
-  { id: 'new-year-dinner', orderId: '202501041904226753', title: '2025书院世家年夜饭' }
+  { id: 'new-year-dinner-2026', orderId: '202601231723235078', title: '2026年书院世家别墅区年夜饭' },
+  { id: 'new-year-dinner', orderId: '202501041904226753', title: '2025年书院世家别墅区年夜饭' }
 ];
 
 const json = async (url, options) => {
@@ -20,7 +20,9 @@ const photoUrl = photo => `${photo.img.primary}${photo.img.path}${photo.img.s108
 const safeName = (value, fallback) => String(value || fallback).replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || fallback;
 
 await mkdir(outputRoot, { recursive: true });
-const manifest = {};
+let manifest = {};
+try { manifest = JSON.parse(await readFile(path.join(outputRoot, 'manifest.json'), 'utf8')); }
+catch (error) { if (error.code !== 'ENOENT') throw error; }
 for (const event of events) {
   const detail = await json(`${api}/applet/v2/order/detail`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form(event.orderId) });
   const tagsResponse = await json(`${api}/applet/v2/order/get-tag-list`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: form(event.orderId) });
@@ -61,5 +63,16 @@ for (const event of events) {
     photos: localPhotos
   };
 }
+manifest['new-year-dinner-2027'] ||= {
+  id: 'new-year-dinner-2027',
+  title: '2027年书院世家别墅区年夜饭',
+  subtitle: '现场照片将在活动后更新。',
+  date: '2027年',
+  place: '',
+  views: 0,
+  cover: '',
+  tags: [],
+  photos: []
+};
 await writeFile(path.join(outputRoot, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log(`Wrote ${Object.values(manifest).reduce((sum, event) => sum + event.photos.length, 0)} local event photos.`);

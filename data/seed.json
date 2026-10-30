@@ -826,31 +826,40 @@
     },
     {
       "id": "venture",
-      "label": "智邻创投",
+      "label": "智邻精英汇",
       "href": "/content-page.html?type=venture&id=intro",
       "children": [
         {
           "id": "venture-intro",
-          "label": "简介",
+          "label": "智邻创投",
           "href": "/content-page.html?type=venture&id=intro",
-          "target": "",
-          "action": "venture"
+          "target": "blank",
+          "action": "venture",
+          "value": "intro"
+        },
+        {
+          "id": "new-year-dinner",
+          "label": "2025年书院世家别墅区年夜饭",
+          "href": "/content-page.html?type=venture&id=new-year-dinner",
+          "target": "blank",
+          "action": "venture",
+          "value": "new-year-dinner"
         },
         {
           "id": "new-year-dinner-2026",
-          "label": "2026书院世家年夜饭",
+          "label": "2026年书院世家别墅区年夜饭",
           "href": "/content-page.html?type=venture&id=new-year-dinner-2026",
           "target": "blank",
           "action": "venture",
           "value": "new-year-dinner-2026"
         },
         {
-          "id": "new-year-dinner",
-          "label": "2025书院世家年夜饭",
-          "href": "/content-page.html?type=venture&id=new-year-dinner",
+          "id": "new-year-dinner-2027",
+          "label": "2027年书院世家别墅区年夜饭",
+          "href": "/content-page.html?type=venture&id=new-year-dinner-2027",
           "target": "blank",
           "action": "venture",
-          "value": "new-year-dinner"
+          "value": "new-year-dinner-2027"
         }
       ]
     },
@@ -1013,7 +1022,7 @@
   "venturePages": [
     {
       "id": "intro",
-      "title": "智邻创投简介",
+      "title": "智邻创投",
       "summary": "关注教育、科技与社区创新项目，连接伙伴与长期价值。",
       "body": "智邻创投以教育服务和科技创新为关注方向，支持有真实需求、有长期价值的项目，让更多好想法在社区和校园落地。",
       "image": "/assets/logo.png",
@@ -1021,7 +1030,7 @@
     },
     {
       "id": "new-year-dinner",
-      "title": "2025书院世家年夜饭",
+      "title": "2025年书院世家别墅区年夜饭",
       "summary": "在书院世家相聚，分享一桌年味，也分享人与人的温度。",
       "body": "2025书院世家年夜饭是一场面向伙伴、家庭与社区的年度相聚活动。官网已收录活动现场照片，可按标签筛选、搜索照片名称，并打开大图回看团聚、交流与成长留下的每一个瞬间。",
       "image": "/assets/hero.webp",
@@ -1029,10 +1038,20 @@
     },
     {
       "id": "new-year-dinner-2026",
-      "title": "2026书院世家年夜饭",
+      "title": "2026年书院世家别墅区年夜饭",
       "summary": "记录新一年的相聚、祝福与美好瞬间。",
       "body": "2026书院世家年夜饭连接伙伴、家庭与社区，在年味与欢笑中开启新一年的同行。官网已收录活动现场照片，支持名称搜索、缩略图浏览、大图查看、全屏和下载。",
       "image": "/assets/hero.webp",
+      "longImage": "",
+      "order": 0,
+      "published": true
+    },
+    {
+      "id": "new-year-dinner-2027",
+      "title": "2027年书院世家别墅区年夜饭",
+      "summary": "新一年的相聚正在筹备，敬请期待。",
+      "body": "2027年书院世家别墅区年夜饭的现场照片将在活动后更新。",
+      "image": "",
       "longImage": "",
       "order": 0,
       "published": true
