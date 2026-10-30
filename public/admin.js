@@ -114,7 +114,8 @@ const NAVIGATION_DEFAULTS = [
     { id: 'group-news', label: '集团动态', href: '#news', action: 'news-group', value: 'group' },
     { id: 'industry-news', label: '行业洞察', href: '#news', action: 'news-group', value: 'industry' }
   ] },
-  { id: 'venture', label: '智邻精英汇', href: '/content-page.html?type=venture&id=intro', action: 'venture', children: [
+  { id: 'venture', label: '智邻精英汇', href: '/content-page.html?type=venture&id=zhilin-hub', action: 'venture', children: [
+    { id: 'zhilin-hub', label: '智邻精英汇', href: '/content-page.html?type=venture&id=zhilin-hub', target: 'blank', action: 'venture', value: 'zhilin-hub' },
     { id: 'venture-intro', label: '智邻创投', href: '/content-page.html?type=venture&id=intro', action: 'venture', value: 'intro' },
     { id: 'new-year-dinner', label: '2025年书院世家别墅区年夜饭', href: '/content-page.html?type=venture&id=new-year-dinner', action: 'venture', value: 'new-year-dinner' },
     { id: 'new-year-dinner-2026', label: '2026年书院世家别墅区年夜饭', href: '/content-page.html?type=venture&id=new-year-dinner-2026', action: 'venture', value: 'new-year-dinner-2026' },
@@ -274,7 +275,7 @@ function renderCollection(target, collection) {
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
     newsCategories: '维护新闻资讯的“集团动态”和“行业洞察”分类。',
     news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
-    venturePages: '编辑智邻精英汇下的智邻创投和历年书院世家别墅区年夜饭页面。',
+    venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',
     contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。',
     services: '兼容旧版本的产品与服务字段；新官网请优先编辑“集团核心业务”。'
   };

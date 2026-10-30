@@ -820,8 +820,16 @@
     {
       "id": "venture",
       "label": "智邻精英汇",
-      "href": "/content-page.html?type=venture&id=intro",
+      "href": "/content-page.html?type=venture&id=zhilin-hub",
       "children": [
+        {
+          "id": "zhilin-hub",
+          "label": "智邻精英汇",
+          "href": "/content-page.html?type=venture&id=zhilin-hub",
+          "target": "blank",
+          "action": "venture",
+          "value": "zhilin-hub"
+        },
         {
           "id": "venture-intro",
           "label": "智邻创投",
@@ -1045,6 +1053,16 @@
     }
   ],
   "venturePages": [
+    {
+      "id": "zhilin-hub",
+      "title": "智邻精英汇",
+      "summary": "了解智邻创投与历年书院世家别墅区年夜饭。",
+      "body": "智邻精英汇汇集智邻创投与书院世家别墅区年夜饭等内容，记录项目交流与社区相聚。",
+      "image": "",
+      "longImage": "",
+      "order": 0,
+      "published": true
+    },
     {
       "id": "intro",
       "title": "智邻创投",
