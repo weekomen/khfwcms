@@ -178,13 +178,17 @@ function renderManagedPages(data) {
 function normalizeNewsCategory(value) {
   return ({ '公司动态': '集团动态', '企业动态': '集团动态', '行业资讯': '行业洞察', '政策解读': '行业洞察' })[value] || value;
 }
+const FIXED_NEWS_MENU = [
+  { id: 'group-news', label: '集团动态', href: '#news', action: 'news-group', value: 'group' },
+  { id: 'industry-news', label: '行业洞察', href: '#news', action: 'news-group', value: 'industry' }
+];
+const newsCategoryOf = item => item.group === 'industry' ? '行业洞察' : item.group === 'group' ? '集团动态' : normalizeNewsCategory(item.category) === '行业洞察' ? '行业洞察' : '集团动态';
 let renderNewsList = () => {};
 window.selectNewsCategory = category => renderNewsList(normalizeNewsCategory(category));
 
 function renderNews(data) {
   const list = $('#news-list'); const filter = $('#news-filters');
-  const categories = asList(data.newsCategories).map(item => typeof item === 'string' ? item : item.label || item.name || item.title).filter(Boolean);
-  const available = [...new Set([...categories.map(normalizeNewsCategory), '集团动态', '行业洞察'])];
+  const available = FIXED_NEWS_MENU.map(item => item.label);
   let selected = '';
   const drawFilters = () => {
     filter.replaceChildren();
@@ -192,11 +196,11 @@ function renderNews(data) {
   };
   renderNewsList = category => {
     selected = normalizeNewsCategory(category || ''); drawFilters(); list.replaceChildren();
-    const news = asList(data.news).filter(item => !selected || normalizeNewsCategory(item.category) === selected).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const news = asList(data.news).filter(item => !selected || newsCategoryOf(item) === selected).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
     if (!news.length) { const empty = el('div', 'news-empty'); empty.append(el('span', '', '↗'), el('div', '', '暂无该分类资讯，新的故事正在发生。')); list.append(empty); return; }
     news.forEach(item => {
       let source; try { const url = new URL(item.source || item.url); if (url.protocol === 'https:') source = url.href; } catch { }
-      const industry = item.group === 'industry' || normalizeNewsCategory(item.category) === '行业洞察';
+      const industry = newsCategoryOf(item) === '行业洞察';
       const href = source && industry ? source : `/article.html?id=${encodeURIComponent(item.id)}`;
       const row = el('a', 'news-row'); row.href = href; row.target = '_blank'; row.rel = 'noopener noreferrer'; row.setAttribute('aria-label', `${item.title}（在新标签页打开）`);
       const copy = el('div');
@@ -258,7 +262,7 @@ function applyNavigationData(data) {
     const label = item.label || item.title; if (label) group.querySelector('.nav-parent').firstChild.textContent = label + ' ';
     // 联系我们只保留联系方式入口；旧内容文件中可能仍有历史合作/招聘子项，
     // 前台统一过滤掉，避免升级已有站点时把旧按钮重新显示出来。
-    const children = asList(item.children || item.items || item.submenu).filter(child => {
+    const children = (key === 'news' ? FIXED_NEWS_MENU : asList(item.children || item.items || item.submenu)).filter(child => {
       if (key !== 'contact') return true;
       const value = String(child.value || child.id || child.label || child.title || '').trim().toLowerCase();
       return value === 'info' || value === 'contact-info' || value === '联系方式';

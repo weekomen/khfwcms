@@ -1015,14 +1015,14 @@
     {
       "id": "group",
       "title": "集团动态",
-      "description": "公司活动、嘉年华与课程落地新闻。",
+      "description": "公司活动、嘉年华新闻",
       "order": 1,
       "published": true
     },
     {
       "id": "industry",
       "title": "行业洞察",
-      "description": "课后服务、AI 素质教育与行业政策解读。",
+      "description": "课后服务、AI 素质教育政策解读",
       "order": 2,
       "published": true
     }

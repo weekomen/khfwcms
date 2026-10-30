@@ -125,7 +125,7 @@ const NAVIGATION_DEFAULTS = [
     { id: 'contact-info', label: '联系方式', href: '#contact', action: 'contact-topic', value: 'info' }
   ] }
 ];
-const ARRAY_TABS = ['aboutPages', 'businessPages', 'courseCategories', 'courses', 'team', 'newsCategories', 'news', 'venturePages', 'contactTopics', 'services'];
+const ARRAY_TABS = ['aboutPages', 'businessPages', 'courseCategories', 'courses', 'team', 'news', 'venturePages', 'contactTopics', 'services'];
 const NAV_TAB_ROOTS = {
   aboutPages: 'about',
   businessPages: 'business',
@@ -154,6 +154,9 @@ function findNavigationRoot(rootKey) {
   // as a fallback after the explicit ID/key/label match.
   return match || navigation[NAV_ROOT_INDEX[rootKey]];
 }
+function findFixedNewsRoot() {
+  return (data?.navigation || []).find(item => [item.id, item.label].some(value => NAV_ROOT_ALIASES.news.has(String(value || '').trim().toLowerCase())));
+}
 function syncAdminTabLabels() {
   if (!data || !Array.isArray(data.navigation)) return;
   document.querySelectorAll('[data-tab]').forEach(button => {
@@ -172,10 +175,12 @@ function ensureDataShape() {
   data.aboutPages.forEach(item => { item.id ||= newId('about'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.link ??= ''; item.target ??= ''; item.order ??= 0; item.published ??= true; });
   data.businessPages.forEach(item => { item.id ||= newId('business'); item.title ??= '新业务'; item.summary ??= ''; item.body ??= ''; });
   data.courseCategories.forEach(item => { item.id ||= newId('course-category'); item.title ??= '新分类'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
-  data.newsCategories.forEach(item => { item.id ||= newId('news-category'); item.title ??= '新分类'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
+  data.newsCategories = structuredClone(FIXED_NEWS_CATEGORIES);
+  const newsRoot = findFixedNewsRoot();
+  if (newsRoot) newsRoot.children = structuredClone(NAVIGATION_DEFAULTS.find(item => item.id === 'news').children);
   data.venturePages.forEach(item => { item.id ||= newId('venture'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.order ??= 0; item.published ??= true; });
   data.contactTopics.forEach(item => { item.id ||= newId('contact'); item.title ??= '新联系栏目'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
-  data.news.forEach(item => { item.id ||= newId('news'); item.group ??= item.category === '行业洞察' ? 'industry' : 'group'; item.image ??= ''; item.longImage ??= ''; });
+  data.news.forEach(item => { item.id ||= newId('news'); item.group = item.group === 'industry' || (!item.group && ['行业洞察', '行业资讯', '政策解读'].includes(item.category)) ? 'industry' : 'group'; item.category = item.group === 'industry' ? '行业洞察' : '集团动态'; if (item.group !== 'industry') item.source = ''; item.image ??= ''; item.longImage ??= ''; });
   data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
 }
 function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
@@ -224,14 +229,26 @@ function photoPicker(item, key = 'image', label = '图片') {
 }
 const targetChoices = [{ value: '', label: '本窗口打开' }, { value: 'blank', label: '新窗口打开' }];
 const actionChoices = [{ value: '', label: '普通链接' }, { value: 'business', label: '集团核心业务' }, { value: 'course-category', label: '课程分类' }, { value: 'news-group', label: '新闻分组' }, { value: 'venture', label: '智邻创投' }, { value: 'contact-topic', label: '联系栏目' }];
+const FIXED_NEWS_CATEGORIES = [
+  { id: 'group', title: '集团动态', description: '公司活动、嘉年华新闻', order: 1, published: true },
+  { id: 'industry', title: '行业洞察', description: '课后服务、AI 素质教育政策解读', order: 2, published: true }
+];
 function renderNavigation(target) {
   target.append(el('p', 'admin-note', '维护官网的七个一级菜单及下拉二级菜单。数组顺序就是官网显示顺序；链接、打开方式和动作均可编辑。'));
   data.navigation.forEach((item, index) => {
+    const fixedNews = item === findFixedNewsRoot();
     const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const remove = el('button', 'remove', '删除');
     remove.onclick = () => { if (confirm(`确定删除“${item.label || '新菜单'}”？保存后生效。`)) { data.navigation.splice(index, 1); changed(); render(); } };
-    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${item.label || '新菜单'}`), remove); card.append(heading);
+    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${item.label || '新菜单'}`)); if (!fixedNews) heading.append(remove); card.append(heading);
     const grid = el('div', 'form-grid'); field(grid, item, 'id', '菜单 ID'); field(grid, item, 'label', '菜单名称'); field(grid, item, 'href', '链接地址'); field(grid, item, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(grid, item, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(grid, item, 'value', '动作参数'); card.append(grid);
     const childHead = el('div', 'nested-heading'); childHead.append(el('h3', '', '二级菜单')); card.append(childHead);
+    if (fixedNews) {
+      card.append(el('p', 'admin-note', '新闻资讯下固定保留以下两个二级菜单，文章可在“新闻资讯”中选择分组。'));
+      FIXED_NEWS_CATEGORIES.forEach(category => {
+        const childCard = el('div', 'nested-card'); childCard.append(el('strong', '', category.title), el('p', '', category.description)); card.append(childCard);
+      });
+      target.append(card); return;
+    }
     item.children.forEach((child, childIndex) => {
       const childCard = el('div', 'nested-card'); const childGrid = el('div', 'form-grid'); const childRemove = el('button', 'remove', '删除此项');
       childRemove.type = 'button'; childRemove.onclick = () => { item.children.splice(childIndex, 1); changed(); render(); };
@@ -248,8 +265,7 @@ function collectionFields(collection, item) {
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
-  if (collection === 'newsCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'news') return [['id', '文章 ID'], ['title', '文章标题'], ['group', '资讯分组', 'select', false, { choices: [{ value: 'group', label: '集团动态' }, { value: 'industry', label: '行业洞察' }] }], ['category', '文章分类'], ['date', '发布日期', 'date'], ['source', '公众号原文链接（行业洞察可填写）', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'news') return [['id', '文章 ID'], ['title', '文章标题'], ['group', '资讯分组', 'select', false, { choices: FIXED_NEWS_CATEGORIES.map(({ id, title }) => ({ value: id, label: title })), onChange: value => { item.category = value === 'industry' ? '行业洞察' : '集团动态'; if (value !== 'industry') item.source = ''; render(); } }], ['date', '发布日期', 'date'], ...(item.group === 'industry' ? [['source', '公众号原文链接', 'url']] : []), ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   return [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
@@ -260,7 +276,6 @@ function collectionDefault(collection) {
   if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.png', longImage: '', order: 0, published: true };
   if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, cover: '', longImage: '' };
   if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.png' };
-  if (collection === 'newsCategories') return { id: newId('news-category'), title: '新分类', description: '', order: 0, published: false };
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
   if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
   if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
@@ -273,7 +288,6 @@ function renderCollection(target, collection) {
     courseCategories: '维护课程资源库的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
     courses: '维护课程卡片、独立封面、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
-    newsCategories: '维护新闻资讯的“集团动态”和“行业洞察”分类。',
     news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
     venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',
     contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。',
@@ -288,13 +302,18 @@ function renderCollection(target, collection) {
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
   });
-  const labels = { aboutPages: '页面', businessPages: '业务', courseCategories: '课程分类', courses: '课程', team: '成员', newsCategories: '新闻分类', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
+  const labels = { aboutPages: '页面', businessPages: '业务', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
   const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
 }
 function renderNewsWorkspace(target) {
   const categories = el('section', 'admin-subsection');
   categories.append(el('h2', '', '新闻分类'));
-  renderCollection(categories, 'newsCategories');
+  categories.append(el('p', 'admin-note', '固定两个分类，新增文章时直接选择所属分组。'));
+  FIXED_NEWS_CATEGORIES.forEach(category => {
+    const card = el('article', 'edit-card fixed-news-category');
+    card.append(el('h3', '', category.title), el('p', '', category.description));
+    categories.append(card);
+  });
   const articles = el('section', 'admin-subsection');
   articles.append(el('h2', '', '新闻文章'));
   renderCollection(articles, 'news');
