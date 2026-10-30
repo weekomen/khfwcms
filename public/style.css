@@ -384,90 +384,6 @@ h2 em {
     line-height: 1.9
 }
 
-.service-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px
-}
-
-.service-card {
-    border: 1px solid #e5ebf2;
-    background: #fff;
-    padding: 20px;
-    transition: transform .2s, border .2s;
-    display: flex;
-    flex-direction: column
-}
-
-.service-card:hover {
-    transform: translateY(-5px);
-    border-color: #9cb9ee
-}
-
-.service-number {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: #94a7c1;
-    font-size: 11px;
-    letter-spacing: 1px
-}
-
-.service-symbol {
-    font-size: 24px;
-    color: var(--blue);
-    font-weight: 300;
-    line-height: 1.2
-}
-
-.service-card h3 {
-    font-size: 20px;
-    font-weight: 550;
-    line-height: 1.5;
-    margin: 12px 0 5px
-}
-
-.service-card p {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.8;
-    margin: 0 0 12px
-}
-
-.service-card .service-subtitle {
-    color: var(--blue);
-    font-size: 12px;
-    margin-bottom: 10px
-}
-
-.service-features {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 10px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 12px;
-    line-height: 1.65
-}
-
-.service-features li {
-    position: relative;
-    padding-left: 11px;
-    overflow-wrap: anywhere
-}
-
-.service-features li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: .65em;
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--blue)
-}
-
 .filters {
     display: flex;
     gap: 25px;
@@ -771,10 +687,6 @@ body.modal-open {
         padding: 0 28px
     }
 
-    .service-grid {
-        grid-template-columns: repeat(2, 1fr)
-    }
-
     .team-grid {
         gap: 18px
     }
@@ -964,41 +876,6 @@ body.modal-open {
         margin-top: 12px
     }
 
-    .service-grid {
-        gap: 10px
-    }
-
-    .service-card {
-        padding: 12px
-    }
-
-    .service-card h3 {
-        font-size: 17px;
-        margin: 8px 0 4px
-    }
-
-    .service-card p {
-        font-size: 12px;
-        line-height: 1.7;
-        margin: 0 0 10px
-    }
-
-    .service-card .service-subtitle {
-        font-size: 11px;
-        margin-bottom: 8px
-    }
-
-    .service-features {
-        grid-template-columns: 1fr;
-        gap: 4px;
-        font-size: 11px;
-        margin-bottom: 0
-    }
-
-    .service-symbol {
-        font-size: 23px
-    }
-
     .team-grid {
         grid-template-columns: 1fr 1fr;
         gap: 25px 16px
@@ -1081,14 +958,6 @@ body.modal-open {
 @media(max-width:380px) {
     .portrait {
         height: 200px
-    }
-
-    .service-grid {
-        grid-template-columns: 1fr
-    }
-
-    .service-features {
-        grid-template-columns: repeat(2, minmax(0, 1fr))
     }
 
     .filters {

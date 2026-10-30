@@ -108,72 +108,10 @@ platforms.forEach(platform => {
 
 const asList = value => Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 const safeSlug = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-').replace(/^-+|-+$/g, '') || 'page';
-const pageText = page => page.body ?? page.content ?? page.description ?? page.summary ?? '';
-const pageImage = page => page.image ?? page.longImage ?? page.cover ?? '';
-const makeParagraphs = text => String(text || '').split(/\n\s*\n|\n/).map(value => value.trim()).filter(Boolean).map(value => el('p', '', value));
-
-const defaultPages = [
-  { group: 'businessPages', slug: 'business-supply', title: '课后邦供应链', summary: '连接优质课程、师资与服务资源，为学校和合作伙伴提供稳定的课程供应与交付支持。', body: '从资源筛选、课程研发到交付保障，课后邦供应链持续完善服务标准，让每一门好课程都能稳定抵达真实课堂。', bullets: ['课程资源整合与评估', '师资与交付标准建设', '区域项目协同支持'] },
-  { group: 'businessPages', slug: 'business-online', title: '线上素质教育', summary: '以线上内容和数字化工具，延伸课后学习场景。', body: '围绕孩子的兴趣成长与家庭陪伴，提供可持续的线上课程、内容运营和学习支持，帮助优质教育资源跨越地域抵达更多家庭。', bullets: ['线上课程内容', '学习陪伴服务', '数字化运营支持'] },
-  { group: 'businessPages', slug: 'business-street', title: '教育一条街', summary: '汇聚多元教育服务，打造开放共享的成长空间。', body: '教育一条街连接学校、家庭、机构和社区，把课程体验、文化活动与成长服务放在更贴近生活的场景中。', bullets: ['课程体验与展示', '社区教育活动', '多方资源共建'] },
-  { group: 'businessPages', slug: 'business-youth', title: '青少年成长中心', summary: '关注每个年龄阶段的成长需要，提供综合实践与发展支持。', body: '以青少年成长为核心，融合素质课程、实践活动和成长指导，帮助孩子发现兴趣、建立自信、拓展视野。', bullets: ['兴趣发展课程', '实践与研学活动', '成长陪伴与指导'] },
-  { group: 'businessPages', slug: 'business-ai', title: '人工智能科技馆', summary: '让孩子在真实体验中认识科技、理解人工智能。', body: '以人工智能、机器人和科学实践为主题，打造可参与、可探索、可分享的科技教育空间，培养面向未来的创造力。', bullets: ['AI 科普体验', '机器人与编程实践', '科技主题活动'] },
-  { group: 'venturePages', slug: 'invest-intro', title: '智邻创投简介', summary: '发现教育与成长领域的长期价值，连接更多创新伙伴。', body: '智邻创投关注教育、科技与社区成长的交叉机会，以长期主义支持有创造力的团队与项目。', bullets: ['教育创新项目', '科技与内容融合', '伙伴共创与成长'] },
-  { group: 'venturePages', slug: 'invest-meal', title: '书院世家年夜饭', summary: '一场连接社区、文化与亲情的年度相聚。', body: '书院世家年夜饭以团聚为起点，将地方文化、社区交流和家庭记忆融入年度活动，让每一次相聚都留下温暖的故事。', bullets: ['社区文化交流', '家庭团聚活动', '城市美好生活'] }
-];
 const pageAliases = {
   '课后邦供应链': 'business-supply', '线上素质教育': 'business-online', '教育一条街': 'business-street',
   '青少年成长中心': 'business-youth', '人工智能科技馆': 'business-ai', '简介': 'invest-intro', '智邻创投简介': 'invest-intro', '书院世家年夜饭': 'invest-meal'
 };
-
-function renderManagedPages(data) {
-  const root = $('#managed-pages-list');
-  const custom = [
-    ...asList(data.businessPages).map(page => ({ ...page, _pageGroup: 'businessPages' })),
-    ...asList(data.venturePages).map(page => ({ ...page, _pageGroup: 'venturePages' })),
-    ...asList(data.aboutPages).map(page => ({ ...page, _pageGroup: 'aboutPages' }))
-  ];
-  const businessSlugs = { 'supply-chain': 'business-supply', 'online-education': 'business-online', 'education-street': 'business-street', 'youth-center': 'business-youth', 'ai-museum': 'business-ai' };
-  const ventureSlugs = { intro: 'invest-intro', 'new-year-dinner': 'invest-meal' };
-  const pageSlug = page => {
-    const raw = page.slug || page.key || page.id || pageAliases[page.title || page.name];
-    if (page._pageGroup === 'businessPages') return businessSlugs[raw] || (String(raw).startsWith('business-') ? raw : `business-${safeSlug(raw)}`);
-    if (page._pageGroup === 'venturePages') return ventureSlugs[raw] || (String(raw).startsWith('invest-') ? raw : `invest-${safeSlug(raw)}`);
-    return safeSlug(raw);
-  };
-  const bySlug = new Map();
-  custom.forEach(page => { const slug = pageSlug(page); if (slug) bySlug.set(slug, { ...page, slug }); });
-  const pages = defaultPages.map(page => ({ ...page, ...(bySlug.get(page.slug) || {}) }));
-  custom.forEach(page => {
-    const slug = pageSlug(page);
-    if (slug && !pages.some(item => item.slug === slug)) pages.push({ ...page, slug, title: page.title || page.name || '未命名页面' });
-  });
-  root.replaceChildren();
-  pages.forEach(page => {
-    const article = el('article', 'managed-page'); article.id = `page-${safeSlug(page.slug)}`;
-    const body = el('div', 'managed-page-copy');
-    body.append(el('div', 'eyebrow', page.eyebrow || 'KEHOU BANG / 内容页面'), el('h3', '', page.title || page.name || '未命名页面'));
-    if (page.summary || page.subtitle) body.append(el('p', 'managed-page-summary', page.summary || page.subtitle));
-    makeParagraphs(pageText(page)).forEach(paragraph => body.append(paragraph));
-    asList(page.sections).forEach(section => {
-      if (section.heading || section.title) body.append(el('h4', '', section.heading || section.title));
-      makeParagraphs(section.body ?? section.content ?? section.text).forEach(paragraph => body.append(paragraph));
-    });
-    const bullets = asList(page.bullets || page.features || page.items);
-    if (bullets.length) { const list = el('ul', 'managed-page-list'); bullets.forEach(item => list.append(el('li', '', typeof item === 'string' ? item : item.title || item.name || item.text || ''))); body.append(list); }
-    const image = pageImage(page);
-    if (image) { const figure = el('figure', 'managed-page-visual'); const img = el('img'); img.src = image; img.alt = page.imageAlt || page.title || ''; img.loading = 'lazy'; figure.append(img); article.append(figure); }
-    article.append(body); root.append(article);
-  });
-  $('#managed-pages').hidden = pages.length === 0;
-  // A managed page can be opened in a new tab with a hash.  Its article is
-  // created asynchronously after /api/content returns, so perform the hash
-  // scroll again once the DOM exists.
-  const hash = decodeURIComponent(location.hash.replace(/^#/, ''));
-  if (hash && hash.startsWith('page-')) {
-    requestAnimationFrame(() => document.getElementById(hash)?.scrollIntoView({ behavior: 'auto', block: 'start' }));
-  }
-}
 
 function normalizeNewsCategory(value) {
   return ({ '公司动态': '集团动态', '企业动态': '集团动态', '行业资讯': '行业洞察', '政策解读': '行业洞察' })[value] || value;
@@ -292,12 +230,7 @@ async function init() {
     document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
     $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || '';
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';
-    applyNavigationData(data); renderManagedPages(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
-    asList(data.services).forEach((service, index) => {
-      const card = el('article', 'service-card'); const number = el('div', 'service-number', `0${index + 1} / SERVICE`); number.append(el('span', 'service-symbol', ['▦', '◎', '⌘', '↗'][index % 4]));
-      const features = el('ul', 'service-features'); features.setAttribute('aria-label', `${service.title || '服务'}支持内容`); asList(service.features).forEach(feature => features.append(el('li', '', feature)));
-      card.append(number, el('h3', '', service.title || ''), el('p', 'service-subtitle', service.subtitle || ''), el('p', 'service-description', service.description || ''), features); $('#service-grid').append(card);
-    });
+    applyNavigationData(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
     let teamExpanded = false; const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button'; teamToggle.setAttribute('aria-controls', 'team-grid'); $('#team-grid').after(teamToggle);
     const updateTeamVisibility = () => { const cards = [...$('#team-grid').children]; const columns = Math.max(1, getComputedStyle($('#team-grid')).gridTemplateColumns.split(' ').length); cards.forEach((card, index) => { card.hidden = !teamExpanded && index >= columns; }); teamToggle.hidden = cards.length <= columns; teamToggle.textContent = teamExpanded ? '收起团队 ↑' : `展开更多团队（${Math.max(0, cards.length - columns)}） ↓`; teamToggle.setAttribute('aria-expanded', String(teamExpanded)); };
     teamToggle.onclick = () => { teamExpanded = !teamExpanded; updateTeamVisibility(); }; new ResizeObserver(updateTeamVisibility).observe($('#team-grid'));
