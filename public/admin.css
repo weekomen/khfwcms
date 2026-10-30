@@ -139,6 +139,9 @@ textarea {
     margin-bottom: 20px
 }
 
+.admin-subsection { margin-bottom: 40px }
+.admin-subsection > h2 { margin: 0 0 14px; font-size: 20px }
+
 .compat-tab {
     margin-left: auto !important;
     color: var(--muted) !important;

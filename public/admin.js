@@ -127,7 +127,6 @@ const NAV_TAB_ROOTS = {
   aboutPages: 'about',
   businessPages: 'business',
   courseCategories: 'courses',
-  newsCategories: 'news',
   venturePages: 'venture',
   contactTopics: 'contact'
 };
@@ -289,6 +288,15 @@ function renderCollection(target, collection) {
   const labels = { aboutPages: '页面', businessPages: '业务', courseCategories: '课程分类', courses: '课程', team: '成员', newsCategories: '新闻分类', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
   const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
 }
+function renderNewsWorkspace(target) {
+  const categories = el('section', 'admin-subsection');
+  categories.append(el('h2', '', '新闻分类'));
+  renderCollection(categories, 'newsCategories');
+  const articles = el('section', 'admin-subsection');
+  articles.append(el('h2', '', '新闻文章'));
+  renderCollection(articles, 'news');
+  target.append(categories, articles);
+}
 function render() {
   ensureDataShape();
   syncAdminTabLabels();
@@ -300,6 +308,7 @@ function render() {
     [['name', '品牌名称'], ['tagline', '品牌说明'], ['headline', '首页标题（换行显示）', 'textarea'], ['intro', '首页简介', 'textarea'], ['about', '公司介绍', 'textarea', true], ['phone', '合作电话'], ['email', '合作邮箱', 'email'], ['address', '公司地址'], ['filing', '备案信息']].forEach(([k, l, t, w]) => field(grid, data.site, k, l, t, w)); card.append(grid); target.append(card); return;
   }
   if (tab === 'navigation') return renderNavigation(target);
+  if (tab === 'news') return renderNewsWorkspace(target);
   if (ARRAY_TABS.includes(tab)) return renderCollection(target, tab);
 }
 $('#save').onclick = async () => {
