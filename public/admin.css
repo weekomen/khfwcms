@@ -139,12 +139,6 @@ textarea {
     margin-bottom: 20px
 }
 
-.admin-subsection { margin-bottom: 40px }
-.admin-subsection > h2 { margin: 0 0 14px; font-size: 20px }
-.fixed-news-category { padding: 18px 22px; margin-bottom: 10px }
-.fixed-news-category h3 { margin: 0 0 4px; font-size: 17px }
-.fixed-news-category p { margin: 0; color: var(--muted); font-size: 13px }
-
 .compat-tab {
     margin-left: auto !important;
     color: var(--muted) !important;

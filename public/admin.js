@@ -169,6 +169,12 @@ function syncAdminTabLabels() {
     if (root?.label || root?.title) button.textContent = root.label || root.title;
   });
 }
+function newsGroupForCategory(category) {
+  const value = String(category || '').trim();
+  if (['行业洞察', '行业资讯', '政策解读'].includes(value)) return 'industry';
+  if (['集团动态', '公司动态', '企业动态'].includes(value)) return 'group';
+  return '';
+}
 function ensureDataShape() {
   data.courses ||= [];
   ARRAY_TABS.forEach(key => { if (!Array.isArray(data[key])) data[key] = []; });
@@ -183,7 +189,12 @@ function ensureDataShape() {
   if (newsRoot) newsRoot.children = structuredClone(NAVIGATION_DEFAULTS.find(item => item.id === 'news').children);
   data.venturePages.forEach(item => { item.id ||= newId('venture'); item.title ??= '新页面'; item.summary ??= ''; item.body ??= ''; item.order ??= 0; item.published ??= true; });
   data.contactTopics.forEach(item => { item.id ||= newId('contact'); item.title ??= '新联系栏目'; item.description ??= ''; item.order ??= 0; item.published ??= true; });
-  data.news.forEach(item => { item.id ||= newId('news'); item.group = item.group === 'industry' || (!item.group && ['行业洞察', '行业资讯', '政策解读'].includes(item.category)) ? 'industry' : 'group'; item.category = item.group === 'industry' ? '行业洞察' : '集团动态'; if (item.group !== 'industry') item.source = ''; item.image ??= ''; item.longImage ??= ''; });
+  data.news.forEach(item => {
+    item.id ||= newId('news');
+    item.category ??= item.group === 'industry' ? '行业洞察' : '集团动态';
+    item.group = newsGroupForCategory(item.category) || (item.group === 'industry' ? 'industry' : 'group');
+    item.source ??= ''; item.image ??= ''; item.longImage ??= '';
+  });
   data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
 }
 function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
@@ -246,7 +257,7 @@ function renderNavigation(target) {
     const grid = el('div', 'form-grid'); field(grid, item, 'id', '菜单 ID'); field(grid, item, 'label', '菜单名称'); field(grid, item, 'href', '链接地址'); field(grid, item, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(grid, item, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(grid, item, 'value', '动作参数'); card.append(grid);
     const childHead = el('div', 'nested-heading'); childHead.append(el('h3', '', '二级菜单')); card.append(childHead);
     if (fixedNews) {
-      card.append(el('p', 'admin-note', '新闻资讯下固定保留以下两个二级菜单，文章可在“新闻资讯”中选择分组。'));
+      card.append(el('p', 'admin-note', '新闻资讯下固定保留以下两个二级菜单，可在“新闻资讯”的文章分类中填写对应名称。'));
       FIXED_NEWS_CATEGORIES.forEach(category => {
         const childCard = el('div', 'nested-card'); childCard.append(el('strong', '', category.title), el('p', '', category.description)); card.append(childCard);
       });
@@ -268,7 +279,7 @@ function collectionFields(collection, item) {
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
-  if (collection === 'news') return [['id', '文章 ID'], ['title', '文章标题'], ['group', '资讯分组', 'select', false, { choices: FIXED_NEWS_CATEGORIES.map(({ id, title }) => ({ value: id, label: title })), onChange: value => { item.category = value === 'industry' ? '行业洞察' : '集团动态'; if (value !== 'industry') item.source = ''; render(); } }], ['date', '发布日期', 'date'], ...(item.group === 'industry' ? [['source', '公众号原文链接', 'url']] : []), ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   return [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
@@ -291,7 +302,7 @@ function renderCollection(target, collection) {
     courseCategories: '维护课程资源库的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
     courses: '维护课程卡片、独立封面、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
-    news: '集团动态不需要公众号链接；行业洞察可填写公众号原文链接。未勾选发布的文章只保存在后台。',
+    news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
     venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',
     contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。',
     services: '兼容旧版本的产品与服务字段；新官网请优先编辑“集团核心业务”。'
@@ -301,26 +312,12 @@ function renderCollection(target, collection) {
     const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
     remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { data[collection].splice(index, 1); changed(); render(); } };
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`), remove); card.append(heading);
-    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : collection === 'news' ? [['image', '文章封面'], ['longImage', '文章长图']] : [];
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
   });
   const labels = { aboutPages: '页面', businessPages: '业务', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
   const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
-}
-function renderNewsWorkspace(target) {
-  const categories = el('section', 'admin-subsection');
-  categories.append(el('h2', '', '新闻分类'));
-  categories.append(el('p', 'admin-note', '固定两个分类，新增文章时直接选择所属分组。'));
-  FIXED_NEWS_CATEGORIES.forEach(category => {
-    const card = el('article', 'edit-card fixed-news-category');
-    card.append(el('h3', '', category.title), el('p', '', category.description));
-    categories.append(card);
-  });
-  const articles = el('section', 'admin-subsection');
-  articles.append(el('h2', '', '新闻文章'));
-  renderCollection(articles, 'news');
-  target.append(categories, articles);
 }
 function consultationPage(value) {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20]/.test(value) || value.length > 500) return '';
@@ -416,7 +413,6 @@ function render() {
   }
   if (tab === 'navigation') return renderNavigation(target);
   if (tab === 'consultations') return renderConsultations(target, view);
-  if (tab === 'news') return renderNewsWorkspace(target);
   if (ARRAY_TABS.includes(tab)) return renderCollection(target, tab);
 }
 $('#save').onclick = async () => {
