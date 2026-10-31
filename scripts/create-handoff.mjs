@@ -11,7 +11,7 @@ const supportFiles = new Set([
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md',
   'deploy/khfwcms.service', 'deploy/nginx.conf', 'deploy/nginx-bootstrap.conf', 'deploy/khfwcms-proxy.conf', 'deploy/khfwcms.env.example',
   'scripts/backup-content.mjs', 'scripts/create-handoff.mjs', 'scripts/verify-handoff.mjs',
-  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/alliance-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs'
+  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/alliance-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs', 'tests/hero-carousel.cjs'
 ]);
 export const requiredFiles = [
   'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'alliance-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',

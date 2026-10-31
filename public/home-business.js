@@ -23,7 +23,9 @@
     image.onerror = () => { image.onerror = null; image.src = fallback; };
     image.src = source || fallback;
   };
+  let destroyCarousel;
   window.renderHomeBusiness = data => {
+    destroyCarousel?.();
     const tabs = document.getElementById('business-tabs');
     if (!tabs) return;
     const pages = new Map((data.businessPages || []).map(page => [page.id, page]));
@@ -31,17 +33,35 @@
     const feature = document.getElementById('business-feature');
     const image = document.getElementById('business-feature-image');
     const panel = document.getElementById('business-feature-panel');
+    const hero = document.getElementById('home');
+    const previous = document.getElementById('business-previous');
+    const next = document.getElementById('business-next');
+    if (!feature || !image || !panel || !hero || !previous || !next) return;
     const buttons = [];
-    const select = (index, focus = false) => {
+    let current = 0, timer;
+    let focusPaused = hero.contains(document.activeElement) && document.activeElement.matches(':focus-visible');
+    let hovered = false;
+    let inView = hero.getBoundingClientRect().bottom > 0 && hero.getBoundingClientRect().top < window.innerHeight;
+    const listeners = [];
+    const on = (target, event, handler) => { target.addEventListener(event, handler); listeners.push(() => target.removeEventListener(event, handler)); };
+    const canRotate = () => !focusPaused && !hovered && !document.hidden && inView;
+    const syncAutoplay = () => {
+      window.clearInterval(timer);
+      panel.setAttribute('aria-live', focusPaused || hovered ? 'polite' : 'off');
+      if (canRotate()) timer = window.setInterval(() => {
+        if (canRotate()) select((current + 1) % businesses.length);
+      }, 6000);
+    };
+    const select = (index, { focus = false, manual = false } = {}) => {
+      current = index;
       const page = businesses[index];
       buttons.forEach((button, position) => { const active = position === index; button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1; button.classList.toggle('selected', active); });
       const fallback = `/assets/business-${index + 1}.svg`;
       setImage(image, page.image, fallback); image.alt = `${page.title}展示图`;
-      const number = String(index + 1).padStart(2, '0');
-      document.getElementById('business-feature-index').textContent = `${number} / CORE BUSINESS`;
+      document.getElementById('business-feature-index').textContent = 'CORE BUSINESS / 集团核心业务';
       document.getElementById('business-feature-title').textContent = page.title;
       document.getElementById('business-feature-summary').textContent = page.summary ?? entries[index].summary;
-      document.getElementById('business-feature-counter').textContent = `${number} / 07`;
+      feature.dataset.businessId = page.id;
       feature.href = destination(page.id);
       const local = !!sections[page.id];
       if (local) { feature.removeAttribute('target'); feature.removeAttribute('rel'); }
@@ -50,25 +70,51 @@
       document.getElementById('business-feature-action').textContent = local ? '了解业务 ↓' : '了解业务 ↗';
       panel.setAttribute('aria-labelledby', buttons[index].id);
       if (focus) { buttons[index].focus(); buttons[index].scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+      if (manual) syncAutoplay();
     };
     tabs.replaceChildren();
     businesses.forEach((page, index) => {
       const button = make('button', 'business-tab'); button.type = 'button'; button.id = `business-tab-${page.id}`;
       button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', panel.id);
-      button.append(make('span', 'business-tab-index', String(index + 1).padStart(2, '0')), make('span', 'business-tab-title', page.title));
-      button.onclick = () => select(index);
+      button.append(make('span', 'business-tab-title', page.title));
+      button.onclick = () => select(index, { manual: true });
       button.onkeydown = event => {
         let next;
         if (event.key === 'ArrowRight') next = (index + 1) % businesses.length;
         if (event.key === 'ArrowLeft') next = (index - 1 + businesses.length) % businesses.length;
         if (event.key === 'Home') next = 0;
         if (event.key === 'End') next = businesses.length - 1;
-        if (next !== undefined) { event.preventDefault(); select(next, true); }
+        if (next !== undefined) { event.preventDefault(); select(next, { focus: true, manual: true }); }
       };
       buttons.push(button); tabs.append(button);
     });
-    window.selectHomeBusiness = id => { const index = businesses.findIndex(page => page.id === id); if (index >= 0) select(index); };
+    window.selectHomeBusiness = id => { const index = businesses.findIndex(page => page.id === id); if (index >= 0) select(index, { manual: true }); };
     select(0);
+    on(previous, 'click', () => select((current - 1 + businesses.length) % businesses.length, { manual: true }));
+    on(next, 'click', () => select((current + 1) % businesses.length, { manual: true }));
+    const pauseForPointer = event => {
+      if (event.pointerType === 'mouse' && !hovered) { hovered = true; syncAutoplay(); }
+    };
+    on(hero, 'pointerenter', pauseForPointer);
+    on(hero, 'pointermove', pauseForPointer);
+    on(hero, 'pointerleave', event => {
+      if (event.pointerType === 'mouse') { hovered = false; syncAutoplay(); }
+    });
+    on(hero, 'focusin', event => { focusPaused = event.target.matches(':focus-visible'); syncAutoplay(); });
+    on(hero, 'focusout', event => {
+      focusPaused = !!event.relatedTarget && hero.contains(event.relatedTarget) && event.relatedTarget.matches(':focus-visible');
+      syncAutoplay();
+    });
+    // Keyboard input may reveal focus on the current button without focusin.
+    on(hero, 'keydown', () => { focusPaused = true; syncAutoplay(); });
+    on(hero, 'pointerdown', () => { focusPaused = false; syncAutoplay(); });
+    on(document, 'visibilitychange', syncAutoplay);
+    const observer = 'IntersectionObserver' in window ? new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting; syncAutoplay();
+    }, { threshold: 0.1 }) : null;
+    observer?.observe(hero);
+    destroyCarousel = () => { window.clearInterval(timer); observer?.disconnect(); listeners.forEach(remove => remove()); };
+    syncAutoplay();
     for (const page of businesses.slice(0, 2)) {
       document.querySelector(`[data-business-heading="${page.id}"]`).textContent = page.title;
       document.querySelector(`[data-business-summary="${page.id}"]`).textContent = page.summary ?? entries.find(entry => entry.id === page.id).summary;
