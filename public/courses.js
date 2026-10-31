@@ -46,6 +46,11 @@ window.renderCourses = (courses, showDetail, options = {}) => {
       button.onclick = () => {
         const title = make('h2', '', course.title); title.id = 'course-dialog-title';
         const nodes = [make('div', 'eyebrow', canonical(course.category) + ' / 课程介绍'), title];
+        const overview = make('section', 'course-overview');
+        overview.append(make('h3', 'course-detail-heading', '课程简介'), make('p', 'course-description', course.description || course.summary || '课程简介待补充。'));
+        const grades = make('dl', 'course-grades');
+        grades.append(make('dt', '', '适用年级'), make('dd', '', String(course.grades || '').trim() || '待补充'));
+        overview.append(grades); nodes.push(overview);
         if (cover) {
           const coverImage = make('img', 'course-detail-cover'); coverImage.src = cover; coverImage.alt = `${course.title || ''}课程封面`; coverImage.loading = 'eager'; coverImage.decoding = 'async';
           nodes.push(coverImage);
@@ -56,7 +61,6 @@ window.renderCourses = (courses, showDetail, options = {}) => {
           const image = make('img', 'course-long-image'); image.src = longImage; image.alt = `${course.title || ''}课程介绍长图`; image.loading = 'eager'; image.decoding = 'async';
           link.append(image); figure.append(link, make('figcaption', 'course-image-caption', '点击图片查看清晰原图')); nodes.push(figure);
         }
-        nodes.push(make('p', 'course-description', course.description || course.summary || ''));
         const outline = String(course.outline || '').split('\n').map(line => line.trim()).filter(Boolean);
         if (outline.length) { const list = make('ul', 'course-outline'); outline.forEach(line => list.append(make('li', '', line))); nodes.push(make('h3', 'course-detail-heading', '学习内容'), list); }
         const detailDialog = document.getElementById('detail');

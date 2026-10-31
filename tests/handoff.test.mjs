@@ -39,7 +39,7 @@ test('handoff allowlist excludes credentials, work files and unused uploads whil
   const detailUpload = `upload-${'c'.repeat(32)}.webp`;
   const stale = `upload-${'b'.repeat(32)}.jpg`;
   const snapshot = structuredClone(minimalContent);
-  snapshot.courses.push({ title: 'Public course', category: '美育类', summary: '', page: 0, cover: '/assets/' + coverUpload, longImage: '/assets/' + detailUpload });
+  snapshot.courses.push({ title: 'Public course', category: '美育类', summary: '', grades: '小学一至六年级', page: 0, cover: '/assets/' + coverUpload, longImage: '/assets/' + detailUpload });
   data.blobs.set('backups/published-content.json', Buffer.from(JSON.stringify(snapshot)));
   data.blobs.set('backups/uploads/' + coverUpload, Buffer.from('public cover fixture'));
   data.blobs.set('backups/uploads/' + detailUpload, Buffer.from('public detail fixture'));

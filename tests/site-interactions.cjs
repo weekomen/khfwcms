@@ -12,6 +12,9 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
       if (url.pathname === '/api/admin/session') return route.fulfill({status:401,json:{error:'请登录'}});
       if (url.pathname === '/api/admin/login') return route.fulfill({json:{ok:true,csrfToken:'browser-fixture',passwordChangeRequired:false}});
       if (url.pathname.startsWith('/api/')) return route.fulfill({json:data});
+      // Exercise every dialog without retaining 55 decoded tall posters in one
+      // browser process. Real image bytes are checked separately on live pages.
+      if (/^\/assets\/course-[a-f0-9]{24}\.(jpg|png)$/.test(url.pathname)) return route.fulfill({body:Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64'),contentType:'image/gif'});
       const file = url.pathname==='/'?'index.html':url.pathname==='/admin'?'admin.html':url.pathname.slice(1);
       await route.fulfill({body:fs.readFileSync(path.join('public',file)),contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png'})[path.extname(file)]||'application/octet-stream'});
     });
@@ -31,6 +34,16 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
         assert.equal(await page.locator('#detail').evaluate(d=>d.open),true);
         assert.ok((await page.locator('.course-description').textContent()).length>35);
         assert.equal(await page.locator('.course-outline li').count(),3);
+        const title = await page.locator('#detail h2').textContent();
+        const course = data.courses.find(course => course.title === title && (course.category === '劳动类' ? '手工类' : course.category) === category);
+        assert.equal(await page.locator('.course-detail-cover').getAttribute('src'),course.cover);
+        assert.equal(await page.locator('.course-long-image').count(),course.longImage ? 1 : 0);
+        if (course.longImage) assert.equal(await page.locator('.course-long-image').getAttribute('src'),course.longImage);
+        assert.equal(await page.locator('.course-grades dd').textContent(), course.grades?.trim() || '待补充');
+        assert.equal(await page.locator('#detail-content').evaluate(root => {
+          const overview = root.querySelector('.course-overview');
+          return [...root.querySelectorAll('img')].every(image => Boolean(overview.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING));
+        }), true);
         await page.keyboard.press('Escape'); checked++;
       }
     }
@@ -64,6 +77,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.goto('http://localhost:3199/admin');await page.getByLabel('管理密码',{exact:true}).fill('test');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('button',{name:'课程目录',exact:true}).click();
     assert.equal(await page.getByLabel('详细介绍（弹窗）',{exact:true}).count(),55);
     assert.equal(await page.getByLabel('学习内容（每行一项）',{exact:true}).count(),55);
+    assert.equal(await page.getByLabel('适用年级',{exact:true}).count(),55);
     assert.deepEqual(errors,[]);
     console.log('PASS: homepage, standalone course/team pages, all 55 course dialogs, query category, mobile 3-course preview, team focus restore, QR images and editable details.');
   } finally {await browser.close();}

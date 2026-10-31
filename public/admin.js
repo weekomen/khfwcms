@@ -204,7 +204,7 @@ function ensureDataShape() {
     item.group = newsGroupForCategory(item.category) || (item.group === 'industry' ? 'industry' : 'group');
     item.source ??= ''; item.image ??= ''; item.longImage ??= '';
   });
-  data.courses.forEach(item => { item.description ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
+  data.courses.forEach(item => { item.description ??= ''; item.grades ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
 }
 function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
   const box = el('div', 'form-field' + (wide ? ' wide' : '')); const id = 'f-' + crypto.randomUUID(); const l = el('label', '', label); l.htmlFor = id;
@@ -288,7 +288,7 @@ function collectionFields(collection, item) {
   if (collection === 'businessPages') return [['id', '业务 ID', 'text', false, { readOnly: FIXED_BUSINESS_IDS.has(item.id) }], ['title', '业务名称'], ['summary', CORE_BUSINESS_IDS.includes(item.id) ? '首页整体介绍 / 业务摘要' : '详情页摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
   if (collection === 'alliancePages') return [['id', '页面 ID', 'text', false, { readOnly: FIXED_ALLIANCE_IDS.has(item.id) }], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
+  if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['grades', '适用年级'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
   if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
@@ -300,7 +300,7 @@ function collectionDefault(collection) {
   if (collection === 'businessPages') return { id: newId('business'), title: '新业务', summary: '', body: '', image: '/assets/logo.png', longImage: '' };
   if (collection === 'alliancePages') return { id: newId('alliance'), title: '新联盟页面', summary: '', body: '', image: '', longImage: '', order: 0, published: false };
   if (collection === 'courseCategories') return { id: newId('course-category'), title: '新分类', description: '', image: '/assets/logo.png', longImage: '', order: 0, published: true };
-  if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', outline: '', page: 0, cover: '', longImage: '' };
+  if (collection === 'courses') return { title: '新课程', category: '美育类', summary: '', description: '', grades: '', outline: '', page: 0, cover: '', longImage: '' };
   if (collection === 'team') return { name: '新成员', role: '', category: '管理团队', bio: '', image: '/assets/logo.png' };
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
   if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
@@ -313,7 +313,7 @@ function renderCollection(target, collection) {
     businessPages: '维护七大核心业务与六个详情页面。前七项封面同时用于首页业务切换图，前两项摘要用于首页整体介绍；标题、摘要、正文和图片均可编辑。固定入口 ID 只读，修改后点击保存。',
     alliancePages: '维护联盟介绍、第三届成员与理事单位招募、第三届大会计划三页。固定页面 ID 只读且不可删除；可编辑标题、摘要、正文、封面、长图、发布状态和排序。正式信息请核实后发布，“历届大会展示”链接在七大导航中维护。',
     courseCategories: '维护“关于课后邦 → 课程资源库”的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
-    courses: '维护“关于课后邦 → 课程资源库”的课程卡片、独立封面、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
+    courses: '维护“关于课后邦 → 课程资源库”的课程卡片、独立封面、分类、适用年级、弹窗介绍和课程长图。简介与适用年级显示在详情图片前；年级未填写时显示“待补充”。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
     news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
     venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',

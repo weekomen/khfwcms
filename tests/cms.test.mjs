@@ -86,6 +86,7 @@ test('content rejects unsafe URLs, assets and duplicate IDs', () => {
   const courseImages = structuredClone(seed);
   courseImages.courses[0].cover = '/assets/course-cover.webp';
   courseImages.courses[0].longImage = '/assets/course-detail.webp';
+  courseImages.courses[0].grades = '小学一至六年级';
   assert.doesNotThrow(() => validateContent(courseImages));
   const invalidCourse = structuredClone(seed); invalidCourse.courses[0].page = 33; assert.throws(() => validateContent(invalidCourse));
   for (const change of [
@@ -93,6 +94,8 @@ test('content rejects unsafe URLs, assets and duplicate IDs', () => {
     c => c.team[0].image = '/../../secret',
     c => c.courses[0].cover = '/uploads/course-cover.webp',
     c => c.courses[0].longImage = 'javascript:alert(1)',
+    c => c.courses[0].grades = '年'.repeat(201),
+    c => c.courses[0].grades = ['一年级'],
     c => c.news[1].id = c.news[0].id
   ]) { const c = structuredClone(validationFixture); change(c); assert.throws(() => validateContent(c)); }
 });
@@ -155,6 +158,7 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   content.courses[0].longImage = '/assets/image5.webp';
   content.courses[0].summary = '课程简介保存验证';
   content.courses[0].description = '课程详细介绍保存验证';
+  content.courses[0].grades = '小学三至六年级';
   content.courses[0].outline = '学习内容一\n学习内容二';
   content.news = structuredClone(draftNews);
   content.news[0] = { ...content.news[0], title: '已发布测试文章', published: true, body: '测试内容', date: '2026-09-23' };
@@ -181,6 +185,7 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   assert.equal(persisted.courses[0].longImage, '/assets/image5.webp');
   assert.equal(persisted.courses[0].summary, '课程简介保存验证');
   assert.equal(persisted.courses[0].description, '课程详细介绍保存验证');
+  assert.equal(persisted.courses[0].grades, '小学三至六年级');
   assert.equal(persisted.courses[0].outline, '学习内容一\n学习内容二');
   const manual = await api('/assets/course-manual.pdf');
   assert.equal(manual.status, 200); assert.equal(manual.headers.get('content-type'), 'application/pdf');

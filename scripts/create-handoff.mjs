@@ -27,7 +27,7 @@ const knownFields = {
   root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'],
   site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
-  courses: ['title', 'category', 'summary', 'description', 'outline', 'page', 'cover', 'longImage'],
+  courses: ['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage'],
   team: ['name', 'role', 'bio', 'category', 'image'],
   news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published', 'group', 'image', 'longImage'],
   navigation: ['id', 'label', 'href', 'children', 'target', 'action', 'value'],

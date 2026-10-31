@@ -106,11 +106,12 @@ function validateTeam(team) {
 
 function validateCourses(courses) {
   list(courses, 200, '课程列表');
-  const allowed = new Set(['title', 'category', 'summary', 'description', 'outline', 'page', 'cover', 'longImage']);
+  const allowed = new Set(['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage']);
   for (const course of courses) {
     object(course, '课程项目'); keys(course, allowed, '课程项目');
     for (const key of ['title', 'category', 'summary']) text(course[key], 10000, `courses.${key}`);
     for (const key of ['description', 'outline']) if (course[key] !== undefined) text(course[key], 10000, `courses.${key}`);
+    optionalText(course.grades, 200, '课程适用年级');
     optionalAsset(course.cover, '课程封面');
     optionalAsset(course.longImage, '课程长图');
     if (!course.title.trim() || !course.category.trim()) throw Error('课程名称和分类不能为空');
