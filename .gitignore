@@ -1,5 +1,6 @@
 node_modules/
 data/content.json
+data/consultations.json
 data/admin-token
 data/admin-auth.json
 data/admin-auth.json.*

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateContent } from './validation.mjs';
 import { createAdminAuth } from './auth.mjs';
+import { createConsultations } from './consultations.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
@@ -28,6 +29,7 @@ function withDefaultCollections(content) {
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });
+const consultations = await createConsultations({ dataDir });
 let writing = Promise.resolve();
 const mime = { '.pdf': 'application/pdf', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const server = http.createServer(async (req, res) => {
@@ -40,6 +42,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/admin/')) {
       if (await adminAuth.handle(req, res, url, send)) return;
     }
+    if (await consultations.handle(req, res, url, send)) return;
     if (url.pathname === '/api/admin/images') {
       if (req.method !== 'POST') return send(405, { error: '不支持此操作' });
       const limit = 5 * 1024 * 1024;

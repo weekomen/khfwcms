@@ -2,7 +2,7 @@
   "site": {
     "name": "课后邦",
     "tagline": "素质教育 · 课后服务",
-    "headline": "让课后时光，\n生长更多可能。",
+    "headline": "让科技赋能教育，让成长连接未来",
     "intro": "连接优质课程、专业师资与数字化服务，\n用心做好每一份教育陪伴。",
     "about": "课后邦聚焦素质教育与课后服务，汇聚教育、设计、技术、运营与市场等多领域人才。我们围绕课程资源整合、师资培养与数字化平台建设，为课程落地提供持续支持，让教育服务更有温度、更有品质。",
     "phone": "132546987",
@@ -111,7 +111,21 @@
       "image": "/assets/image19.webp"
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "id": "news-0eb499db-bb8f-409e-96cb-169f4f9b6fcf",
+      "title": "新文章",
+      "group": "group",
+      "category": "集团动态",
+      "date": "2026-10-31",
+      "summary": "",
+      "body": "",
+      "source": "",
+      "image": "",
+      "longImage": "",
+      "published": true
+    }
+  ],
   "courses": [
     {
       "category": "美育类",
@@ -803,7 +817,6 @@
           "id": "group-news",
           "label": "集团动态",
           "href": "#news",
-          "target": "",
           "action": "news-group",
           "value": "group"
         },
@@ -811,7 +824,6 @@
           "id": "industry-news",
           "label": "行业洞察",
           "href": "#news",
-          "target": "",
           "action": "news-group",
           "value": "industry"
         }

@@ -1,6 +1,7 @@
 const $ = s => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 let csrfToken = '', data, tab = 'site', dirty = false, saving = false, uploading = false, passwordChangeRequired = false;
+let consultationView = 0;
 const safeConnection = location.protocol === 'https:' || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 // Remove credentials left by older versions; authentication uses an HttpOnly cookie.
 try { sessionStorage.removeItem('khb-token'); } catch { }
@@ -8,6 +9,8 @@ const status = (message, error = false) => { $('#status').textContent = message;
 const changed = () => { dirty = true; status('有未保存的修改'); syncAdminTabLabels(); };
 function showLogin(clear = false) {
   csrfToken = ''; $('#login').hidden = false; $('#editor').hidden = true; $('#security').hidden = true; $('#logout').hidden = true;
+  consultationView++;
+  if (tab === 'consultations') $('#fields').replaceChildren();
   $('#password-form').reset();
   if (clear) { data = null; dirty = false; $('#fields').replaceChildren(); }
 }
@@ -319,9 +322,91 @@ function renderNewsWorkspace(target) {
   renderCollection(articles, 'news');
   target.append(categories, articles);
 }
+function consultationPage(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20]/.test(value) || value.length > 500) return '';
+  try {
+    const url = new URL(value, location.origin);
+    return url.origin === location.origin ? url.pathname + url.search + url.hash : '';
+  } catch { return ''; }
+}
+function renderConsultations(target, view) {
+  const session = csrfToken;
+  const workspace = el('section', 'consultation-inbox');
+  const current = () => tab === 'consultations' && consultationView === view && csrfToken === session && !!session && workspace.isConnected;
+  const toolbar = el('div', 'consultation-toolbar');
+  const heading = el('div'); heading.append(el('h2', '', '合作咨询'), el('p', 'admin-note', '咨询记录独立保存，标记和删除会立即生效。网站内容的未保存修改仍会保留。'));
+  const refresh = el('button', 'consultation-refresh', '刷新记录'); refresh.type = 'button'; refresh.onclick = () => render();
+  toolbar.append(heading, refresh);
+  const message = el('p', 'consultation-message', '正在加载咨询记录…'); message.setAttribute('role', 'status'); message.setAttribute('aria-live', 'polite');
+  const list = el('div', 'consultation-list');
+  workspace.append(toolbar, message, list); target.append(workspace);
+  let items = [], visible = 50, busy = false;
+  const update = async (item, method, body) => {
+    if (busy || !current()) return;
+    if (method === 'DELETE' && !confirm(`确定删除“${item.name || '此用户'}”的咨询记录？此操作会立即生效。`)) return;
+    busy = true;
+    workspace.querySelectorAll('button').forEach(button => { button.disabled = true; });
+    message.classList.remove('error'); message.textContent = method === 'DELETE' ? '正在删除…' : '正在更新状态…';
+    try {
+      const result = await apiRequest('/api/admin/consultations/' + encodeURIComponent(item.id), method, body);
+      if (!current()) return;
+      items = method === 'DELETE' ? items.filter(entry => entry.id !== item.id) : items.map(entry => entry.id === item.id ? (result.item || { ...entry, ...body }) : entry);
+      busy = false; draw();
+      message.textContent = method === 'DELETE' ? '咨询记录已删除。' : body.status === 'contacted' ? '已标记为已联系。' : '已恢复为待联系。';
+    } catch (error) {
+      if (!current()) return;
+      message.classList.add('error'); message.textContent = error.message || '操作失败，请重试。';
+    } finally {
+      busy = false;
+      if (current()) workspace.querySelectorAll('button').forEach(button => { button.disabled = false; });
+    }
+  };
+  const draw = () => {
+    list.replaceChildren(); refresh.disabled = false;
+    const pending = items.filter(item => item.status !== 'contacted').length;
+    message.classList.remove('error'); message.textContent = items.length ? `共 ${items.length} 条咨询，${pending} 条待联系。` : '暂时没有咨询记录，访客提交后会显示在这里。';
+    items.slice(0, visible).forEach(item => {
+      const card = el('article', 'consultation-record');
+      const recordHeading = el('div', 'consultation-record-heading');
+      recordHeading.append(el('h3', '', item.name || '未填写姓名'), el('span', 'consultation-state' + (item.status === 'contacted' ? ' contacted' : ''), item.status === 'contacted' ? '已联系' : '待联系'));
+      const details = el('dl', 'consultation-details');
+      const detail = (label, value) => { const box = el('div'); box.append(el('dt', '', label), value); details.append(box); };
+      const phone = el('dd');
+      if (/^1[3-9]\d{9}$/.test(item.phone || '')) { const link = el('a', '', item.phone); link.href = 'tel:' + item.phone; phone.append(link); }
+      else phone.textContent = item.phone || '—';
+      detail('联系电话', phone);
+      const date = new Date(item.createdAt);
+      detail('提交时间', el('dd', '', Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })));
+      const page = consultationPage(item.page), source = el('dd', 'consultation-source');
+      if (page) { const link = el('a', '', page); link.href = page; link.target = '_blank'; link.rel = 'noopener noreferrer'; source.append(link); }
+      else source.textContent = '未记录';
+      detail('来源页面', source);
+      const actions = el('div', 'consultation-record-actions');
+      const toggle = el('button', 'consultation-toggle', item.status === 'contacted' ? '恢复待联系' : '标记已联系'); toggle.type = 'button';
+      toggle.onclick = () => update(item, 'PATCH', { status: item.status === 'contacted' ? 'new' : 'contacted' });
+      const remove = el('button', 'remove', '删除记录'); remove.type = 'button'; remove.onclick = () => update(item, 'DELETE');
+      actions.append(toggle, remove); card.append(recordHeading, details, actions); list.append(card);
+    });
+    if (items.length > visible) {
+      const more = el('button', 'add consultation-more', `加载更多（剩余 ${items.length - visible} 条）`); more.type = 'button';
+      more.onclick = () => { visible += 50; draw(); }; list.append(more);
+    }
+  };
+  refresh.disabled = true;
+  apiRequest('/api/admin/consultations').then(result => {
+    if (!current()) return;
+    items = (Array.isArray(result.items) ? result.items : []).filter(item => item && typeof item.id === 'string').sort((left, right) => String(right.createdAt || '').localeCompare(String(left.createdAt || '')));
+    draw();
+  }).catch(error => {
+    if (!current()) return;
+    refresh.disabled = false; message.classList.add('error'); message.textContent = error.message || '咨询记录加载失败，请刷新重试。';
+  });
+}
 function render() {
+  const view = ++consultationView;
   ensureDataShape();
   syncAdminTabLabels();
+  $('#save').hidden = tab === 'consultations';
   document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('selected', b.dataset.tab === tab));
   const target = $('#fields'); target.replaceChildren();
   if (tab === 'site') {
@@ -330,11 +415,12 @@ function render() {
     [['name', '品牌名称'], ['tagline', '品牌说明'], ['headline', '首页标题（换行显示）', 'textarea'], ['intro', '首页简介', 'textarea'], ['about', '公司介绍', 'textarea', true], ['phone', '合作电话'], ['email', '合作邮箱', 'email'], ['address', '公司地址'], ['filing', '备案信息']].forEach(([k, l, t, w]) => field(grid, data.site, k, l, t, w)); card.append(grid); target.append(card); return;
   }
   if (tab === 'navigation') return renderNavigation(target);
+  if (tab === 'consultations') return renderConsultations(target, view);
   if (tab === 'news') return renderNewsWorkspace(target);
   if (ARRAY_TABS.includes(tab)) return renderCollection(target, tab);
 }
 $('#save').onclick = async () => {
-  if (saving || uploading) return; saving = true; $('#save').disabled = true; $('#fields').inert = true; status('正在保存…');
+  if (tab === 'consultations' || saving || uploading) return; saving = true; $('#save').disabled = true; $('#fields').inert = true; status('正在保存…');
   try { await request('PUT', data); dirty = false; status('保存成功，官网内容已更新。'); } catch (e) { status('保存失败：' + e.message, true); }
   finally { saving = false; $('#save').disabled = false; $('#fields').inert = false; }
 };

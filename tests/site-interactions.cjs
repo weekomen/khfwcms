@@ -26,7 +26,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
       const buttons=page.locator('.course-detail-button');
       for(let i=0;i<await buttons.count();i++) {
         await buttons.nth(i).click();
-        assert.equal(await page.locator('dialog').evaluate(d=>d.open),true);
+        assert.equal(await page.locator('#detail').evaluate(d=>d.open),true);
         assert.ok((await page.locator('.course-description').textContent()).length>35);
         assert.equal(await page.locator('.course-outline li').count(),3);
         await page.keyboard.press('Escape'); checked++;
@@ -45,7 +45,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.setViewportSize({width:390,height:844}); await page.getByLabel('外观').selectOption('dark');
     await page.screenshot({path:'reference/hero-office-mobile.png'});
     await page.locator('#platform-grid').scrollIntoViewIfNeeded(); assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    await page.getByRole('button',{name:'放大抖音二维码'}).click(); assert.ok(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth)); await page.keyboard.press('Escape');
+    await page.getByRole('button',{name:'放大抖音二维码'}).click(); assert.ok(await page.locator('#detail').evaluate(d=>d.scrollWidth<=d.clientWidth)); await page.keyboard.press('Escape');
     await page.goto('http://localhost:3199/admin');await page.getByLabel('管理密码',{exact:true}).fill('test');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('button',{name:'课程目录',exact:true}).click();
     assert.equal(await page.getByLabel('详细介绍（弹窗）',{exact:true}).count(),55);
     assert.equal(await page.getByLabel('学习内容（每行一项）',{exact:true}).count(),55);
