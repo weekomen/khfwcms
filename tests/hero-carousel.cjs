@@ -116,7 +116,7 @@ async function assertBusinessLayout(page, viewport) {
         assert.equal(await feature.getAttribute('href'), index === 0 ? '#after-school-supply' : '#ai-school-supply');
         assert.equal(await feature.getAttribute('target'), null);
       } else {
-        assert.equal(await feature.getAttribute('href'), `/content-page.html?type=business&id=${ids[index]}`);
+        assert.equal(await feature.getAttribute('href'), index === 3 ? '/courses.html' : `/content-page.html?type=business&id=${ids[index]}`);
         assert.equal(await feature.getAttribute('target'), '_blank');
         assert.match(await feature.getAttribute('rel'), /noopener/);
       }

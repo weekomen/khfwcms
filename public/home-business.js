@@ -13,6 +13,7 @@
     'ai-school-supply': '#ai-school-supply'
   };
   const resourceLinks = {
+    'online-education': '/courses.html',
     'supply-courses': '/courses.html',
     'supply-school-plan': 'https://kehoubang.cn/profile/upload/pdf/2/index.html'
   };
