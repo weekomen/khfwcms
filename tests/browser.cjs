@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { once } = require('node:events');
 (async () => {
+  const courseCount = JSON.parse(await fs.readFile('data/seed.json', 'utf8')).courses.length;
   // Tests must never edit the maintained website database.
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'khb-browser-'));
   const port = 42000 + Math.floor(Math.random() * 10000), origin = `http://127.0.0.1:${port}`;
@@ -52,7 +53,7 @@ const { once } = require('node:events');
     await page.getByRole('status').filter({ hasText: '保存成功' }).waitFor();
     await page.reload(); await page.waitForSelector('#editor:not([hidden])');
     await page.getByRole('button', { name: '课程目录', exact: true }).click();
-    assert.equal(await page.getByLabel('详细介绍（弹窗）', { exact: true }).count(), 55);
+    assert.equal(await page.getByLabel('详细介绍（弹窗）', { exact: true }).count(), courseCount);
     await page.getByRole('button', { name: '退出登录', exact: true }).click(); await page.waitForSelector('#login:not([hidden])');
     assert.equal((await context.cookies()).length, 0);
     await page.screenshot({path: 'reference/secure-login-mobile.png'});

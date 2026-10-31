@@ -14,6 +14,7 @@ window.renderCourses = (courses, showDetail, options = {}) => {
     if (!item || typeof item !== 'object') return ['', ''];
     return [canonical(item.label || item.name || item.title), normalizeImage(item.image || item.cover)];
   }).filter(([category]) => category));
+  const categoryDescriptions = new Map(suppliedCategoryItems.filter(item => item && typeof item === 'object').map(item => [canonical(item.label || item.name || item.title), item.description]));
   const descriptions = { '美育类': '在表达、阅读与艺术创作中，发现兴趣，感受美。', '益智类': '在游戏、推理与对弈中，练习观察，探索思考的方法。', '科技类': '从科学实验到人工智能，在动手探索中认识科技。', '手工类': '在生活实践、手工创作与非遗体验中，感受劳动的价值。' };
   let selected = categories.find(category => courses.some(course => canonical(course.category) === category)) || categories[0];
   let expanded = false;
@@ -30,8 +31,9 @@ window.renderCourses = (courses, showDetail, options = {}) => {
     const previewCount = mobile.matches ? 3 : 6;
     filters.querySelectorAll('button').forEach(button => { const active = button.dataset.category === selected; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active)); });
     banner.replaceChildren();
-    if (images[selected]) { const image = make('img', 'course-banner-image'); image.src = `/assets/course-${images[selected]}.webp`; image.alt = `${selected}课程配图`; image.loading = 'lazy'; banner.append(image); }
-    const copy = make('div', 'course-banner-copy'); copy.append(make('div', 'eyebrow', 'COURSE COLLECTION / 课程资源'), make('h3', '', selected), make('p', '', descriptions[selected] || '探索多样化课程，发现更多兴趣与可能。')); banner.append(copy);
+    const bannerCover = categoryFallbackCover(selected);
+    if (bannerCover) { const image = make('img', 'course-banner-image'); image.src = bannerCover; image.alt = `${selected}课程配图`; image.loading = 'lazy'; banner.append(image); }
+    const copy = make('div', 'course-banner-copy'); copy.append(make('div', 'eyebrow', 'COURSE COLLECTION / 课程资源'), make('h3', '', selected), make('p', '', categoryDescriptions.get(selected) ?? descriptions[selected] ?? '探索多样化课程，发现更多兴趣与可能。')); banner.append(copy);
     grid.replaceChildren();
     matches.slice(0, expanded ? matches.length : previewCount).forEach(course => {
       const card = make('article', 'course-card');

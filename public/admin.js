@@ -229,7 +229,7 @@ function field(parent, obj, key, label, type = 'text', wide = false, options = {
 function photoPicker(item, key = 'image', label = '图片') {
   const box = el('div', 'photo-picker'); const button = el('button', 'photo-button'); button.type = 'button';
   const name = item.name || item.title || '页面'; button.setAttribute('aria-label', `上传${name}${label}`);
-  const img = el('img'); img.src = item[key] || '/assets/logo.png'; img.alt = `${name}${label}`;
+  const img = el('img'); img.loading = 'lazy'; img.decoding = 'async'; img.src = item[key] || '/assets/logo.png'; img.alt = `${name}${label}`;
   const caption = el('span', '', item[key] ? '点击更换' + label : '点击上传' + label); button.append(img, caption);
   const input = el('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true;
   const message = el('p', 'photo-help', '支持 JPG、PNG、WebP，单张不超过 5 MB'); message.setAttribute('role', 'status');
