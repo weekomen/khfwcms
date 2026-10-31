@@ -203,7 +203,7 @@ function applyNavigationData(data) {
       if (key === 'contact' || child.action === 'contact-topic') link.href = '#contact';
       if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') { link.href = '/team.html'; link.dataset.libraryPage = 'true'; }
       const inPage = link.getAttribute('href').startsWith('#');
-      const managedPage = key !== 'contact' && !inPage && (child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.getAttribute('href')));
+      const managedPage = key !== 'contact' && !inPage && (child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture|alliance)/i.test(link.getAttribute('href')));
       if (managedPage) link.dataset.managedPage = 'true';
       if (key !== 'contact' && !inPage && (managedPage || link.dataset.libraryPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.getAttribute('href')))) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);

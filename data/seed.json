@@ -717,6 +717,13 @@
           "href": "/team.html",
           "target": "blank",
           "action": ""
+        },
+        {
+          "id": "course-library",
+          "label": "课程资源库",
+          "href": "/courses.html",
+          "target": "blank",
+          "action": ""
         }
       ]
     },
@@ -784,65 +791,39 @@
       ]
     },
     {
-      "id": "courses",
-      "label": "课程资源库",
-      "href": "/courses.html",
+      "id": "alliance",
+      "label": "课后服务联盟",
+      "href": "/content-page.html?type=alliance&id=alliance-intro",
+      "target": "blank",
+      "action": "",
       "children": [
         {
-          "id": "aesthetic",
-          "label": "美育类",
-          "href": "/courses.html?category=%E7%BE%8E%E8%82%B2%E7%B1%BB",
+          "id": "alliance-intro",
+          "label": "全国课后服务行业联盟介绍",
+          "href": "/content-page.html?type=alliance&id=alliance-intro",
           "target": "blank",
-          "action": "course-category",
-          "value": "美育类"
+          "action": ""
         },
         {
-          "id": "puzzle",
-          "label": "益智类",
-          "href": "/courses.html?category=%E7%9B%8A%E6%99%BA%E7%B1%BB",
+          "id": "third-members",
+          "label": "第三届成员介绍及理事单位招募",
+          "href": "/content-page.html?type=alliance&id=third-members",
           "target": "blank",
-          "action": "course-category",
-          "value": "益智类"
+          "action": ""
         },
         {
-          "id": "technology",
-          "label": "科技类",
-          "href": "/courses.html?category=%E7%A7%91%E6%8A%80%E7%B1%BB",
+          "id": "conference-history",
+          "label": "历届大会展示",
+          "href": "https://mp.weixin.qq.com/s/Yw8dvTeQqkIkpR571V8kxA",
           "target": "blank",
-          "action": "course-category",
-          "value": "科技类"
+          "action": ""
         },
         {
-          "id": "craft",
-          "label": "手工类",
-          "href": "/courses.html?category=%E6%89%8B%E5%B7%A5%E7%B1%BB",
+          "id": "third-conference-plan",
+          "label": "第三届全国课后服务行业大会计划",
+          "href": "/content-page.html?type=alliance&id=third-conference-plan",
           "target": "blank",
-          "action": "course-category",
-          "value": "手工类"
-        }
-      ],
-      "target": "blank"
-    },
-    {
-      "id": "news",
-      "label": "新闻资讯",
-      "href": "#news",
-      "children": [
-        {
-          "id": "group-news",
-          "label": "集团动态",
-          "href": "#news",
-          "target": "",
-          "action": "news-group",
-          "value": "group"
-        },
-        {
-          "id": "industry-news",
-          "label": "行业洞察",
-          "href": "#news",
-          "target": "",
-          "action": "news-group",
-          "value": "industry"
+          "action": ""
         }
       ]
     },
@@ -890,6 +871,29 @@
           "target": "blank",
           "action": "venture",
           "value": "new-year-dinner-2027"
+        }
+      ]
+    },
+    {
+      "id": "news",
+      "label": "新闻资讯",
+      "href": "#news",
+      "children": [
+        {
+          "id": "group-news",
+          "label": "集团动态",
+          "href": "#news",
+          "target": "",
+          "action": "news-group",
+          "value": "group"
+        },
+        {
+          "id": "industry-news",
+          "label": "行业洞察",
+          "href": "#news",
+          "target": "",
+          "action": "news-group",
+          "value": "industry"
         }
       ]
     },
@@ -1197,6 +1201,38 @@
       "id": "info",
       "title": "联系方式",
       "description": "电话、邮箱和地址等公开联系方式见本页下方。"
+    }
+  ],
+  "alliancePages": [
+    {
+      "id": "alliance-intro",
+      "title": "全国课后服务行业联盟介绍",
+      "summary": "全国课后服务行业联盟相关介绍待发布，以正式公告为准。",
+      "body": "全国课后服务行业联盟相关介绍待发布。请以正式公告为准。",
+      "image": "",
+      "longImage": "",
+      "order": 1,
+      "published": true
+    },
+    {
+      "id": "third-members",
+      "title": "第三届成员介绍及理事单位招募",
+      "summary": "第三届成员介绍及理事单位招募信息待发布，以正式公告为准。",
+      "body": "第三届成员介绍及理事单位招募信息待发布。成员名单、招募要求与申请方式以正式公告为准。",
+      "image": "",
+      "longImage": "",
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "third-conference-plan",
+      "title": "第三届全国课后服务行业大会计划",
+      "summary": "第三届全国课后服务行业大会计划待发布，以正式公告为准。",
+      "body": "第三届全国课后服务行业大会计划待发布。时间、地点、议程和参与方式等信息以正式公告为准。",
+      "image": "",
+      "longImage": "",
+      "order": 3,
+      "published": true
     }
   ]
 }

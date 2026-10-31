@@ -116,13 +116,13 @@ const renderEventGallery = async (card, page) => {
   search.addEventListener('input', () => draw(true)); select.addEventListener('change', () => draw(true)); more.onclick = () => draw(false); draw(true);
 };
 const render = async data => {
-  const collection = type === 'venture' ? data.venturePages : type === 'about' ? data.aboutPages : data.businessPages;
+  const collection = type === 'alliance' ? data.alliancePages : type === 'venture' ? data.venturePages : type === 'about' ? data.aboutPages : data.businessPages;
   const id = aliases[requestedId] || requestedId;
   const page = asList(collection).find(item => String(item.id || item.slug || '') === id) || asList(collection).find(item => String(item.title || item.name || '') === requestedId);
-  if (!page) return showError();
+  if (!page || (type === 'alliance' && page.published === false)) return showError();
   document.title = `课后邦｜${page.title || page.name || '内容介绍'}`;
   const card = document.createElement('article'); card.className = 'content-page-card';
-  const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'venture' ? 'ZHILIN / 智邻精英汇' : 'CORE BUSINESS / 集团核心业务';
+  const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'alliance' ? 'ALLIANCE / 课后服务联盟' : type === 'venture' ? 'ZHILIN / 智邻精英汇' : type === 'about' ? 'ABOUT US / 关于课后邦' : 'CORE BUSINESS / 集团核心业务';
   const title = document.createElement('h1'); title.textContent = page.title || page.name || '内容介绍'; card.append(eyebrow, title);
   if (page.summary || page.subtitle) { const summary = document.createElement('p'); summary.className = 'content-page-summary'; summary.textContent = page.summary || page.subtitle; card.append(summary); }
   if (type === 'venture' && String(page.id || '').startsWith('new-year-dinner')) {

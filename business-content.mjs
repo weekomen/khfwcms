@@ -84,7 +84,9 @@ export function applyBusinessDefaults(content) {
       if (['#services', '#business', '#products', ''].includes(business.href || '')) business.href = '#business-showcase';
     }
   }
-  const courses = navigationRoot(content, ['courses', 'course-library', 'resource-library', '课程资源库', '课程手册'], 3);
+  // Index 3 becomes the alliance menu in newer layouts. Identify an actual
+  // legacy course root rather than treating that position as courses forever.
+  const courses = content.navigation.find(item => [item.id, item.label].some(value => ['courses', 'course-library', 'resource-library', '课程资源库', '课程手册'].includes(String(value || '').toLowerCase())) || item.action === 'course-category' || (item.children || []).some(child => child.action === 'course-category'));
   if (courses) {
     if (/^#(?:courses|course-catalog|services)$/.test(courses.href || '')) { courses.href = '/courses.html'; courses.target = 'blank'; }
     for (const child of courses.children || []) {

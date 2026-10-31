@@ -19,8 +19,14 @@ function legacyContent() {
   const business = content.navigation.find(item => item.id === 'business');
   business.href = '#services';
   business.children = business.children.filter(item => legacyIds.includes(item.id)).map(item => ({ ...item, label: item.id === 'supply-chain' ? '课后邦供应链' : item.label, href: `/content-page.html?type=business&id=${item.id}`, target: 'blank' }));
-  const courses = content.navigation.find(item => item.id === 'courses'); courses.href = '#course-catalog';
+  let courses = content.navigation.find(item => item.id === 'courses');
+  if (!courses) {
+    courses = { id: 'courses', label: '课程资源库', href: '#course-catalog', action: 'course-category', children: ['美育类', '益智类', '科技类', '手工类'].map((label, index) => ({ id: `legacy-course-${index}`, label, href: '#course-catalog', action: 'course-category', value: label })) };
+    content.navigation[content.navigation.findIndex(item => item.id === 'alliance')] = courses;
+  }
+  courses.href = '#course-catalog';
   courses.children.forEach(item => { item.href = '#course-catalog'; item.target = ''; });
+  content.navigation.find(item => item.id === 'about').children = content.navigation.find(item => item.id === 'about').children.filter(item => item.id !== 'course-library');
   content.navigation.find(item => item.id === 'about').children.find(item => item.id === 'team').href = '#team';
   return content;
 }

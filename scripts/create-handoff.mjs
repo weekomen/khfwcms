@@ -6,15 +6,15 @@ import { fileURLToPath } from 'node:url';
 import { validateContent } from '../validation.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const rootFiles = new Set(['.gitignore', 'AGENTS.md', 'README.md', 'package.json', 'package-lock.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json']);
+const rootFiles = new Set(['.gitignore', 'AGENTS.md', 'README.md', 'package.json', 'package-lock.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'alliance-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json']);
 const supportFiles = new Set([
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md',
   'deploy/khfwcms.service', 'deploy/nginx.conf', 'deploy/nginx-bootstrap.conf', 'deploy/khfwcms-proxy.conf', 'deploy/khfwcms.env.example',
   'scripts/backup-content.mjs', 'scripts/create-handoff.mjs', 'scripts/verify-handoff.mjs',
-  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs'
+  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/alliance-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs'
 ]);
 export const requiredFiles = [
-  'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
+  'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'alliance-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
   'public/index.html', 'public/app.js', 'public/style.css', 'public/site-theme.css', 'public/courses.js', 'public/courses.css',
   'public/admin.html', 'public/admin.js', 'public/admin.css', 'public/upload.css', 'public/theme.js', 'public/theme.css',
   'public/consultation.js', 'public/consultation.css',
@@ -24,7 +24,7 @@ export const requiredFiles = [
 ];
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
 const knownFields = {
-  root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics'],
+  root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'],
   site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
   courses: ['title', 'category', 'summary', 'description', 'outline', 'page', 'cover', 'longImage'],
@@ -37,6 +37,7 @@ const knownFields = {
   courseCategories: ['id', 'title', 'description', 'image', 'longImage', 'order', 'published'],
   newsCategories: ['id', 'title', 'description', 'order', 'published'],
   venturePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
+  alliancePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
   contactTopics: ['id', 'title', 'description', 'order', 'published']
 };
 export function validatePublicData(content, label) {
@@ -46,7 +47,7 @@ export function validatePublicData(content, label) {
   };
   checkKeys(content, knownFields.root, 'root');
   checkKeys(content.site, knownFields.site, 'site');
-  for (const collection of ['services', 'courses', 'team', 'news', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics']) {
+  for (const collection of ['services', 'courses', 'team', 'news', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages']) {
     for (const [index, item] of (content[collection] || []).entries()) checkKeys(item, knownFields[collection], `${collection}[${index}]`);
   }
   for (const [index, item] of (content.navigation || []).entries()) {
@@ -54,6 +55,7 @@ export function validatePublicData(content, label) {
     for (const [childIndex, child] of (item.children || []).entries()) checkKeys(child, knownFields.navigationChild, `navigation[${index}].children[${childIndex}]`);
   }
   if (content.news.some(article => !article.published)) throw new Error(`${label} 含未发布文章，停止打包。`);
+  if ((content.alliancePages || []).some(page => page.published === false)) throw new Error(`${label} 含未发布联盟页面，停止打包。`);
 }
 export function safeRelativePath(file) {
   return typeof file === 'string' && !!file && !/[\\\x00-\x1f:]/.test(file) && !path.posix.isAbsolute(file) && file.split('/').every(part => part && part !== '.' && part !== '..');
@@ -74,7 +76,7 @@ export function isAllowedPath(file, referencedUploads = new Set()) {
 const imageCollections = [
   ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
   ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
-  ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']]
+  ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
 ];
 function imageReferences(content) {
   const references = [];

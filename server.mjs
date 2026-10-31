@@ -7,6 +7,7 @@ import { validateContent } from './validation.mjs';
 import { createAdminAuth } from './auth.mjs';
 import { createConsultations } from './consultations.mjs';
 import { applyBusinessDefaults } from './business-content.mjs';
+import { applyAllianceDefaults } from './alliance-content.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
@@ -14,7 +15,7 @@ const contentPath = path.join(dataDir, 'content.json');
 const seedPath = path.join(root, 'data/seed.json');
 const seedContent = JSON.parse(await readFile(seedPath, 'utf8'));
 validateContent(seedContent);
-const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics'];
+const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'];
 function withDefaultCollections(content) {
   for (const key of defaultCollections) {
     // This is an in-memory migration for old content.json files. It never
@@ -26,7 +27,7 @@ function withDefaultCollections(content) {
   // files readable while exposing the new field to the admin editor; the
   // administrator can explicitly save it when a cover is selected.
   for (const course of content.courses || []) if (course && typeof course === 'object') course.cover ??= '';
-  return applyBusinessDefaults(content);
+  return applyAllianceDefaults(applyBusinessDefaults(content));
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });
@@ -65,6 +66,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'GET') {
         const content = withDefaultCollections(JSON.parse(await readFile(contentPath, 'utf8')));
         content.news = (content.news || []).filter(n => n.published);
+        content.alliancePages = (content.alliancePages || []).filter(page => page.published !== false);
         return send(200, content);
       }
       return send(405, { error: '不支持此操作' });

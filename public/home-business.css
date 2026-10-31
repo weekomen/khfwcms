@@ -30,6 +30,7 @@
 .business-ai-section { border-top: 1px solid var(--line); }
 [data-theme="dark"] .business-tab:hover, [data-theme="dark"] .business-tab.selected { background: #203751; }
 @media (min-width: 1201px) { .site-body #nav-business { min-width: 300px; } }
+@media (min-width: 1201px) { .site-body #nav-alliance { min-width: 320px; } }
 @media (max-width: 1000px) {
   .business-switcher { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
   .business-tab { flex: 0 0 175px; scroll-snap-align: start; }

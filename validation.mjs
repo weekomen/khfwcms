@@ -10,7 +10,7 @@
 const TOP_LEVEL_KEYS = new Set([
   'site', 'services', 'team', 'news', 'courses', 'navigation',
   'aboutPages', 'businessPages', 'courseCategories', 'newsCategories',
-  'venturePages', 'contactTopics'
+  'venturePages', 'contactTopics', 'alliancePages'
 ]);
 
 function object(value, label) {
@@ -223,5 +223,6 @@ export function validateContent(content) {
   if (c.courseCategories !== undefined) pageRecords(c.courseCategories, 12, ['title', 'description'], { image: true, longImage: true, listLabel: '课程分类', itemLabel: '课程分类' });
   if (c.newsCategories !== undefined) validateNewsCategories(c.newsCategories);
   if (c.venturePages !== undefined) pageRecords(c.venturePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '创投页面', itemLabel: '创投页面' });
+  if (c.alliancePages !== undefined) pageRecords(c.alliancePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '联盟页面', itemLabel: '联盟页面' });
   if (c.contactTopics !== undefined) pageRecords(c.contactTopics, 12, ['title', 'description'], { image: false, longImage: false, listLabel: '联系主题', itemLabel: '联系主题' });
 }
