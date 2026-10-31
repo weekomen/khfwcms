@@ -136,7 +136,7 @@
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 9px 0 0;
+  padding: 7px 0 0;
   border: 1px solid var(--line);
   border-left: 0;
   border-right: 0;
@@ -149,8 +149,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 7px;
-  padding: 0 clamp(16px, 3.5vw, 50px);
+  margin-bottom: 5px;
 }
 .business-showcase-heading .eyebrow { font-size: 10px; letter-spacing: 1.4px; }
 .business-showcase-heading p { margin: 0; color: var(--muted); font-size: 11px; }
@@ -158,16 +157,14 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   border: 1px solid var(--line);
-  border-left: 0;
-  border-right: 0;
 }
 .business-tab {
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: 58px;
-  padding: 7px 8px;
+  min-height: 48px;
+  padding: 5px 7px;
   border: 0;
   border-right: 1px solid var(--line);
   border-bottom: 3px solid transparent;
@@ -240,16 +237,16 @@
     order: 2;
     width: 100%;
     margin: 0;
-    padding: 7px 0 0;
+    padding: 5px 0 0;
     scroll-margin-top: 76px;
   }
-  .business-showcase-heading { margin-bottom: 6px; }
+  .business-showcase-heading { margin-bottom: 4px; }
   .business-showcase-heading .eyebrow { font-size: 9px; letter-spacing: 1px; }
   .business-showcase-heading p { display: none; }
   .business-switcher { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .business-tab {
-    min-height: 36px;
-    padding: 4px 6px;
+    min-height: 34px;
+    padding: 3px 5px;
     border-bottom: 1px solid var(--line);
   }
   .business-tab:nth-child(even) { border-right: 0; }
@@ -263,7 +260,7 @@
   .site-body .hero-content h1 { font-size: 27px; }
   .business-feature-copy h2 { font-size: 17px; }
   .hero-carousel-controls { top: 10px; right: 10px; }
-  .business-tab { min-height: 34px; }
+  .business-tab { min-height: 32px; }
   .business-tab-title { font-size: 10px; }
 }
 @media (max-height: 500px) and (min-width: 761px) {

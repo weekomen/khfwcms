@@ -62,6 +62,7 @@ async function expectOneAutomaticStep(page, index) {
   await assertSlide(page, (index + 1) % ids.length);
 }
 async function assertBusinessLayout(page, viewport) {
+  assert.equal(await page.locator('#business-showcase > .business-showcase-inner').count(), 1, 'Business navigation must have one inner content container');
   await page.locator('#business-feature-image').evaluate(image => image.decode());
   const layout = await page.evaluate(() => {
     const image = document.getElementById('business-feature-image');
@@ -73,9 +74,19 @@ async function assertBusinessLayout(page, viewport) {
     // excluding any letterboxing in the element's larger CSS box.
     const scale = Math.min(bounds.width / image.naturalWidth, bounds.height / image.naturalHeight);
     const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
+    const horizontalBounds = selector => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { left: rect.left, right: rect.right };
+    };
     return {
       fit: style.objectFit, position: style.objectPosition, viewportWidth: innerWidth,
       navigation: { left: navigation.left, right: navigation.right, top: navigation.top },
+      reference: horizontalBounds('#after-school-supply .section-head'),
+      content: {
+        inner: horizontalBounds('#business-showcase > .business-showcase-inner'),
+        heading: horizontalBounds('#business-showcase .business-showcase-heading'),
+        tabs: horizontalBounds('#business-tabs')
+      },
       panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom },
       image: { left: bounds.left + (bounds.width - width) / 2, right: bounds.left + (bounds.width + width) / 2, top: bounds.top, bottom: bounds.top + height, width, height }
     };
@@ -83,6 +94,10 @@ async function assertBusinessLayout(page, viewport) {
   const label = `${viewport.width}x${viewport.height}`;
   assert.ok(Math.abs(layout.navigation.left) <= 1, `Business navigation must reach the left edge at ${label}`);
   assert.ok(Math.abs(layout.navigation.right - layout.viewportWidth) <= 1, `Business navigation must reach the right edge at ${label}`);
+  for (const [name, bounds] of Object.entries(layout.content)) {
+    assert.ok(Math.abs(bounds.left - layout.reference.left) <= 1, `Business ${name} must align with the following section's left edge at ${label}: ${bounds.left} vs ${layout.reference.left}`);
+    assert.ok(Math.abs(bounds.right - layout.reference.right) <= 1, `Business ${name} must align with the following section's right edge at ${label}: ${bounds.right} vs ${layout.reference.right}`);
+  }
   assert.equal(layout.fit, 'contain', `Business images must be fully contained at ${label}`);
   assert.ok(['top', '0%', '0px'].includes(layout.position.trim().split(/\s+/).at(-1)), `Business images must align to the top at ${label}: ${layout.position}`);
   assert.ok(layout.image.width > 0 && layout.image.height > 0, `Business image must have a decoded visible area at ${label}`);
@@ -184,6 +199,6 @@ async function assertBusinessLayout(page, viewport) {
     assert.equal(await page.locator('#business-feature-counter, #business-autoplay').count(), 0);
     assert.deepEqual(reduced.errors, []);
     await page.close();
-    console.log('PASS: full-width navigation and contained top-aligned hero images; seven first-viewport buttons, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and mobile dark layout.');
+    console.log('PASS: full-width navigation with aligned inner content and contained top-aligned hero images; seven first-viewport buttons, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and mobile dark layout.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
