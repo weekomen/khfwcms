@@ -131,7 +131,7 @@ const NAVIGATION_DEFAULTS = [
     { id: 'contact-info', label: '联系方式', href: '#contact', action: 'contact-topic', value: 'info' }
   ] }
 ];
-const ARRAY_TABS = ['aboutPages', 'businessPages', 'alliancePages', 'courseCategories', 'courses', 'team', 'venturePages', 'news', 'contactTopics', 'services'];
+const ARRAY_TABS = ['aboutPages', 'businessPages', 'alliancePages', 'courseCategories', 'courses', 'team', 'venturePages', 'news', 'contactTopics'];
 const CORE_BUSINESS_IDS = ['supply-chain', 'ai-school-supply', 'online-ai-study', 'online-education', 'education-street', 'youth-center', 'ai-museum'];
 const FIXED_BUSINESS_IDS = new Set([...CORE_BUSINESS_IDS, 'supply-system', 'supply-courses', 'supply-school-plan', 'ai-study-system', 'ai-portals', 'ai-school-model']);
 const FIXED_ALLIANCE_IDS = new Set(['alliance-intro', 'third-members', 'third-conference-plan']);
@@ -215,12 +215,11 @@ function field(parent, obj, key, label, type = 'text', wide = false, options = {
   } else { input = el('input'); input.type = type; }
   input.id = id;
   if (options.readOnly) input.readOnly = true;
-  if (key === 'features') input.value = Array.isArray(obj[key]) ? obj[key].join('\n') : (obj[key] ?? '');
-  else if (type === 'checkbox') input.checked = Boolean(obj[key]);
+  if (type === 'checkbox') input.checked = Boolean(obj[key]);
   else input.value = obj[key] ?? '';
   if (type === 'checkbox') { box.classList.add('published-field'); }
   const update = () => {
-    obj[key] = type === 'checkbox' ? input.checked : type === 'number' ? (input.value === '' ? 0 : Number(input.value)) : key === 'features' ? input.value.split('\n').filter(Boolean) : input.value;
+    obj[key] = type === 'checkbox' ? input.checked : type === 'number' ? (input.value === '' ? 0 : Number(input.value)) : input.value;
     changed(); options.onChange?.(obj[key]);
   };
   input.addEventListener(type === 'select' || type === 'checkbox' ? 'change' : 'input', update);
@@ -293,7 +292,7 @@ function collectionFields(collection, item) {
   if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  return [['title', '服务名称'], ['category', '服务分类'], ['subtitle', '副标题', 'text', true], ['description', '详细介绍', 'textarea', true], ['features', '服务要点（每行一个）', 'textarea', true]];
+  return [];
 }
 function collectionDefault(collection) {
   if (collection === 'aboutPages') return { id: newId('about'), title: '新页面', summary: '', body: '', link: '', target: '', order: 0, published: false };
@@ -305,7 +304,7 @@ function collectionDefault(collection) {
   if (collection === 'news') return { id: newId('news'), title: '新文章', group: 'group', category: '集团动态', date: new Date().toISOString().slice(0, 10), summary: '', body: '', source: '', image: '', longImage: '', published: false };
   if (collection === 'venturePages') return { id: newId('venture'), title: '新页面', summary: '', body: '', image: '/assets/logo.png', longImage: '', order: 0, published: false };
   if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
-  return { title: '新服务', subtitle: '', description: '', category: '课程服务', features: [] };
+  return {};
 }
 function renderCollection(target, collection) {
   const notes = {
@@ -317,8 +316,7 @@ function renderCollection(target, collection) {
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
     news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
     venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',
-    contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。',
-    services: '兼容旧版本的产品与服务字段；新官网请优先编辑“集团核心业务”。'
+    contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。'
   };
   target.append(el('p', 'admin-note', notes[collection] || '维护栏目内容。'));
   data[collection].forEach((item, index) => {
@@ -330,7 +328,7 @@ function renderCollection(target, collection) {
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
   });
-  const labels = { aboutPages: '页面', businessPages: '业务', alliancePages: '联盟页面', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目', services: '服务' };
+  const labels = { aboutPages: '页面', businessPages: '业务', alliancePages: '联盟页面', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目' };
   const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
 }
 function consultationPage(value) {

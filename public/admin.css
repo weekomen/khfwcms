@@ -139,12 +139,6 @@ textarea {
     margin-bottom: 20px
 }
 
-.compat-tab {
-    margin-left: auto !important;
-    color: var(--muted) !important;
-    font-size: 12px
-}
-
 .nested-heading {
     display: flex;
     align-items: center;
@@ -309,10 +303,6 @@ button:disabled {
     .admin-tabs {
         gap: 16px;
         font-size: 13px
-    }
-
-    .compat-tab {
-        margin-left: 0 !important
     }
 
     .form-grid {

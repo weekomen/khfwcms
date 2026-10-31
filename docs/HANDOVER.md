@@ -79,7 +79,7 @@
 | 字段 | 结构与校验 |
 | --- | --- |
 | `site` | `name`、`tagline`、`headline`、`intro`、`about`、`phone`、`email`、`address`、`filing`，均为字符串。品牌名和首页标题非空；邮箱填写时须通过格式检查 |
-| `services` | 最多 24 项；每项 `title`、`subtitle`、`description`、`category` 为字符串；`features` 为最多 12 项的字符串数组 |
+| `services` | 旧数据兼容字段，后台已移除“旧版服务”入口，维护其它栏目时原样保留；现有业务使用 `businessPages`。最多 24 项，每项 `title`、`subtitle`、`description`、`category` 为字符串，`features` 为最多 12 项的字符串数组 |
 | `courses` | 可省略，最多 200 项；`title`、`category`、`summary` 为字符串，前两项非空；`description`、`outline`、`cover`、`longImage` 可选；图片字段必须是 `/assets/` 下的素材路径（后台上传素材仅支持 JPG、PNG、WebP），`cover` 为卡片封面，`longImage` 为详情长图；`page` 必须为 0–32 的整数，新增项默认为 0 |
 | `team` | 最多 100 项；`name`、`role`、`bio`、`category`、`image` 为字符串。图片路径最多 150 字符，须符合 `/assets/文件名`，文件名只含英文字母、数字、下划线、点、连字符 |
 | `news` | 最多 100 项；`id`、`title`、`category`、`date`、`summary`、`body`、`source` 为字符串；`id` 非空且唯一；`published` 为布尔值。正文最多 50,000 字符；日期可空，非空须为 `YYYY-MM-DD` 格式；原文地址可空，非空只接受 HTTPS |
