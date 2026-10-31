@@ -50,8 +50,6 @@ function handleNavLink(event, link) {
   if (courseCategory && window.selectCourseCategory) { event.preventDefault(); window.selectCourseCategory(courseCategory); }
   const newsCategory = link.dataset.newsCategory;
   if (newsCategory && window.selectNewsCategory) { event.preventDefault(); window.selectNewsCategory(newsCategory); }
-  const topic = link.dataset.contactTopic;
-  if (topic) window.selectContactTopic?.(topic);
   // Core team is a section on the home page.  Handle it explicitly so the
   // dynamically rebuilt menu scrolls reliably after the dropdown closes.
   if (link.dataset.teamLink === 'true' || link.hash === '#team') {
@@ -210,19 +208,17 @@ function applyNavigationData(data) {
       const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageUrl(child);
       if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
       if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
-      if (child.action === 'contact-topic') { link.dataset.contactTopic = ({ business: '商务合作', teachers: '师资合作', careers: '人才招聘', info: '联系方式' })[child.value] || child.value || child.label; link.href = '#contact'; }
+      if (key === 'contact' || child.action === 'contact-topic') link.href = '#contact';
       if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') link.dataset.teamLink = 'true';
       // Business and venture entries are managed pages.  Open them in a new
       // tab even when older content records did not store target="blank".
-      const managedPage = child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.href);
+      const managedPage = key !== 'contact' && (child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.href));
       if (managedPage) link.dataset.managedPage = 'true';
-      if (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      if (key !== 'contact' && (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href))) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);
     });
   });
 }
-window.selectContactTopic = topic => { const heading = $('#contact-topic'); if (heading) heading.textContent = topic; };
-
 async function init() {
   try {
     const response = await fetch('/api/content'); if (!response.ok) throw Error();
@@ -238,15 +234,6 @@ async function init() {
     ['全部团队', ...new Set(asList(data.team).map(person => person.category).filter(Boolean))].forEach(category => { const button = el('button', '', category); button.type = 'button'; button.onclick = () => renderTeam(category); $('#team-filters').append(button); }); renderTeam('全部团队');
     renderNews(data);
     const contact = $('#contact-info'); contact.append(el('div', 'contact-info-label', '期待与您携手，共建优质教育服务'));
-    // 兼容旧数据中的商务合作、师资合作和人才招聘记录，但官网只展示联系方式。
-    const infoRecord = asList(data.contactTopics).find(item => {
-      if (typeof item === 'string') return item === '联系方式';
-      const value = String(item.id || item.key || item.label || item.title || item.name || '').trim().toLowerCase();
-      return value === 'info' || value === 'contact-info' || value === '联系方式';
-    });
-    const infoTopic = typeof infoRecord === 'string' ? infoRecord : infoRecord?.label || infoRecord?.title || infoRecord?.name || '联系方式';
-    const topicList = el('div', 'contact-topics'); const button = el('button', '', infoTopic); button.type = 'button'; button.onclick = () => window.selectContactTopic(infoTopic); topicList.append(button); contact.append(topicList);
-    const topicHeading = el('strong', '', '合作咨询'); topicHeading.id = 'contact-topic'; contact.append(topicHeading);
     if (site.phone) { const phone = el('a', 'contact-line', site.phone); phone.href = 'tel:' + site.phone.replace(/[^+\d-]/g, ''); contact.append(phone); }
     if (site.email) { const email = el('a', 'contact-line', site.email); email.href = 'mailto:' + site.email; contact.append(email); }
     if (site.address) contact.append(el('p', '', site.address));

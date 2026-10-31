@@ -238,8 +238,7 @@ a.news-row:hover h3 {
     margin: -4px 0 18px
 }
 
-.news-filters button,
-.contact-topics button {
+.news-filters button {
     border: 0;
     border-bottom: 1px solid transparent;
     padding: 5px 0;
@@ -250,23 +249,9 @@ a.news-row:hover h3 {
 }
 
 .news-filters button.selected,
-.news-filters button:hover,
-.contact-topics button:hover {
+.news-filters button:hover {
     color: var(--blue);
     border-color: currentColor
-}
-
-.contact-topics {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 16px 0 12px
-}
-
-#contact-topic {
-    display: block;
-    margin: 10px 0;
-    color: var(--ink);
-    font-size: 16px
 }
 
 @media(min-width:1201px) and (max-width:1400px) {
