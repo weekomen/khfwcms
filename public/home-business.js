@@ -34,9 +34,10 @@
     const image = document.getElementById('business-feature-image');
     const panel = document.getElementById('business-feature-panel');
     const hero = document.getElementById('home');
+    const showcase = document.getElementById('business-showcase');
     const previous = document.getElementById('business-previous');
     const next = document.getElementById('business-next');
-    if (!feature || !image || !panel || !hero || !previous || !next) return;
+    if (!feature || !image || !panel || !hero || !showcase || !previous || !next) return;
     const buttons = [];
     let current = 0, timer;
     let focusPaused = hero.contains(document.activeElement) && document.activeElement.matches(':focus-visible');
@@ -90,6 +91,13 @@
     });
     window.selectHomeBusiness = id => { const index = businesses.findIndex(page => page.id === id); if (index >= 0) select(index, { manual: true }); };
     select(0);
+    const measureShowcase = () => {
+      hero.style.setProperty('--business-showcase-height', `${showcase.getBoundingClientRect().height}px`);
+    };
+    measureShowcase();
+    const sizeObserver = 'ResizeObserver' in window ? new ResizeObserver(measureShowcase) : null;
+    sizeObserver?.observe(showcase);
+    on(window, 'resize', measureShowcase);
     on(previous, 'click', () => select((current - 1 + businesses.length) % businesses.length, { manual: true }));
     on(next, 'click', () => select((current + 1) % businesses.length, { manual: true }));
     const pauseForPointer = event => {
@@ -113,7 +121,7 @@
       inView = entry.isIntersecting; syncAutoplay();
     }, { threshold: 0.1 }) : null;
     observer?.observe(hero);
-    destroyCarousel = () => { window.clearInterval(timer); observer?.disconnect(); listeners.forEach(remove => remove()); };
+    destroyCarousel = () => { window.clearInterval(timer); observer?.disconnect(); sizeObserver?.disconnect(); listeners.forEach(remove => remove()); };
     syncAutoplay();
     for (const page of businesses.slice(0, 2)) {
       document.querySelector(`[data-business-heading="${page.id}"]`).textContent = page.title;

@@ -61,6 +61,36 @@ async function expectOneAutomaticStep(page, index) {
   await advance(page, 6100);
   await assertSlide(page, (index + 1) % ids.length);
 }
+async function assertBusinessLayout(page, viewport) {
+  await page.locator('#business-feature-image').evaluate(image => image.decode());
+  const layout = await page.evaluate(() => {
+    const image = document.getElementById('business-feature-image');
+    const panel = document.getElementById('business-feature-panel').getBoundingClientRect();
+    const navigation = document.getElementById('business-showcase').getBoundingClientRect();
+    const bounds = image.getBoundingClientRect();
+    const style = getComputedStyle(image);
+    // With contain and top alignment, this is the rendered source-image area,
+    // excluding any letterboxing in the element's larger CSS box.
+    const scale = Math.min(bounds.width / image.naturalWidth, bounds.height / image.naturalHeight);
+    const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
+    return {
+      fit: style.objectFit, position: style.objectPosition, viewportWidth: innerWidth,
+      navigation: { left: navigation.left, right: navigation.right, top: navigation.top },
+      panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom },
+      image: { left: bounds.left + (bounds.width - width) / 2, right: bounds.left + (bounds.width + width) / 2, top: bounds.top, bottom: bounds.top + height, width, height }
+    };
+  });
+  const label = `${viewport.width}x${viewport.height}`;
+  assert.ok(Math.abs(layout.navigation.left) <= 1, `Business navigation must reach the left edge at ${label}`);
+  assert.ok(Math.abs(layout.navigation.right - layout.viewportWidth) <= 1, `Business navigation must reach the right edge at ${label}`);
+  assert.equal(layout.fit, 'contain', `Business images must be fully contained at ${label}`);
+  assert.ok(['top', '0%', '0px'].includes(layout.position.trim().split(/\s+/).at(-1)), `Business images must align to the top at ${label}: ${layout.position}`);
+  assert.ok(layout.image.width > 0 && layout.image.height > 0, `Business image must have a decoded visible area at ${label}`);
+  if (viewport.width > 760) {
+    assert.ok(layout.image.left >= layout.panel.left - 1 && layout.image.right <= layout.panel.right + 1 && layout.image.top >= layout.panel.top - 1 && layout.image.bottom <= layout.panel.bottom + 1, `The complete business image must fit inside the visible hero panel at ${label}`);
+    assert.ok(layout.image.bottom <= layout.navigation.top + 1, `Business navigation must not cover the rendered image at ${label}: image bottom ${layout.image.bottom}, navigation top ${layout.navigation.top}`);
+  }
+}
 
 (async () => {
   const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
@@ -138,6 +168,7 @@ async function expectOneAutomaticStep(page, index) {
       const visible = await tabs.evaluateAll(buttons => buttons.map(button => { const r = button.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }));
       assert.deepEqual(visible, Array(7).fill(true), `All seven business buttons must be in the first viewport at ${viewport.width}x${viewport.height}`);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      await assertBusinessLayout(page, viewport);
     }
     await page.getByLabel('外观').selectOption('dark');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -153,6 +184,6 @@ async function expectOneAutomaticStep(page, index) {
     assert.equal(await page.locator('#business-feature-counter, #business-autoplay').count(), 0);
     assert.deepEqual(reduced.errors, []);
     await page.close();
-    console.log('PASS: seven hero buttons visible in the first viewport; six-second automatic playback, wraparound, manual reset, temporary hover/keyboard/visibility/scroll pauses, links, reduced-motion cadence and mobile dark layout.');
+    console.log('PASS: full-width navigation and contained top-aligned hero images; seven first-viewport buttons, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and mobile dark layout.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
