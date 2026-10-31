@@ -7,6 +7,15 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
   try {
     const page = await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
     const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+    const waitForNewsAnchor = async () => {
+      await page.waitForFunction(() => {
+        if (location.hash !== '#news') return false;
+        const section = document.getElementById('news').getBoundingClientRect();
+        const header = document.querySelector('header').getBoundingClientRect();
+        return section.top >= header.bottom - 1 && section.top < Math.min(innerHeight, header.bottom + 150) && section.bottom > header.bottom;
+      });
+      assert.equal(new URL(page.url()).hash,'#news');
+    };
     await page.route('http://localhost:3199/**',async route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/admin/session') return route.fulfill({status:401,json:{error:'请登录'}});
@@ -34,6 +43,10 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.evaluate(()=>window.scrollTo(0,0));
     assert.equal(await page.locator('#back-to-top').isVisible(),false);
     await page.screenshot({path:'reference/hero-business-desktop.png'});
+    await page.locator('[data-nav-key="news"] > a.nav-parent[href="#news"]').click();
+    await waitForNewsAnchor();
+    assert.equal(await page.locator('[data-nav-key="news"] .news-menu-toggle').getAttribute('aria-expanded'),'false');
+    assert.equal(await page.locator('#nav-news').isVisible(),false);
     await page.goto('http://localhost:3199/courses.html'); await page.waitForSelector('.course-card');
     assert.equal(await page.locator('#course-catalog a').count(),0);
     let checked = 0;
@@ -78,6 +91,20 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.goto('http://localhost:3199/'); await page.waitForSelector('#platform-grid button');
     await page.screenshot({path:'reference/hero-business-mobile.png'});
+    await page.locator('.menu-toggle').click();
+    await page.locator('[data-nav-key="news"] > a.nav-parent[href="#news"]').click();
+    await waitForNewsAnchor();
+    assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
+    assert.equal(await page.locator('#nav').isVisible(),false);
+    await page.locator('.menu-toggle').click();
+    await page.getByRole('button',{name:'展开新闻分类',exact:true}).click();
+    await page.locator('#nav-news a[data-news-category="行业洞察"]').click();
+    await waitForNewsAnchor();
+    assert.equal(await page.locator('#news-filters button.selected').textContent(),'行业洞察');
+    assert.equal(await page.locator('#news-filters button.selected').getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
+    assert.equal(await page.locator('#nav').isVisible(),false);
+    assert.equal(await page.locator('[data-nav-key="news"] .news-menu-toggle').getAttribute('aria-expanded'),'false');
     await page.locator('#platform-grid').scrollIntoViewIfNeeded(); assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.getByRole('button',{name:'放大抖音二维码'}).click(); assert.ok(await page.locator('#detail').evaluate(d=>d.scrollWidth<=d.clientWidth)); await page.keyboard.press('Escape');
     await page.goto('http://localhost:3199/team.html'); await page.waitForSelector('.person');
@@ -91,6 +118,6 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     assert.equal(await page.getByLabel('学习内容（每行一项）',{exact:true}).count(),data.courses.length);
     assert.equal(await page.getByLabel('适用年级',{exact:true}).count(),data.courses.length);
     assert.deepEqual(errors,[]);
-    console.log(`PASS: homepage, standalone course/team pages, all ${checked} course dialogs, query category, mobile 3-course preview, team focus restore, QR images and editable details.`);
+    console.log(`PASS: homepage news anchors and mobile menu dismissal, standalone course/team pages, all ${checked} course dialogs, query category, mobile 3-course preview, team focus restore, QR images and editable details.`);
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -80,6 +80,9 @@ a.news-row:hover h3 {
     transition: transform .2s ease
 }
 
+.site-body [data-nav-key="news"] { column-gap: 2px; }
+.site-body .news-menu-toggle { min-width: 24px; justify-content: center; }
+
 .site-body .nav-group:hover .nav-parent,
 .site-body .nav-group:focus-within .nav-parent,
 .site-body .nav-group.active .nav-parent,
@@ -331,6 +334,16 @@ a.news-row:hover h3 {
         padding: 10px;
         height: auto
     }
+
+    .site-body [data-nav-key="news"] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 40px;
+        column-gap: 0;
+    }
+
+    .site-body [data-nav-key="news"] > .nav-parent { width: auto; }
+    .site-body .news-menu-toggle { justify-content: center; min-height: 40px; }
+    .site-body [data-nav-key="news"] > .nav-dropdown { grid-column: 1 / -1; }
 
     .site-body .nav-dropdown {
         position: static;
