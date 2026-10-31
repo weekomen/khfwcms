@@ -12,7 +12,11 @@
     'supply-chain': '#after-school-supply',
     'ai-school-supply': '#ai-school-supply'
   };
-  const destination = id => sections[id] || `/content-page.html?type=business&id=${encodeURIComponent(id)}`;
+  const resourceLinks = {
+    'supply-courses': '/courses.html',
+    'supply-school-plan': 'https://kehoubang.cn/profile/upload/pdf/2/index.html'
+  };
+  const destination = id => sections[id] || resourceLinks[id] || `/content-page.html?type=business&id=${encodeURIComponent(id)}`;
   window.homeBusinessDestination = destination;
   const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
   const setImage = (image, source, fallback) => {
