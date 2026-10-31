@@ -2,6 +2,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'C:/Users/zhou/.cach
 const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
 (async () => {
   const data = JSON.parse(fs.readFileSync('data/seed.json','utf8'));
+  fs.mkdirSync('reference', { recursive: true });
   const browser = await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL || 'chromium',headless:true});
   try {
     const page = await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
@@ -12,15 +13,16 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
       if (url.pathname === '/api/admin/login') return route.fulfill({json:{ok:true,csrfToken:'browser-fixture',passwordChangeRequired:false}});
       if (url.pathname.startsWith('/api/')) return route.fulfill({json:data});
       const file = url.pathname==='/'?'index.html':url.pathname==='/admin'?'admin.html':url.pathname.slice(1);
-      await route.fulfill({body:fs.readFileSync(path.join('public',file)),contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png'})[path.extname(file)]||'application/octet-stream'});
+      await route.fulfill({body:fs.readFileSync(path.join('public',file)),contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png'})[path.extname(file)]||'application/octet-stream'});
     });
-    await page.goto('http://localhost:3199/'); await page.waitForSelector('.course-card');
+    await page.goto('http://localhost:3199/'); await page.waitForSelector('.hero-image');
     assert.match(await page.locator('.hero-image').evaluate(e=>getComputedStyle(e).backgroundImage),/hero-office.jpg/);
     assert.equal(await page.locator('#back-to-top').isVisible(),false);
     await page.screenshot({path:'reference/hero-office-desktop.png'});
+    await page.goto('http://localhost:3199/courses.html'); await page.waitForSelector('.course-card');
     assert.equal(await page.locator('#course-catalog a').count(),0);
     let checked = 0;
-    for (const category of [...new Set(data.courses.map(c=>c.category))]) {
+    for (const category of [...new Set(data.courses.map(c=>c.category === '劳动类' ? '手工类' : c.category))]) {
       await page.getByRole('button',{name:category,exact:true}).click();
       await page.locator('#course-catalog .team-toggle').click();
       const buttons=page.locator('.course-detail-button');
@@ -33,6 +35,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
       }
     }
     assert.equal(checked,55);
+    await page.goto('http://localhost:3199/'); await page.waitForSelector('#platform-grid button');
     for (const name of ['微信','视频号','快手','抖音']) {
       await page.getByRole('button',{name:`放大${name}二维码`}).click();
       await page.locator('.qr-large').evaluate(img=>img.decode());
@@ -42,14 +45,26 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.locator('#platform-grid').scrollIntoViewIfNeeded(); await page.screenshot({path:'reference/contact-platforms.png'});
     await page.getByRole('button',{name:'返回顶部',exact:true}).click();
     await page.waitForFunction(()=>scrollY===0);
-    await page.setViewportSize({width:390,height:844}); await page.getByLabel('外观').selectOption('dark');
+    await page.setViewportSize({width:390,height:844});
+    await page.goto('http://localhost:3199/courses.html?category=%E7%A7%91%E6%8A%80%E7%B1%BB'); await page.waitForSelector('.course-card');
+    await page.getByLabel('外观').selectOption('dark');
+    assert.equal(await page.locator('.course-filters .selected').textContent(),'科技类');
+    assert.equal(await page.locator('.course-card').count(),3);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await page.goto('http://localhost:3199/'); await page.waitForSelector('#platform-grid button');
     await page.screenshot({path:'reference/hero-office-mobile.png'});
     await page.locator('#platform-grid').scrollIntoViewIfNeeded(); assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.getByRole('button',{name:'放大抖音二维码'}).click(); assert.ok(await page.locator('#detail').evaluate(d=>d.scrollWidth<=d.clientWidth)); await page.keyboard.press('Escape');
+    await page.goto('http://localhost:3199/team.html'); await page.waitForSelector('.person');
+    assert.equal(await page.locator('.person').count(),data.team.length);
+    await page.locator('.person').first().click(); assert.equal(await page.locator('#detail').evaluate(d=>d.open),true);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('.person').first().evaluate(button=>button===document.activeElement),true);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.goto('http://localhost:3199/admin');await page.getByLabel('管理密码',{exact:true}).fill('test');await page.getByRole('button',{name:'登录后台'}).click();await page.getByRole('button',{name:'课程目录',exact:true}).click();
     assert.equal(await page.getByLabel('详细介绍（弹窗）',{exact:true}).count(),55);
     assert.equal(await page.getByLabel('学习内容（每行一项）',{exact:true}).count(),55);
     assert.deepEqual(errors,[]);
-    console.log('PASS: new hero, all 55 course dialogs, no PDF navigation, 4 original QR images, back to top, mobile dark layout, editable details.');
+    console.log('PASS: homepage, standalone course/team pages, all 55 course dialogs, query category, mobile 3-course preview, team focus restore, QR images and editable details.');
   } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

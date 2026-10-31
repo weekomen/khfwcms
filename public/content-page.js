@@ -4,9 +4,10 @@ const type = params.get('type') || 'business';
 const requestedId = params.get('id') || '';
 const asList = value => Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
 const paragraphs = text => String(text || '').split(/\n\s*\n|\n/).map(value => value.trim()).filter(Boolean).map(value => {
-  const node = document.createElement('p'); node.textContent = value; return node;
+  const heading = /^(#{1,3})\s+(.+)$/.exec(value);
+  const node = document.createElement(heading ? (heading[1].length === 3 ? 'h3' : 'h2') : 'p'); node.textContent = heading ? heading[2] : value; return node;
 });
-const aliases = { 'business-supply': 'supply-chain', 'business-online': 'online-education', 'business-street': 'education-street', 'business-youth': 'youth-center', 'business-ai': 'ai-museum', 'invest-intro': 'intro', 'invest-meal': 'new-year-dinner' };
+const aliases = { 'business-supply': 'supply-chain', 'business-supply-chain': 'supply-chain', 'business-online': 'online-education', 'business-online-education': 'online-education', 'business-street': 'education-street', 'business-education-street': 'education-street', 'business-youth': 'youth-center', 'business-youth-center': 'youth-center', 'business-ai': 'ai-museum', 'business-ai-museum': 'ai-museum', 'invest-intro': 'intro', 'invest-meal': 'new-year-dinner' };
 const showError = () => {
   const card = document.createElement('article'); card.className = 'content-page-card';
   const title = document.createElement('h1'); title.textContent = '内容不存在';

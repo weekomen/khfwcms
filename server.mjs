@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { validateContent } from './validation.mjs';
 import { createAdminAuth } from './auth.mjs';
 import { createConsultations } from './consultations.mjs';
+import { applyBusinessDefaults } from './business-content.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
@@ -25,7 +26,7 @@ function withDefaultCollections(content) {
   // files readable while exposing the new field to the admin editor; the
   // administrator can explicitly save it when a cover is selected.
   for (const course of content.courses || []) if (course && typeof course === 'object') course.cover ??= '';
-  return content;
+  return applyBusinessDefaults(content);
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });

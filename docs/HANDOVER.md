@@ -34,7 +34,10 @@
 | `server.mjs` | HTTP 路由、静态文件、图片上传、读取和保存内容；默认监听 `127.0.0.1:3000` |
 | `auth.mjs` | 密码初始化及哈希、会话、CSRF、同源/HTTPS 检查和登录限流 |
 | `validation.mjs` | 保存内容时的字段、数量、链接和路径校验 |
-| `public/index.html`、`public/app.js` | 官网栏目、团队、服务卡片、新闻链接、二维码与详情弹窗 |
+| `public/index.html`、`public/app.js` | 首页导航、进校栏目、新闻链接、二维码与咨询入口 |
+| `public/home-business.js`、`public/home-business.css` | 七项业务切图、两类进校整体介绍与六个详情入口 |
+| `business-content.mjs` | 旧内容的七项业务与六个详情页内存补缺、旧导航迁移 |
+| `public/courses.html`、`public/team.html`、`public/library.js`、`public/library.css` | 独立课程资源库与团队介绍页面 |
 | `public/courses.js`、`public/courses.css` | 课程分类、默认展示数量、展开收起、课程详情 |
 | `public/style.css`、`public/site-theme.css` | 官网布局、响应式样式、夜间模式覆盖 |
 | `public/admin.html`、`public/admin.js`、`public/admin.css`、`public/upload.css` | 登录、改密、栏目编辑、照片上传与保存状态 |
@@ -52,11 +55,11 @@
 
 ## 2. 已实现的官网功能
 
-- **产品与服务**：服务卡片直接展示名称、副标题、详细介绍和全部服务要点，无“了解更多”弹窗。文字来自 CMS 的 `services`。
-- **课程目录**：交付内容包含 55 门课程，分为美育、益智、科技、劳动四类；分类由实际数据生成。视口宽度 ≤600px 时，每类默认展示 3 门，其余宽度展示 6 门，可展开全部，切换分类时重新收起。课程封面和课程介绍长图分开维护：`cover` 用于课程卡片缩略图，`longImage` 仅用于详情弹窗，详情弹窗会按可读宽度展示长图并允许页面滚动查看；未设置封面时才回退到长图或分类配图。详情同时显示介绍和按行拆分的学习内容。
-- **在线资料入口**：页眉提供“课程手册 / 一校一案”；“从优质课程，到每一次落地”旁提供“全部课程手册”，“课程落地与配套服务”旁提供“一校一案”。课程手册指向 `https://kehoubang.cn/profile/upload/pdf/1/index.html`，一校一案指向 `https://kehoubang.cn/profile/upload/pdf/2/index.html`，均为带 `noopener noreferrer` 的新标签页链接。配置位置为 `public/index.html`，目前不由 CMS 编辑。窄屏导航可展开和滚动访问。
-- **专业团队**：按分类查看，默认只展示一排，数量按当前网格列数计算，常见桌面 4 人、手机 2 人；可以展开/收起。点击成员查看照片、职称和简介，切换团队分类不会改变课程分类。
-- **公司动态**：仅显示已发布文章，按日期字符串倒序排列。存在有效 HTTPS 原文链接时，在新标签页打开；无链接时显示“文章链接待补充”，不弹出文章详情。后台保存的正文仍可通过公开 API 的已发布文章读取。
+- **集团核心业务**：首页提供七项切图，图片来自对应 `businessPages.image`。首两项导航和大图跳到首页课后服务进校、人工智能进校栏目；两栏目各三张卡片打开独立详情页，其余五项业务直接打开业务页。七张图片及十三页文字均可在后台维护，固定编号用于稳定跳转。
+- **课程目录**：独立 `/courses.html` 包含美育、益智、科技、手工四类共 55 门课程。手机默认 3 门，其余宽度 6 门，可展开；通过 `?category=分类名` 选择分类。`cover` 用于卡片缩略图，`longImage` 用于弹窗的可读长图；详情显示介绍和学习内容。
+- **在线资料入口**：“关于课后邦”下保留公司展册、课程手册与一校一案；课程资源库提供全部课程手册链接，均在新标签页打开。导航可在 CMS 维护，窄屏可展开和滚动。
+- **专业团队**：独立 `/team.html` 展示全部成员，支持分类筛选，点击成员查看照片、职称和自然分段的简介。
+- **公司动态**：仅显示已发布文章，按日期倒序排列。两类新闻存在有效 HTTPS 原文链接时均直接在新标签页打开；没有链接时打开站内文章页。
 - **联系与主题**：电话和邮箱链接、微信/视频号/快手/抖音二维码放大、返回顶部；官网和后台均支持日间、夜间和跟随系统。偏好保存在当前浏览器同源 `localStorage` 的 `khb-admin-theme`，不涉及认证信息。
 
 首屏照片为 `public/assets/hero-office.jpg`，引用位置在 `public/style.css`；平台名称、提示及二维码路径在 `public/app.js`。这些素材和课程分类配图尚无后台上传入口。课程 `page` 字段仅为兼容旧数据保留，单门课程详情使用弹窗；完整课程手册与一校一案通过上述独立链接打开。`public/assets/course-manual.pdf` 仍属于公开静态文件，但它不是两个在线 HTML 阅读器的完整文件包，不能替代它们的部署。
@@ -160,7 +163,7 @@ sha256sum -c khfwcms-handover-xxxxxxxxxxxx.zip.sha256
 npm test
 ```
 
-它运行 `tests/cms.test.mjs` 和 `tests/consultations.test.mjs`，使用临时数据目录和测试凭据，覆盖内容校验、旧凭据迁移、首次改密、Cookie/CSRF、HTTPS/反代来源、登录限流、会话过期/撤销、上传限制、草稿隔离、保存和重启持久化，以及咨询校验、防刷、私有存储和管理操作。不会修改正式运行数据；不依赖额外 npm 包。
+它运行 `tests/cms.test.mjs`、`tests/consultations.test.mjs` 和 `tests/business-content.test.mjs`，使用临时数据目录和测试凭据，覆盖内容校验、旧凭据迁移、首次改密、Cookie/CSRF、HTTPS/反代来源、登录限流、会话过期/撤销、上传限制、草稿隔离、保存和重启持久化，以及咨询管理、七项业务和旧导航迁移。不会修改正式运行数据；不依赖额外 npm 包。
 
 可选浏览器检查：
 

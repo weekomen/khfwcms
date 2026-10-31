@@ -714,8 +714,8 @@
         {
           "id": "team",
           "label": "核心团队",
-          "href": "#team",
-          "target": "",
+          "href": "/team.html",
+          "target": "blank",
           "action": ""
         }
       ]
@@ -723,83 +723,105 @@
     {
       "id": "business",
       "label": "集团核心业务",
-      "href": "#services",
+      "href": "#business-showcase",
       "children": [
         {
           "id": "supply-chain",
-          "label": "课后邦供应链",
-          "href": "/content-page.html?type=business&id=supply-chain",
+          "label": "课后邦课后服务进校供应链",
+          "href": "#after-school-supply",
+          "target": "",
+          "action": "business",
+          "value": "supply-chain"
+        },
+        {
+          "id": "ai-school-supply",
+          "label": "课后邦人工智能进校供应链",
+          "href": "#ai-school-supply",
+          "target": "",
+          "action": "business",
+          "value": "ai-school-supply"
+        },
+        {
+          "id": "online-ai-study",
+          "label": "线上AI伴学",
+          "href": "/content-page.html?type=business&id=online-ai-study",
           "target": "blank",
-          "action": "business"
+          "action": "business",
+          "value": "online-ai-study"
         },
         {
           "id": "online-education",
           "label": "线上素质教育",
           "href": "/content-page.html?type=business&id=online-education",
           "target": "blank",
-          "action": "business"
+          "action": "business",
+          "value": "online-education"
         },
         {
           "id": "education-street",
           "label": "教育一条街",
           "href": "/content-page.html?type=business&id=education-street",
           "target": "blank",
-          "action": "business"
+          "action": "business",
+          "value": "education-street"
         },
         {
           "id": "youth-center",
           "label": "青少年成长中心",
           "href": "/content-page.html?type=business&id=youth-center",
           "target": "blank",
-          "action": "business"
+          "action": "business",
+          "value": "youth-center"
         },
         {
           "id": "ai-museum",
           "label": "人工智能科技馆",
           "href": "/content-page.html?type=business&id=ai-museum",
           "target": "blank",
-          "action": "business"
+          "action": "business",
+          "value": "ai-museum"
         }
       ]
     },
     {
       "id": "courses",
       "label": "课程资源库",
-      "href": "#course-catalog",
+      "href": "/courses.html",
       "children": [
         {
           "id": "aesthetic",
           "label": "美育类",
-          "href": "#course-catalog",
-          "target": "",
+          "href": "/courses.html?category=%E7%BE%8E%E8%82%B2%E7%B1%BB",
+          "target": "blank",
           "action": "course-category",
           "value": "美育类"
         },
         {
           "id": "puzzle",
           "label": "益智类",
-          "href": "#course-catalog",
-          "target": "",
+          "href": "/courses.html?category=%E7%9B%8A%E6%99%BA%E7%B1%BB",
+          "target": "blank",
           "action": "course-category",
           "value": "益智类"
         },
         {
           "id": "technology",
           "label": "科技类",
-          "href": "#course-catalog",
-          "target": "",
+          "href": "/courses.html?category=%E7%A7%91%E6%8A%80%E7%B1%BB",
+          "target": "blank",
           "action": "course-category",
           "value": "科技类"
         },
         {
           "id": "craft",
           "label": "手工类",
-          "href": "#course-catalog",
-          "target": "",
+          "href": "/courses.html?category=%E6%89%8B%E5%B7%A5%E7%B1%BB",
+          "target": "blank",
           "action": "course-category",
           "value": "手工类"
         }
-      ]
+      ],
+      "target": "blank"
     },
     {
       "id": "news",
@@ -942,18 +964,38 @@
   "businessPages": [
     {
       "id": "supply-chain",
-      "title": "课后邦供应链",
+      "title": "课后邦课后服务进校供应链",
       "summary": "从课程研发、师资组织到交付运营，提供一站式教育资源供应链。",
       "body": "课后邦供应链连接课程研发机构、专业师资、学校与区域合作伙伴，建立标准化的选品、培训、交付和反馈机制，让优质课程能够稳定进入校园并持续迭代。\\n\\n服务重点：课程资源筛选与研发；师资培训与交付标准；区域项目运营与质量反馈。",
-      "image": "/assets/logo.png",
+      "image": "/assets/business-1.svg",
       "longImage": ""
+    },
+    {
+      "id": "ai-school-supply",
+      "title": "课后邦人工智能进校供应链",
+      "summary": "围绕 AI 伴学、校园多端协同与进校模式，探索人工智能与教育场景的结合。",
+      "body": "人工智能进校服务以学校教学与学生成长场景为基础，连接 AI 伴学工具、校园管理流程和家校协同需求。\n\n通过系统介绍、多端功能说明和进校方案沟通，帮助学校与合作伙伴了解适用场景、实施条件与推进方式。",
+      "image": "/assets/business-2.svg",
+      "longImage": "",
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "online-ai-study",
+      "title": "线上AI伴学",
+      "summary": "连接学习资源、互动工具和学习陪伴，为课后自主学习提供支持。",
+      "body": "线上 AI 伴学围绕学生课后的学习任务与兴趣探索，结合数字内容、互动练习和学习反馈，构建可持续的线上学习陪伴场景。\n\n具体课程、工具与服务方式可根据年龄阶段和合作需求进行配置。",
+      "image": "/assets/business-3.svg",
+      "longImage": "",
+      "order": 3,
+      "published": true
     },
     {
       "id": "online-education",
       "title": "线上素质教育",
       "summary": "以线上课程、数字工具和学习陪伴，延伸学生的成长场景。",
       "body": "线上素质教育融合直播课、录播课、互动任务和学习评价，为不同年龄阶段提供美育、益智、科技与综合实践内容。线上线下协同，让孩子在课后保持持续探索。\\n\\n服务重点：多元素质课程内容；学习任务与成长记录；家校协同与运营支持。",
-      "image": "/assets/logo.png",
+      "image": "/assets/business-4.svg",
       "longImage": ""
     },
     {
@@ -961,7 +1003,7 @@
       "title": "教育一条街",
       "summary": "把课程体验、文化活动和社区服务汇聚到身边的教育空间。",
       "body": "教育一条街面向家庭、学校和社区，提供课程体验、主题活动、研学实践与公益服务。通过开放式场景连接更多教育伙伴，让教育服务更有温度、更易参与。\\n\\n服务重点：课程体验与展示空间；社区主题活动与研学；教育伙伴联合运营。",
-      "image": "/assets/logo.png",
+      "image": "/assets/business-5.svg",
       "longImage": ""
     },
     {
@@ -969,7 +1011,7 @@
       "title": "青少年成长中心",
       "summary": "围绕青少年兴趣、能力与品格成长，提供连续的成长支持。",
       "body": "青少年成长中心以真实项目和长期陪伴为核心，结合兴趣课程、实践活动、成长咨询与生涯启蒙，帮助孩子发现优势、建立自信，并在合作与创造中拓展视野。\\n\\n服务重点：兴趣发展与综合实践；成长主题营和研学活动；个性化陪伴与指导。",
-      "image": "/assets/logo.png",
+      "image": "/assets/business-6.svg",
       "longImage": ""
     },
     {
@@ -977,8 +1019,68 @@
       "title": "人工智能科技馆",
       "summary": "用可参与的展陈、实验和项目学习，打开人工智能的探索之门。",
       "body": "人工智能科技馆面向不同年龄段设计机器人、编程、智能硬件和科学实验体验。孩子可以从观察和提问开始，在动手实践中理解技术原理，形成面向未来的问题解决能力。\\n\\n服务重点：人工智能科普展陈；机器人与编程工作坊；项目制学习和科技活动。",
-      "image": "/assets/logo.png",
+      "image": "/assets/business-7.svg",
       "longImage": ""
+    },
+    {
+      "id": "supply-system",
+      "title": "技术系统介绍",
+      "summary": "连接课后服务的课程组织、教学安排与运营协同。",
+      "body": "技术系统围绕课后服务的日常工作流程，梳理学校、教师与服务团队之间的信息协同。\n\n可结合学校需求介绍课程管理、教学安排、服务记录和运营反馈等应用场景，具体功能与实施范围以项目方案为准。",
+      "image": "/assets/business-1.svg",
+      "longImage": "",
+      "order": 8,
+      "published": true
+    },
+    {
+      "id": "supply-courses",
+      "title": "课程介绍",
+      "summary": "从课程资源到课堂实施，了解多元课后课程的组织方式。",
+      "body": "围绕学生年龄特点与兴趣发展，整合美育、益智、科技和手工等课程资源。\n\n课程沟通可从课程目标、适用年级、教学内容、课时安排、材料配置与师资要求等方面展开，结合学校情况形成课程组合。",
+      "image": "/assets/business-1.svg",
+      "longImage": "",
+      "order": 9,
+      "published": true
+    },
+    {
+      "id": "supply-school-plan",
+      "title": "一校一案",
+      "summary": "结合学校场景与学生需求，规划课后服务实施方案。",
+      "body": "一校一案从学校现状、学生兴趣和课程需求出发，梳理课程结构、实施条件、师资组织与服务流程。\n\n通过需求沟通、方案设计、落地准备与阶段反馈，推动适合校园实际情况的课后服务安排。",
+      "image": "/assets/business-1.svg",
+      "longImage": "",
+      "order": 10,
+      "published": true
+    },
+    {
+      "id": "ai-study-system",
+      "title": "AI伴学系统介绍",
+      "summary": "了解 AI 伴学的学习场景、互动方式与服务流程。",
+      "body": "AI 伴学系统以学习任务与成长需要为起点，连接学习内容、互动练习和过程反馈。\n\n系统介绍可围绕适用年龄、内容范围、学习路径、反馈方式和使用条件展开，帮助学校与家庭了解服务的具体边界。",
+      "image": "/assets/business-2.svg",
+      "longImage": "",
+      "order": 11,
+      "published": true
+    },
+    {
+      "id": "ai-portals",
+      "title": "学生端、学校端、老师端与家长端功能介绍",
+      "summary": "从四类使用角色出发，了解各端功能与协同场景。",
+      "body": "## 学生端\n围绕学习任务、内容体验与学习反馈，介绍学生的使用流程。\n\n## 学校端\n围绕校园应用、组织管理与项目反馈，说明学校的协同方式。\n\n## 老师端\n围绕教学安排、学习指导与过程沟通，介绍教师参与场景。\n\n## 家长端\n围绕学习进展、成长陪伴与家校沟通，介绍家庭参与方式。\n\n具体功能清单与各端使用权限以项目方案为准。",
+      "image": "/assets/business-2.svg",
+      "longImage": "",
+      "order": 12,
+      "published": true
+    },
+    {
+      "id": "ai-school-model",
+      "title": "进校模式",
+      "summary": "结合校园条件，了解人工智能教育服务的实施路径。",
+      "body": "进校模式需要结合学校需求、学生年龄、设备环境和服务资源共同设计。\n\n可从场景调研、方案沟通、应用准备、试点实施与阶段反馈逐步推进，并明确学校与服务团队的分工和支持方式。",
+      "image": "/assets/business-2.svg",
+      "longImage": "",
+      "order": 13,
+      "published": true
     }
   ],
   "courseCategories": [

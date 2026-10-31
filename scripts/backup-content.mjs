@@ -1,8 +1,9 @@
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import path from 'node:path';
+import { applyBusinessDefaults } from '../business-content.mjs';
 const root = path.resolve(import.meta.dirname, '..');
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
-const content = JSON.parse(await readFile(path.join(dataDir, 'content.json'), 'utf8'));
+const content = applyBusinessDefaults(JSON.parse(await readFile(path.join(dataDir, 'content.json'), 'utf8')));
 content.news = content.news.filter(article => article.published);
 await mkdir(path.join(root, 'backups/uploads'), { recursive: true });
 const imageCollections = [

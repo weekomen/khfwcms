@@ -6,18 +6,19 @@ import { fileURLToPath } from 'node:url';
 import { validateContent } from '../validation.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const rootFiles = new Set(['.gitignore', 'AGENTS.md', 'README.md', 'package.json', 'package-lock.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json']);
+const rootFiles = new Set(['.gitignore', 'AGENTS.md', 'README.md', 'package.json', 'package-lock.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json']);
 const supportFiles = new Set([
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md',
   'deploy/khfwcms.service', 'deploy/nginx.conf', 'deploy/nginx-bootstrap.conf', 'deploy/khfwcms-proxy.conf', 'deploy/khfwcms.env.example',
   'scripts/backup-content.mjs', 'scripts/create-handoff.mjs', 'scripts/verify-handoff.mjs',
-  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs'
+  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs'
 ]);
 export const requiredFiles = [
-  'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
+  'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
   'public/index.html', 'public/app.js', 'public/style.css', 'public/site-theme.css', 'public/courses.js', 'public/courses.css',
   'public/admin.html', 'public/admin.js', 'public/admin.css', 'public/upload.css', 'public/theme.js', 'public/theme.css',
   'public/consultation.js', 'public/consultation.css',
+  'public/home-business.js', 'public/home-business.css', 'public/courses.html', 'public/team.html', 'public/library.js', 'public/library.css',
   'public/assets/events/manifest.json',
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md', ...[...supportFiles].filter(file => file.startsWith('deploy/') || file.startsWith('scripts/'))
 ];

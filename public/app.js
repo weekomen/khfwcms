@@ -23,8 +23,12 @@ const closeNav = () => {
   nav.classList.remove('open');
   menuToggle.setAttribute('aria-expanded', 'false');
   nav.querySelectorAll('[data-nav-parent]').forEach(button => button.setAttribute('aria-expanded', 'false'));
-  nav.querySelectorAll('.nav-group.open').forEach(group => group.classList.remove('open'));
+  nav.querySelectorAll('.nav-group').forEach(group => { group.classList.remove('open'); group.classList.add('nav-dismissed'); });
 };
+nav.querySelectorAll('[data-nav-group]').forEach(group => {
+  group.addEventListener('mouseenter', () => group.classList.remove('nav-dismissed'));
+  group.querySelector('[data-nav-parent]').addEventListener('focus', () => group.classList.remove('nav-dismissed'));
+});
 menuToggle.onclick = () => {
   const open = nav.classList.toggle('open');
   menuToggle.setAttribute('aria-expanded', String(open));
@@ -32,6 +36,7 @@ menuToggle.onclick = () => {
 nav.querySelectorAll('[data-nav-parent]').forEach(button => button.addEventListener('click', event => {
   event.preventDefault();
   const group = button.closest('[data-nav-group]');
+  group.classList.remove('nav-dismissed');
   const open = group.classList.toggle('open');
   nav.querySelectorAll('[data-nav-group].open').forEach(other => {
     if (other !== group) { other.classList.remove('open'); other.querySelector('[data-nav-parent]')?.setAttribute('aria-expanded', 'false'); }
@@ -46,23 +51,11 @@ function handleNavLink(event, link) {
     window.open(link.href, '_blank', 'noopener,noreferrer');
     return;
   }
-  const courseCategory = link.dataset.courseCategory;
-  if (courseCategory && window.selectCourseCategory) { event.preventDefault(); window.selectCourseCategory(courseCategory); }
   const newsCategory = link.dataset.newsCategory;
   if (newsCategory && window.selectNewsCategory) { event.preventDefault(); window.selectNewsCategory(newsCategory); }
-  // Core team is a section on the home page.  Handle it explicitly so the
-  // dynamically rebuilt menu scrolls reliably after the dropdown closes.
-  if (link.dataset.teamLink === 'true' || link.hash === '#team') {
-    event.preventDefault();
-    closeNav();
-    const team = document.querySelector('#team');
-    if (team) {
-      history.replaceState(null, '', '#team');
-      team.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-    }
-    return;
-  }
-  if (link.target !== '_blank') closeNav();
+  const schoolBusiness = { '#after-school-supply': 'supply-chain', '#ai-school-supply': 'ai-school-supply' }[link.hash];
+  if (schoolBusiness) window.selectHomeBusiness?.(schoolBusiness);
+  closeNav();
 }
 nav.addEventListener('click', event => {
   const link = event.target.closest('a');
@@ -136,8 +129,7 @@ function renderNews(data) {
     if (!news.length) { const empty = el('div', 'news-empty'); empty.append(el('span', '', '↗'), el('div', '', '暂无该分类资讯，新的故事正在发生。')); list.append(empty); return; }
     news.forEach(item => {
       let source; try { const url = new URL(item.source || item.url); if (url.protocol === 'https:') source = url.href; } catch { }
-      const industry = newsCategoryOf(item) === '行业洞察';
-      const href = source && industry ? source : `/article.html?id=${encodeURIComponent(item.id)}`;
+      const href = source || `/article.html?id=${encodeURIComponent(item.id)}`;
       const row = el('a', 'news-row'); row.href = href; row.target = '_blank'; row.rel = 'noopener noreferrer'; row.setAttribute('aria-label', `${item.title}（在新标签页打开）`);
       const copy = el('div');
       if (item.image) { const thumb = el('img', 'news-thumb'); thumb.src = item.image; thumb.alt = ''; thumb.loading = 'lazy'; copy.append(thumb); }
@@ -170,14 +162,14 @@ function applyNavigationData(data) {
       ? { 'business-supply': 'supply-chain', 'business-online': 'online-education', 'business-street': 'education-street', 'business-youth': 'youth-center', 'business-ai': 'ai-museum' }
       : { 'invest-intro': 'intro', 'invest-meal': 'new-year-dinner' };
     const id = idMap[legacy] || legacy.replace(/^(business|invest)-/, '') || safeSlug(raw);
-    return `/content-page.html?type=${type}&id=${encodeURIComponent(id)}`;
+    return type === 'business' ? window.homeBusinessDestination(id) : `/content-page.html?type=${type}&id=${encodeURIComponent(id)}`;
   };
   const pageUrl = child => {
     const value = child.href || child.url || '';
     const raw = String(child.value || child.slug || child.key || child.id || child.label || '').trim();
     if (child.action === 'business') {
-      if (/^\/content-page\.html/i.test(value)) return value;
-      return managedPageUrl('business', raw);
+      const pageId = /^\/content-page\.html/i.test(value) ? new URL(value, location.origin).searchParams.get('id') : raw;
+      return managedPageUrl('business', pageId || raw);
     }
     if (child.action === 'venture') {
       if (/^\/content-page\.html/i.test(value)) return value;
@@ -206,15 +198,14 @@ function applyNavigationData(data) {
     const dropdown = group.querySelector('.nav-dropdown'); dropdown.replaceChildren();
     children.forEach(child => {
       const link = el('a', 'nav-sublink', child.label || child.title || child.name || '未命名'); link.href = pageUrl(child);
-      if (child.action === 'course-category') { link.dataset.courseCategory = child.value || child.label; link.href = '#services'; }
+      if (child.action === 'course-category') { link.href = `/courses.html?category=${encodeURIComponent(child.value || child.label)}`; link.dataset.libraryPage = 'true'; }
       if (child.action === 'news-group') { link.dataset.newsCategory = child.value === 'industry' ? '行业洞察' : child.value === 'group' ? '集团动态' : child.value || child.label; link.href = '#news'; }
       if (key === 'contact' || child.action === 'contact-topic') link.href = '#contact';
-      if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') link.dataset.teamLink = 'true';
-      // Business and venture entries are managed pages.  Open them in a new
-      // tab even when older content records did not store target="blank".
-      const managedPage = key !== 'contact' && (child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.href));
+      if (child.id === 'team' || child.key === 'team' || child.value === 'team' || link.hash === '#team') { link.href = '/team.html'; link.dataset.libraryPage = 'true'; }
+      const inPage = link.getAttribute('href').startsWith('#');
+      const managedPage = key !== 'contact' && !inPage && (child.action === 'business' || child.action === 'venture' || /^\/content-page\.html\?type=(business|venture)/i.test(link.getAttribute('href')));
       if (managedPage) link.dataset.managedPage = 'true';
-      if (key !== 'contact' && (managedPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.href))) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+      if (key !== 'contact' && !inPage && (managedPage || link.dataset.libraryPage || child.target === 'blank' || child.target === '_blank' || child.external || /^https?:/.test(link.getAttribute('href')))) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
       dropdown.append(link);
     });
   });
@@ -226,12 +217,7 @@ async function init() {
     document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
     $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || '';
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';
-    applyNavigationData(data); window.renderCourses(data.courses || [], detail, { categories: data.courseCategories });
-    let teamExpanded = false; const teamToggle = el('button', 'team-toggle'); teamToggle.type = 'button'; teamToggle.setAttribute('aria-controls', 'team-grid'); $('#team-grid').after(teamToggle);
-    const updateTeamVisibility = () => { const cards = [...$('#team-grid').children]; const columns = Math.max(1, getComputedStyle($('#team-grid')).gridTemplateColumns.split(' ').length); cards.forEach((card, index) => { card.hidden = !teamExpanded && index >= columns; }); teamToggle.hidden = cards.length <= columns; teamToggle.textContent = teamExpanded ? '收起团队 ↑' : `展开更多团队（${Math.max(0, cards.length - columns)}） ↓`; teamToggle.setAttribute('aria-expanded', String(teamExpanded)); };
-    teamToggle.onclick = () => { teamExpanded = !teamExpanded; updateTeamVisibility(); }; new ResizeObserver(updateTeamVisibility).observe($('#team-grid'));
-    const renderTeam = category => { teamExpanded = false; $('#team-grid').replaceChildren(); asList(data.team).filter(person => category === '全部团队' || person.category === category).forEach(person => { const card = el('button', 'person'); const portrait = el('div', 'portrait'); const image = el('img'); image.src = person.image; image.alt = person.name; image.loading = 'lazy'; portrait.append(image); card.append(portrait, el('h3', '', person.name), el('p', '', person.role)); card.onclick = () => detail([image.cloneNode(), el('h2', '', person.name), el('div', 'eyebrow', person.role), el('p', '', person.bio)]); $('#team-grid').append(card); }); document.querySelectorAll('#team-filters button').forEach(button => { const active = button.textContent === category; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active)); }); updateTeamVisibility(); };
-    ['全部团队', ...new Set(asList(data.team).map(person => person.category).filter(Boolean))].forEach(category => { const button = el('button', '', category); button.type = 'button'; button.onclick = () => renderTeam(category); $('#team-filters').append(button); }); renderTeam('全部团队');
+    window.renderHomeBusiness(data); applyNavigationData(data);
     renderNews(data);
     const contact = $('#contact-info'); contact.append(el('div', 'contact-info-label', '期待与您携手，共建优质教育服务'));
     if (site.phone) { const phone = el('a', 'contact-line', site.phone); phone.href = 'tel:' + site.phone.replace(/[^+\d-]/g, ''); contact.append(phone); }

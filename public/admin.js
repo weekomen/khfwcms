@@ -98,20 +98,22 @@ const NAVIGATION_DEFAULTS = [
     { id: 'brochure', label: '公司展册', href: 'https://kehoubang.cn/profile/upload/pdf/3/index.html', target: 'blank' },
     { id: 'handbook', label: '课程手册', href: 'https://kehoubang.cn/profile/upload/pdf/1/index.html', target: 'blank' },
     { id: 'school-plan', label: '一校一案', href: 'https://kehoubang.cn/profile/upload/pdf/2/index.html', target: 'blank' },
-    { id: 'team', label: '核心团队', href: '#team', action: '' }
+    { id: 'team', label: '核心团队', href: '/team.html', target: 'blank', action: '' }
   ] },
-  { id: 'business', label: '集团核心业务', href: '#services', action: 'business', children: [
-    { id: 'supply-chain', label: '课后邦供应链', href: '#business-supply-chain', action: 'business', value: 'supply-chain' },
-    { id: 'online-education', label: '线上素质教育', href: '#business-online-education', action: 'business', value: 'online-education' },
-    { id: 'education-street', label: '教育一条街', href: '#business-education-street', action: 'business', value: 'education-street' },
-    { id: 'youth-center', label: '青少年成长中心', href: '#business-youth-center', action: 'business', value: 'youth-center' },
-    { id: 'ai-museum', label: '人工智能科技馆', href: '#business-ai-museum', action: 'business', value: 'ai-museum' }
+  { id: 'business', label: '集团核心业务', href: '#business-showcase', action: 'business', children: [
+    { id: 'supply-chain', label: '课后邦课后服务进校供应链', href: '#after-school-supply', target: '', action: 'business', value: 'supply-chain' },
+    { id: 'ai-school-supply', label: '课后邦人工智能进校供应链', href: '#ai-school-supply', target: '', action: 'business', value: 'ai-school-supply' },
+    { id: 'online-ai-study', label: '线上AI伴学', href: '/content-page.html?type=business&id=online-ai-study', target: 'blank', action: 'business', value: 'online-ai-study' },
+    { id: 'online-education', label: '线上素质教育', href: '/content-page.html?type=business&id=online-education', target: 'blank', action: 'business', value: 'online-education' },
+    { id: 'education-street', label: '教育一条街', href: '/content-page.html?type=business&id=education-street', target: 'blank', action: 'business', value: 'education-street' },
+    { id: 'youth-center', label: '青少年成长中心', href: '/content-page.html?type=business&id=youth-center', target: 'blank', action: 'business', value: 'youth-center' },
+    { id: 'ai-museum', label: '人工智能科技馆', href: '/content-page.html?type=business&id=ai-museum', target: 'blank', action: 'business', value: 'ai-museum' }
   ] },
-  { id: 'courses', label: '课程资源库', href: '#courses', action: 'course-category', children: [
-    { id: 'art', label: '美育类', href: '#courses', action: 'course-category', value: '美育类' },
-    { id: 'puzzle', label: '益智类', href: '#courses', action: 'course-category', value: '益智类' },
-    { id: 'science', label: '科技类', href: '#courses', action: 'course-category', value: '科技类' },
-    { id: 'craft', label: '手工类', href: '#courses', action: 'course-category', value: '手工类' }
+  { id: 'courses', label: '课程资源库', href: '/courses.html', target: 'blank', action: 'course-category', children: [
+    { id: 'art', label: '美育类', href: '/courses.html?category=美育类', target: 'blank', action: 'course-category', value: '美育类' },
+    { id: 'puzzle', label: '益智类', href: '/courses.html?category=益智类', target: 'blank', action: 'course-category', value: '益智类' },
+    { id: 'science', label: '科技类', href: '/courses.html?category=科技类', target: 'blank', action: 'course-category', value: '科技类' },
+    { id: 'craft', label: '手工类', href: '/courses.html?category=手工类', target: 'blank', action: 'course-category', value: '手工类' }
   ] },
   { id: 'news', label: '新闻资讯', href: '#news', action: 'news-group', children: [
     { id: 'group-news', label: '集团动态', href: '#news', action: 'news-group', value: 'group' },
@@ -129,6 +131,8 @@ const NAVIGATION_DEFAULTS = [
   ] }
 ];
 const ARRAY_TABS = ['aboutPages', 'businessPages', 'courseCategories', 'courses', 'team', 'news', 'venturePages', 'contactTopics', 'services'];
+const CORE_BUSINESS_IDS = ['supply-chain', 'ai-school-supply', 'online-ai-study', 'online-education', 'education-street', 'youth-center', 'ai-museum'];
+const FIXED_BUSINESS_IDS = new Set([...CORE_BUSINESS_IDS, 'supply-system', 'supply-courses', 'supply-school-plan', 'ai-study-system', 'ai-portals', 'ai-school-model']);
 const NAV_TAB_ROOTS = {
   aboutPages: 'about',
   businessPages: 'business',
@@ -205,6 +209,7 @@ function field(parent, obj, key, label, type = 'text', wide = false, options = {
     input = el('select'); (options.choices || []).forEach(choice => { const option = el('option'); option.value = choice.value; option.textContent = choice.label; input.append(option); });
   } else { input = el('input'); input.type = type; }
   input.id = id;
+  if (options.readOnly) input.readOnly = true;
   if (key === 'features') input.value = Array.isArray(obj[key]) ? obj[key].join('\n') : (obj[key] ?? '');
   else if (type === 'checkbox') input.checked = Boolean(obj[key]);
   else input.value = obj[key] ?? '';
@@ -275,7 +280,7 @@ function renderNavigation(target) {
 }
 function collectionFields(collection, item) {
   if (collection === 'aboutPages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['link', '外部链接'], ['target', '打开方式', 'select', false, { choices: targetChoices }], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'businessPages') return [['id', '业务 ID'], ['title', '业务名称'], ['summary', '业务摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
+  if (collection === 'businessPages') return [['id', '业务 ID', 'text', false, { readOnly: FIXED_BUSINESS_IDS.has(item.id) }], ['title', '业务名称'], ['summary', CORE_BUSINESS_IDS.includes(item.id) ? '首页整体介绍 / 业务摘要' : '详情页摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
@@ -298,7 +303,7 @@ function collectionDefault(collection) {
 function renderCollection(target, collection) {
   const notes = {
     aboutPages: '编辑“关于课后邦”下的集团介绍、公司展册、课程手册、一校一案和核心团队页面。',
-    businessPages: '维护集团核心业务五大板块；图片支持直接选择本机文件上传，上传后点击保存。',
+    businessPages: '维护七大核心业务与六个详情页面。前七项封面同时用于首页业务切换图，前两项摘要用于首页整体介绍；标题、摘要、正文和图片均可编辑。固定入口 ID 只读，修改后点击保存。',
     courseCategories: '维护课程资源库的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
     courses: '维护课程卡片、独立封面、分类、弹窗介绍和课程长图。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
@@ -311,8 +316,8 @@ function renderCollection(target, collection) {
   data[collection].forEach((item, index) => {
     const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
     remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { data[collection].splice(index, 1); changed(); render(); } };
-    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`), remove); card.append(heading);
-    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
+    heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`)); if (collection !== 'businessPages' || !FIXED_BUSINESS_IDS.has(item.id)) heading.append(remove); card.append(heading);
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ['longImage', '长图']] : collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
   });
