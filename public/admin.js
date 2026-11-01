@@ -431,9 +431,9 @@ function collectionDefault(collection) {
 function renderCollection(target, collection) {
   const notes = {
     aboutPages: '编辑“关于课后邦”下的集团介绍、公司展册、课程手册、一校一案和核心团队页面。',
-    businessPages: '维护七大核心业务与六个详情页面。前七项封面同时用于首页业务切换图，前两项摘要用于首页整体介绍；标题、摘要、正文和图片均可编辑。固定入口 ID 只读，修改后点击保存。',
+    businessPages: '维护七大核心业务与六个详情页面。七大核心业务的封面同时用于首页业务切换图，两项进校业务的摘要用于首页整体介绍，且仅保留切换图 / 封面图上传。标题、摘要、正文和图片均可编辑。固定入口 ID 只读，修改后点击保存。',
     alliancePages: '维护联盟介绍、第三届成员与理事单位招募、第三届大会计划三页。固定页面 ID 只读且不可删除；可编辑标题、摘要、正文、封面、长图、发布状态和排序。正式信息请核实后发布，“历届大会展示”链接在七大导航中维护。',
-    courseCategories: '维护“关于课后邦 → 课程资源库”的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
+    courseCategories: '维护“关于课后邦 → 课程资源库”的分类名称、说明和配图；课程卡片的详细内容与课程长图在“课程目录”中编辑。',
     courses: '维护“关于课后邦 → 课程资源库”的课程卡片、独立封面、分类、适用年级、弹窗介绍和课程长图。简介与适用年级显示在详情图片前；年级未填写时显示“待补充”。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可上传本机图片；使用排序按钮调整团队展示顺序，新增成员可直接在指定成员下方插入。完成后点击“保存并更新官网”。',
     news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
@@ -447,7 +447,7 @@ function renderCollection(target, collection) {
     const fixedPage = (collection === 'businessPages' && FIXED_BUSINESS_IDS.has(item.id)) || (collection === 'alliancePages' && FIXED_ALLIANCE_IDS.has(item.id));
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`)); if (!fixedPage) heading.append(remove); card.append(heading);
     card.append(reorderControls(data[collection], item, { insert: () => insertRecord(data[collection], collectionDefault(collection), index) }));
-    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ['longImage', '长图']] : collection === 'alliancePages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ...(['supply-chain', 'ai-school-supply'].includes(item.id) ? [] : [['longImage', '长图']])] : collection === 'courseCategories' ? [['image', '封面图']] : collection === 'alliancePages' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
     const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); if (collection === 'venturePages') card.append(albumEditor(item)); target.append(card);
   });
