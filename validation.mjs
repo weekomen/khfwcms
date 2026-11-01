@@ -153,7 +153,7 @@ function validateNavigation(navigation) {
 function pageRecords(value, max, fields, options = {}) {
   const { image = false, longImage = false, photos = false, idLabel = '页面编号' } = options;
   list(value, max, options.listLabel || '页面列表');
-  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), ...(photos ? ['photos'] : []), 'order', 'published']);
+  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), ...(photos ? ['photos', 'albumManaged'] : []), 'order', 'published']);
   const ids = new Set();
   for (const item of value) {
     object(item, options.itemLabel || '页面项目'); keys(item, allowed, options.itemLabel || '页面项目');
@@ -162,27 +162,34 @@ function pageRecords(value, max, fields, options = {}) {
     if (image) optionalAsset(item.image, '页面图片');
     if (longImage) optionalAsset(item.longImage, '页面长图');
     if (photos && item.photos !== undefined) validatePhotos(item.photos);
+    if (photos && item.albumManaged !== undefined && typeof item.albumManaged !== 'boolean') throw Error('相册管理状态无效');
+    if (photos && item.albumManaged === true && !Array.isArray(item.photos)) throw Error('已管理相册须包含照片列表');
     optionalInteger(item.order, 0, 999, `${idLabel}排序`);
     if (item.published !== undefined && typeof item.published !== 'boolean') throw Error(`${idLabel}发布状态无效`);
   }
 }
 
 function validatePhotos(photos) {
-  list(photos, 500, '相册照片');
-  const allowed = new Set(['id', 'src', 'filename', 'tag', 'width', 'height']);
+  list(photos, 2000, '相册照片');
+  const allowed = new Set(['id', 'src', 'thumb', 'filename', 'tag', 'width', 'height']);
   const ids = new Set(), sources = new Set();
   for (const photo of photos) {
     object(photo, '相册照片'); keys(photo, allowed, '相册照片');
     id(photo.id, '照片编号');
     if (ids.has(photo.id)) throw Error('照片编号须唯一');
     ids.add(photo.id);
-    asset(photo.src, '相册照片');
-    if (!/\.(?:jpg|png|webp)$/i.test(photo.src)) throw Error('相册照片仅支持 JPG、PNG 或 WebP');
+    photoAsset(photo.src, '相册照片');
+    if (photo.thumb !== undefined && photo.thumb !== '') photoAsset(photo.thumb, '相册缩略图');
     if (sources.has(photo.src)) throw Error('同一相册不能重复添加相同照片');
     sources.add(photo.src);
     text(photo.filename, 200, '照片名称'); text(photo.tag, 100, '照片标签');
     integer(photo.width, 1, 100000, '照片宽度'); integer(photo.height, 1, 100000, '照片高度');
   }
+}
+
+function photoAsset(value, label) {
+  text(value, 500, label);
+  if (!/^\/assets\/(?:events\/(?:[a-zA-Z0-9_-]+\/)+)?[a-zA-Z0-9_.-]+\.(?:jpe?g|png|webp)$/i.test(value)) throw Error(`${label}须为 /assets/ 下的本地 JPG、PNG 或 WebP 素材`);
 }
 
 function validateAboutPages(value) {

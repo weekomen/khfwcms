@@ -1,13 +1,17 @@
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyBusinessDefaults } from '../business-content.mjs';
 import { applyAllianceDefaults } from '../alliance-content.mjs';
+import { applyEventAlbumDefaults } from '../event-albums.mjs';
 const root = path.resolve(import.meta.dirname, '..');
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
+let eventManifest = null;
+try { eventManifest = JSON.parse(readFileSync(path.join(root, 'public/assets/events/manifest.json'), 'utf8')); } catch { }
 
-export function preparePublicContent(source) {
-  const content = applyAllianceDefaults(applyBusinessDefaults(structuredClone(source)));
+export function preparePublicContent(source, manifest = eventManifest) {
+  const content = applyEventAlbumDefaults(applyAllianceDefaults(applyBusinessDefaults(structuredClone(source))), manifest);
   content.news = content.news.filter(article => article.published);
   content.alliancePages = content.alliancePages.filter(page => page.published !== false);
   content.venturePages = (content.venturePages || []).filter(page => page.published !== false);
@@ -28,6 +32,7 @@ export function preparePublicContent(source) {
   // Other album uploads remain in the live data directory and private backups.
   for (const page of content.venturePages) if (Array.isArray(page.photos)) {
     page.photos = page.photos.filter(photo => !uploadName.test(path.basename(photo.src || '')) || uploadNames.has(path.basename(photo.src)));
+    for (const photo of page.photos) if (uploadName.test(path.basename(photo.thumb || '')) && !uploadNames.has(path.basename(photo.thumb))) delete photo.thumb;
   }
   return { content, uploadNames };
 }

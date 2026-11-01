@@ -17,7 +17,7 @@ test('venture albums accept bounded local photographs without changing older pag
   assert.doesNotThrow(() => validateContent(seed));
   const content = fixture();
   assert.doesNotThrow(() => validateContent(content));
-  content.venturePages[0].photos = Array.from({ length: 500 }, (_, index) => photo(String(index)));
+  content.venturePages[0].photos = Array.from({ length: 2000 }, (_, index) => photo(String(index)));
   assert.doesNotThrow(() => validateContent(content));
   content.venturePages[0].photos.push(photo('overflow'));
   assert.throws(() => validateContent(content), /相册照片/);

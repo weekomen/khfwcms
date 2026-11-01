@@ -210,6 +210,7 @@ function ensureDataShape() {
 const ORDERED_COLLECTIONS = new Set(['aboutPages', 'alliancePages', 'courseCategories', 'venturePages', 'contactTopics']);
 const recordKeys = new WeakMap();
 const openAlbums = new WeakSet();
+const albumViews = new WeakMap();
 function recordKey(item) {
   if (!recordKeys.has(item)) recordKeys.set(item, crypto.randomUUID());
   return recordKeys.get(item);
@@ -268,53 +269,176 @@ function setUploading(busy) {
   uploading = busy; $('#save').disabled = busy; $('#fields').inert = busy;
   document.querySelectorAll('[data-tab], #logout').forEach(button => { button.disabled = busy; });
 }
+function previewAlbumPhoto(photo) {
+  let dialog = document.getElementById('admin-album-preview');
+  if (!dialog) {
+    dialog = el('dialog', 'admin-album-preview'); dialog.id = 'admin-album-preview';
+    const close = el('button', 'dialog-close', '×'); close.type = 'button'; close.dataset.albumPreviewClose = ''; close.setAttribute('aria-label', '关闭照片预览');
+    const title = el('h2'); title.id = 'admin-album-preview-title'; dialog.setAttribute('aria-labelledby', title.id);
+    const image = el('img', 'admin-album-preview-image');
+    const download = el('a', 'album-preview-download', '下载原图 ↗');
+    dialog.append(close, title, image, download); document.body.append(dialog);
+    close.onclick = () => dialog.close();
+    dialog.addEventListener('close', () => { image.removeAttribute('src'); });
+    dialog.addEventListener('click', event => {
+      if (event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    });
+  }
+  dialog.querySelector('h2').textContent = photo.filename || '照片预览';
+  const image = dialog.querySelector('img'); image.src = photo.src; image.alt = photo.filename || '相册照片';
+  const download = dialog.querySelector('a'); download.href = photo.src; download.download = photo.filename || '相册照片';
+  dialog.showModal(); dialog.querySelector('[data-album-preview-close]').focus();
+}
+async function uploadAlbumPhoto(file) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw Error('格式不支持');
+  if (file.size > 5 * 1024 * 1024) throw Error('超过 5 MB');
+  let bitmap, width, height;
+  try {
+    bitmap = await createImageBitmap(file); width = bitmap.width; height = bitmap.height;
+    if (width < 1 || height < 1 || width > 100000 || height > 100000) throw Error();
+  } catch { throw Error('图片无法读取或尺寸超过限制'); }
+  finally { bitmap?.close(); }
+  const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
+  return { src: result.url, width, height };
+}
 function albumEditor(item) {
+  const pageSize = 24;
+  if (!albumViews.has(item)) albumViews.set(item, { query: '', tag: '', page: 0, selected: new Set() });
+  const view = albumViews.get(item);
   const section = el('section', 'album-editor'); section.dataset.albumFor = item.id;
   const header = el('div', 'album-heading'); const title = el('h3', '', '现场相册');
   const upload = el('button', 'album-upload', '+ 批量上传照片'); upload.type = 'button'; upload.setAttribute('aria-label', `上传${item.title || '页面'}相册照片`);
   const input = el('input'); input.type = 'file'; input.multiple = true; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true; input.dataset.albumUpload = '';
-  header.append(title, upload); section.append(header, el('p', 'admin-note', '支持一次选择多张 JPG、PNG、WebP，每张不超过 5 MB，每批最多 50 张，相册最多新增 500 张。原有活动照片继续保留，上传照片在保存后追加到现场相册。'));
+  const total = el('p', 'album-total'); total.setAttribute('aria-live', 'polite');
+  header.append(title, upload); section.append(header, total, el('p', 'admin-note', '已有照片与新上传照片统一管理。可查看大图、修改名称和标签、更换图片、排序或删除，保存后同步官网。支持 JPG、PNG、WebP，每张不超过 5 MB，每批最多 50 张，每个相册最多 2000 张。'));
   const message = el('p', 'photo-help album-message'); message.setAttribute('role', 'status'); message.setAttribute('aria-live', 'polite');
-  const details = el('details', 'album-details'); details.open = openAlbums.has(item); details.addEventListener('toggle', () => { if (details.open) openAlbums.add(item); else openAlbums.delete(item); });
-  const summary = el('summary'); const list = el('div', 'album-photo-list'); details.append(summary, list);
+  const details = el('details', 'album-details'); details.open = openAlbums.has(item);
+  const summary = el('summary');
+  const tools = el('div', 'album-tools');
+  const search = el('input', 'album-search'); search.type = 'search'; search.placeholder = '搜索照片名称或标签'; search.setAttribute('aria-label', '搜索相册照片'); search.value = view.query;
+  const tagFilter = el('select', 'album-tag-filter'); tagFilter.setAttribute('aria-label', '按相册标签筛选');
+  tools.append(search, tagFilter);
+  const selectionBar = el('div', 'album-selection');
+  const selectPage = el('button', 'reorder-button album-select-page', '选择本页'); selectPage.type = 'button';
+  const clearSelection = el('button', 'reorder-button album-clear-selection', '清空选择'); clearSelection.type = 'button';
+  const deleteSelected = el('button', 'remove album-delete-selected', '删除所选'); deleteSelected.type = 'button';
+  const selectionCount = el('span', 'album-selection-count'); selectionCount.setAttribute('aria-live', 'polite');
+  selectionBar.append(selectPage, clearSelection, deleteSelected, selectionCount);
+  const list = el('div', 'album-photo-list');
+  const pager = el('div', 'album-pagination');
+  const previous = el('button', 'reorder-button album-previous', '上一页'); previous.type = 'button';
+  const pageInfo = el('span', 'album-page-info'); pageInfo.setAttribute('role', 'status');
+  const next = el('button', 'reorder-button album-next', '下一页'); next.type = 'button';
+  pager.append(previous, pageInfo, next); details.append(summary, tools, selectionBar, list, pager);
   const photos = () => Array.isArray(item.photos) ? item.photos : [];
-  const draw = () => {
-    const items = photos(); summary.textContent = `已上传 ${items.length} 张照片 · 展开编辑`;
-    list.replaceChildren();
-    if (!items.length) { list.append(el('p', 'admin-note', '尚未上传新照片。')); return; }
-    items.forEach((photo, index) => {
-      const card = el('article', 'album-photo-card'); card.dataset.recordKey = recordKey(photo);
-      const image = el('img', 'album-photo-thumb'); image.src = photo.src; image.alt = photo.filename || `第 ${index + 1} 张照片`; image.loading = 'lazy'; image.decoding = 'async';
-      const content = el('div', 'album-photo-content'); const heading = el('div', 'album-photo-heading'); const remove = el('button', 'remove', '移除照片'); remove.type = 'button'; remove.setAttribute('aria-label', `移除${photo.filename || '照片'}`);
-      remove.onclick = () => { if (!confirm('确定从相册移除此照片？保存后生效。')) return; const position = items.indexOf(photo); if (position < 0) return; items.splice(position, 1); changed(); draw(); };
-      heading.append(el('strong', '', `${String(index + 1).padStart(2, '0')} / ${photo.filename || '照片'}`), remove);
-      const grid = el('div', 'form-grid album-photo-fields'); field(grid, photo, 'filename', '照片名称'); field(grid, photo, 'tag', '照片标签');
-      grid.querySelectorAll('input').forEach(control => { control.maxLength = control === grid.querySelector('input') ? 200 : 100; });
-      content.append(heading, grid, reorderControls(items, photo, { refresh: draw })); card.append(image, content); list.append(card);
-    });
+  const matchingPhotos = () => {
+    const query = view.query.trim().toLocaleLowerCase();
+    return photos().filter(photo => (!view.tag || photo.tag === view.tag) && (!query || `${photo.filename || ''} ${photo.tag || ''}`.toLocaleLowerCase().includes(query)));
   };
+  const albumChanged = () => { item.albumManaged = true; changed(); };
+  const refreshTags = () => {
+    const tags = [...new Set(photos().map(photo => photo.tag).filter(Boolean))];
+    if (view.tag && !tags.includes(view.tag)) tags.unshift(view.tag);
+    tagFilter.replaceChildren(); const all = el('option', '', '全部标签'); all.value = ''; tagFilter.append(all);
+    tags.forEach(tag => { const option = el('option', '', tag); option.value = tag; tagFilter.append(option); });
+    tagFilter.value = view.tag;
+  };
+  const updateSelection = () => {
+    const currentIds = new Set(photos().map(photo => photo.id));
+    for (const id of view.selected) if (!currentIds.has(id)) view.selected.delete(id);
+    selectionCount.textContent = `已选 ${view.selected.size} 张`;
+    deleteSelected.disabled = !view.selected.size; clearSelection.disabled = !view.selected.size;
+    list.querySelectorAll('.album-select').forEach(checkbox => { checkbox.checked = view.selected.has(checkbox.dataset.photoId); });
+  };
+  const revealPhoto = photo => {
+    let matching = matchingPhotos(), position = matching.indexOf(photo);
+    if (position < 0) { view.query = ''; view.tag = ''; search.value = ''; matching = photos(); position = matching.indexOf(photo); }
+    view.page = Math.floor(Math.max(0, position) / pageSize);
+  };
+  const draw = () => {
+    const items = photos(); total.textContent = `共 ${items.length} 张照片`;
+    summary.textContent = `共 ${items.length} 张照片 · ${details.open ? '收起管理' : '展开管理'}`;
+    refreshTags(); list.replaceChildren();
+    const matching = matchingPhotos(), pages = Math.max(1, Math.ceil(matching.length / pageSize));
+    view.page = Math.min(Math.max(0, view.page), pages - 1);
+    const start = view.page * pageSize, visible = matching.slice(start, start + pageSize);
+    previous.disabled = view.page === 0; next.disabled = view.page >= pages - 1;
+    pageInfo.textContent = `${view.page + 1} / ${pages} 页 · ${matching.length ? start + 1 : 0}–${start + visible.length} / ${matching.length} 张`;
+    selectPage.disabled = !visible.length;
+    pager.hidden = !details.open || !matching.length;
+    if (!details.open) { updateSelection(); return; }
+    if (!visible.length) list.append(el('p', 'admin-note', items.length ? '没有找到匹配的照片。' : '相册暂无照片，点击“批量上传照片”添加。'));
+    visible.forEach(photo => {
+      const index = items.indexOf(photo);
+      const card = el('article', 'album-photo-card'); card.dataset.recordKey = recordKey(photo); card.dataset.photoId = photo.id;
+      const media = el('div', 'album-photo-media');
+      const selection = el('label', 'album-photo-selection'); const checkbox = el('input', 'album-select'); checkbox.type = 'checkbox'; checkbox.dataset.photoId = photo.id;
+      checkbox.setAttribute('aria-label', `选择${photo.filename || '照片'}`); checkbox.checked = view.selected.has(photo.id);
+      checkbox.onchange = () => { if (checkbox.checked) view.selected.add(photo.id); else view.selected.delete(photo.id); updateSelection(); };
+      selection.append(checkbox, document.createTextNode('选择'));
+      const preview = el('button', 'album-preview'); preview.type = 'button'; preview.setAttribute('aria-label', `查看${photo.filename || '照片'}大图`); preview.onclick = () => previewAlbumPhoto(photo);
+      const image = el('img', 'album-photo-thumb'); image.src = photo.thumb || photo.src; image.alt = photo.filename || `第 ${index + 1} 张照片`; image.loading = 'lazy'; image.decoding = 'async'; preview.append(image, el('span', '', '查看大图'));
+      media.append(selection, preview);
+      const content = el('div', 'album-photo-content'); const heading = el('div', 'album-photo-heading'); const name = el('strong', '', `${String(index + 1).padStart(2, '0')} / ${photo.filename || '照片'}`);
+      const actions = el('div', 'album-photo-actions');
+      const replace = el('button', 'reorder-button album-replace', '更换图片'); replace.type = 'button'; replace.setAttribute('aria-label', `替换${photo.filename || '照片'}`);
+      const replaceInput = el('input'); replaceInput.type = 'file'; replaceInput.accept = input.accept; replaceInput.hidden = true; replaceInput.dataset.albumReplace = photo.id;
+      replace.onclick = () => replaceInput.click();
+      replaceInput.onchange = async () => {
+        const file = replaceInput.files?.[0]; replaceInput.value = ''; if (!file || uploading || saving) return;
+        setUploading(true); message.classList.remove('upload-error'); message.textContent = `正在替换：${photo.filename || '照片'}`; status(message.textContent);
+        try {
+          const replacement = await uploadAlbumPhoto(file);
+          Object.assign(photo, replacement); delete photo.thumb;
+          albumChanged(); draw(); message.textContent = '图片已更换，名称和标签保留；保存后同步官网。'; status(message.textContent);
+        } catch (error) { message.textContent = `更换失败：${error.message}`; message.classList.add('upload-error'); status(message.textContent, true); }
+        finally { setUploading(false); }
+      };
+      const remove = el('button', 'remove', '移除照片'); remove.type = 'button'; remove.setAttribute('aria-label', `移除${photo.filename || '照片'}`);
+      remove.onclick = () => { if (!confirm('确定从相册移除此照片？保存后官网不再展示。')) return; const position = items.indexOf(photo); if (position < 0) return; items.splice(position, 1); view.selected.delete(photo.id); albumChanged(); draw(); };
+      actions.append(replace, remove); heading.append(name, actions);
+      const updateLabels = () => {
+        name.textContent = `${String(items.indexOf(photo) + 1).padStart(2, '0')} / ${photo.filename || '照片'}`;
+        checkbox.setAttribute('aria-label', `选择${photo.filename || '照片'}`); preview.setAttribute('aria-label', `查看${photo.filename || '照片'}大图`);
+        replace.setAttribute('aria-label', `替换${photo.filename || '照片'}`); remove.setAttribute('aria-label', `移除${photo.filename || '照片'}`); image.alt = photo.filename || '相册照片';
+        item.albumManaged = true; refreshTags();
+      };
+      const grid = el('div', 'form-grid album-photo-fields'); field(grid, photo, 'filename', '照片名称', 'text', false, { onChange: updateLabels }); field(grid, photo, 'tag', '照片标签', 'text', false, { onChange: updateLabels });
+      grid.querySelectorAll('input').forEach((control, fieldIndex) => { control.maxLength = fieldIndex === 0 ? 200 : 100; });
+      content.append(heading, grid, replaceInput, reorderControls(items, photo, { refresh: () => { item.albumManaged = true; revealPhoto(photo); draw(); } })); card.append(media, content); list.append(card);
+    });
+    updateSelection();
+  };
+  details.addEventListener('toggle', () => { if (details.open) openAlbums.add(item); else openAlbums.delete(item); draw(); });
+  search.addEventListener('input', () => { view.query = search.value; view.page = 0; draw(); });
+  tagFilter.addEventListener('change', () => { view.tag = tagFilter.value; view.page = 0; draw(); });
+  selectPage.onclick = () => { matchingPhotos().slice(view.page * pageSize, (view.page + 1) * pageSize).forEach(photo => view.selected.add(photo.id)); updateSelection(); };
+  clearSelection.onclick = () => { view.selected.clear(); updateSelection(); };
+  deleteSelected.onclick = () => {
+    const count = view.selected.size; if (!count || !confirm(`确定从相册移除所选 ${count} 张照片？保存后官网不再展示。`)) return;
+    item.photos = photos().filter(photo => !view.selected.has(photo.id)); view.selected.clear(); albumChanged(); draw();
+    status(`已移除 ${count} 张照片，保存后生效。`);
+  };
+  const goPage = direction => { view.page += direction; draw(); tools.scrollIntoView({ block: 'start', behavior: 'instant' }); };
+  previous.onclick = () => goPage(-1); next.onclick = () => goPage(1);
   upload.onclick = () => input.click();
   input.onchange = async () => {
     const files = Array.from(input.files || []); input.value = ''; if (!files.length || uploading || saving) return;
     const fail = text => { message.textContent = text; message.classList.add('upload-error'); };
     if (files.length > 50) return fail('每批最多上传 50 张照片，请减少选择数量。');
-    if (photos().length + files.length > 500) return fail('相册最多新增 500 张照片，请减少选择数量。');
+    if (photos().length + files.length > 2000) return fail('每个相册最多支持 2000 张照片，请减少选择数量。');
     setUploading(true); message.classList.remove('upload-error');
-    let success = 0; const failures = [];
+    let success = 0; const failures = []; let lastUploaded;
     try {
       for (const [index, file] of files.entries()) {
         const progress = `正在上传 ${index + 1} / ${files.length}：${file.name}`; message.textContent = progress; status(progress);
         try {
-          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw Error('格式不支持');
-          if (file.size > 5 * 1024 * 1024) throw Error('超过 5 MB');
-          let bitmap, width, height;
-          try { bitmap = await createImageBitmap(file); width = bitmap.width; height = bitmap.height; if (width < 1 || height < 1 || width > 100000 || height > 100000) throw Error('图片尺寸不支持'); }
-          catch { throw Error('图片无法读取或尺寸超过限制'); }
-          finally { bitmap?.close(); }
-          const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
+          const uploaded = await uploadAlbumPhoto(file);
           if (!Array.isArray(item.photos)) item.photos = [];
-          item.photos.push({ id: newId('photo'), src: result.url, filename: file.name.slice(0, 200), tag: '', width, height });
-          success++; changed(); draw();
+          lastUploaded = { id: newId('photo'), ...uploaded, filename: file.name.slice(0, 200), tag: '' }; item.photos.push(lastUploaded);
+          success++; albumChanged();
         } catch (error) {
           failures.push(`${file.name}：${error.message || '上传失败'}`);
           if (error.status === 401 || error.status === 403 || !csrfToken) break;
@@ -322,8 +446,8 @@ function albumEditor(item) {
       }
       const summaryText = `成功上传 ${success} 张${failures.length ? `，失败 ${failures.length} 张` : ''}。${success ? '请点击“保存并更新官网”发布照片。' : ''}`;
       message.textContent = summaryText + (failures.length ? ` ${failures.join('；')}` : ''); message.classList.toggle('upload-error', failures.length > 0);
-      if (success) { details.open = true; openAlbums.add(item); }
-      status(summaryText + (!csrfToken ? '请重新登录后保存已上传的照片。' : ''), failures.length > 0);
+      if (success) { details.open = true; openAlbums.add(item); revealPhoto(lastUploaded); }
+      draw(); status(summaryText + (!csrfToken ? '请重新登录后保存已上传的照片。' : ''), failures.length > 0);
     } finally { setUploading(false); }
   };
   draw(); section.append(input, message, details); return section;
@@ -437,7 +561,7 @@ function renderCollection(target, collection) {
     courses: '维护“关于课后邦 → 课程资源库”的课程卡片、独立封面、分类、适用年级、弹窗介绍和课程长图。简介与适用年级显示在详情图片前；年级未填写时显示“待补充”。课程手册页码填 0 表示不关联 PDF。',
     team: '点击成员照片即可上传本机图片；使用排序按钮调整团队展示顺序，新增成员可直接在指定成员下方插入。完成后点击“保存并更新官网”。',
     news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
-    venturePages: '编辑智邻精英汇介绍、智邻创投和历年年夜饭页面。每个页面下的“现场相册”支持批量上传照片、缩略图预览、标签和排序。',
+    venturePages: '编辑智邻精英汇介绍、智邻创投和历年年夜饭页面。每个页面下的“现场相册”统一管理已有及新上传照片，支持搜索、筛选、大图查看、名称与标签编辑、更换图片、排序和删除。',
     contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。'
   };
   target.append(el('p', 'admin-note', (notes[collection] || '维护栏目内容。') + ' 可使用上移、下移、置顶或指定位置调整条目顺序，也可在任意条目下方插入。排序与新增内容均在保存后生效。'));

@@ -129,7 +129,7 @@ test('legacy API reads do not rewrite runtime content and alliance drafts remain
 test('public backup excludes alliance drafts and uploaded alliance images while retaining only team uploads', async t => {
   const dir = await temporaryDirectory(t, 'khb-alliance-backup-');
   await mkdir(path.join(dir, 'scripts')); await mkdir(path.join(dir, 'data', 'uploads'), { recursive: true });
-  for (const file of ['business-content.mjs', 'alliance-content.mjs', 'scripts/backup-content.mjs']) await copyFile(new URL('../' + file, import.meta.url), path.join(dir, file));
+  for (const file of ['business-content.mjs', 'alliance-content.mjs', 'event-albums.mjs', 'scripts/backup-content.mjs']) await copyFile(new URL('../' + file, import.meta.url), path.join(dir, file));
   const content = structuredClone(seed);
   content.alliancePages[0].body = 'PRIVATE ALLIANCE SNAPSHOT DRAFT TEST'; content.alliancePages[0].published = false;
   const teamUpload = `upload-${'a'.repeat(32)}.jpg`, allianceUpload = `upload-${'b'.repeat(32)}.jpg`;

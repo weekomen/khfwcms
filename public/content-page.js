@@ -86,10 +86,11 @@ const renderEventGallery = async (card, page) => {
   } catch {
     manifestUnavailable = true;
   }
-  // Imported photographs stay in their static manifest. CMS uploads append
-  // without replacing that archive, and keep the order chosen in the editor.
+  // A managed album is the complete list saved by the CMS. In particular,
+  // an empty managed list must not bring deleted archive photographs back.
+  const managed = page.albumManaged === true;
   const sources = new Set(), ids = new Set();
-  const photos = [...(Array.isArray(event.photos) ? event.photos : []), ...(Array.isArray(page.photos) ? page.photos : [])].filter(photo => {
+  const photos = [...(!managed && Array.isArray(event.photos) ? event.photos : []), ...(Array.isArray(page.photos) ? page.photos : [])].filter(photo => {
     if (!photo || typeof photo.src !== 'string' || !photo.src || sources.has(photo.src)) return false;
     sources.add(photo.src); return true;
   }).map((photo, index) => {
@@ -97,12 +98,13 @@ const renderEventGallery = async (card, page) => {
     while (ids.has(id)) id = `photo-${index + 1}-${id}`;
     ids.add(id); return { ...photo, id, filename: photo.filename || '', tag: photo.tag || '' };
   });
-  if (manifestUnavailable && !photos.length) {
+  if (manifestUnavailable && !managed && !photos.length) {
     if (note) note.textContent = '现场照片暂时无法加载，请稍后再试。';
     return;
   }
   const hero = card.querySelector('.content-page-figure .content-page-image');
-  if (hero && event.cover) { hero.src = event.cover; hero.alt = event.title || page.title || ''; }
+  const cover = managed ? photos.find(photo => photo.src === event.cover)?.src || photos[0]?.src : event.cover;
+  if (hero && cover) { hero.src = cover; hero.alt = event.title || page.title || ''; }
   const gallery = make('section', 'event-gallery'); gallery.setAttribute('aria-labelledby', 'event-gallery-title');
   const heading = make('div', 'event-gallery-heading'); const title = make('h2', '', '现场照片'); title.id = 'event-gallery-title';
   const meta = make('div', 'event-gallery-meta'); [event.date, event.place, `${photos.length} 张照片`, photos.length && event.views ? `${event.views} 次浏览` : ''].filter(Boolean).forEach(value => meta.append(make('span', '', value)));
@@ -116,7 +118,7 @@ const renderEventGallery = async (card, page) => {
   if (note) note.textContent = '支持标签筛选、名称搜索、缩略图浏览、自动播放、滚动大图、全屏和下载。';
   const toolbar = make('div', 'event-gallery-toolbar'); const search = make('input', 'event-gallery-search'); search.type = 'search'; search.placeholder = '搜索照片名称'; search.setAttribute('aria-label', '搜索照片名称');
   const select = make('select', 'event-gallery-filter'); select.setAttribute('aria-label', '按标签筛选'); const allTags = make('option', '', '全部标签'); allTags.value = ''; select.append(allTags);
-  const tags = new Set([...(Array.isArray(event.tags) ? event.tags.map(tag => tag.name) : []), ...photos.map(photo => photo.tag)].filter(Boolean));
+  const tags = new Set([...(!managed && Array.isArray(event.tags) ? event.tags.map(tag => tag.name) : []), ...photos.map(photo => photo.tag)].filter(Boolean));
   tags.forEach(tag => select.append(Object.assign(make('option', '', tag), { value: tag })));
   const status = make('span', 'event-gallery-status'); toolbar.append(search, select, status); gallery.append(toolbar);
   const grid = make('div', 'event-gallery-grid'); const more = make('button', 'event-gallery-more', '加载更多照片'); more.type = 'button'; gallery.append(grid, more); card.append(gallery);
@@ -136,7 +138,7 @@ const render = async data => {
   const page = asList(collection).find(item => String(item.id || item.slug || '') === id) || asList(collection).find(item => String(item.title || item.name || '') === requestedId);
   if (!page || (['alliance', 'venture'].includes(type) && page.published === false)) return showError();
   const isDinner = type === 'venture' && String(page.id || '').startsWith('new-year-dinner');
-  const hasGallery = isDinner || (type === 'venture' && Array.isArray(page.photos) && page.photos.length > 0);
+  const hasGallery = isDinner || (type === 'venture' && (page.albumManaged === true || (Array.isArray(page.photos) && page.photos.length > 0)));
   document.title = `课后邦｜${page.title || page.name || '内容介绍'}`;
   const card = document.createElement('article'); card.className = 'content-page-card';
   const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = type === 'alliance' ? 'ALLIANCE / 课后服务联盟' : type === 'venture' ? 'ZHILIN / 智邻精英汇' : type === 'about' ? 'ABOUT US / 关于课后邦' : 'CORE BUSINESS / 集团核心业务';

@@ -8,6 +8,7 @@ import { createAdminAuth } from './auth.mjs';
 import { createConsultations } from './consultations.mjs';
 import { applyBusinessDefaults } from './business-content.mjs';
 import { applyAllianceDefaults } from './alliance-content.mjs';
+import { applyEventAlbumDefaults } from './event-albums.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 await mkdir(dataDir, { recursive: true });
@@ -15,6 +16,9 @@ const contentPath = path.join(dataDir, 'content.json');
 const seedPath = path.join(root, 'data/seed.json');
 const seedContent = JSON.parse(await readFile(seedPath, 'utf8'));
 validateContent(seedContent);
+// A missing archive must never turn a legacy album into a managed empty list.
+let eventManifest = null;
+try { eventManifest = JSON.parse(await readFile(path.join(root, 'public/assets/events/manifest.json'), 'utf8')); } catch { }
 const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'];
 function withDefaultCollections(content) {
   for (const key of defaultCollections) {
@@ -27,7 +31,7 @@ function withDefaultCollections(content) {
   // files readable while exposing the new field to the admin editor; the
   // administrator can explicitly save it when a cover is selected.
   for (const course of content.courses || []) if (course && typeof course === 'object') course.cover ??= '';
-  return applyAllianceDefaults(applyBusinessDefaults(content));
+  return applyEventAlbumDefaults(applyAllianceDefaults(applyBusinessDefaults(content)), eventManifest);
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });
@@ -75,8 +79,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/admin/content') {
       if (req.method === 'GET') return send(200, withDefaultCollections(JSON.parse(await readFile(contentPath, 'utf8'))));
       if (req.method !== 'PUT') return send(405, { error: '不支持此操作' });
-      let body = ''; for await (const chunk of req) { body += chunk; if (Buffer.byteLength(body) > 512000) return send(413, { error: '内容过大' }); }
-      let content; try { content = JSON.parse(body); validateContent(content); } catch (e) { return send(400, { error: e.message }); }
+      const chunks = []; let size = 0;
+      for await (const chunk of req) { size += chunk.length; if (size > 2 * 1024 * 1024) return send(413, { error: '内容过大' }); chunks.push(chunk); }
+      let content; try { content = JSON.parse(Buffer.concat(chunks).toString('utf8')); validateContent(content); content = withDefaultCollections(content); validateContent(content); } catch (e) { return send(400, { error: e.message }); }
       const job = writing.then(async () => { await writeFile(contentPath + '.tmp', JSON.stringify(content, null, 2)); await rename(contentPath + '.tmp', contentPath); });
       writing = job.catch(() => { }); await job; return send(200, { ok: true });
     }

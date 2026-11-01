@@ -374,3 +374,31 @@ button:disabled {
   .album-photo-thumb { width: 58px; height: 58px; }
   .nested-card-heading { align-items: start; flex-wrap: wrap; gap: 8px; }
 }
+
+/* Large event albums show a small page of editable thumbnails at a time. */
+.album-total { margin: 7px 0 0; color: var(--ink); font-size: 13px; font-weight: 600; }
+.album-tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 200px); gap: 10px; margin: 12px 0; scroll-margin-top: 110px; }
+.album-tools input, .album-tools select { width: 100%; min-width: 0; padding: 8px 10px; font-size: 13px; }
+.album-selection { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.album-selection .remove { min-height: 34px; padding: 5px 10px; font-size: 12px; }
+.album-selection-count { color: var(--muted); font-size: 12px; }
+.album-photo-media { min-width: 0; }
+.album-photo-selection { display: flex; align-items: center; gap: 4px; margin: 0 0 7px; color: var(--muted); font-size: 11px; cursor: pointer; }
+.album-photo-selection input { width: 15px; height: 15px; margin: 0; accent-color: var(--blue); }
+.album-preview { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: var(--blue); text-align: center; }
+.album-preview span { display: block; margin-top: 4px; font-size: 10px; }
+.album-photo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.album-photo-actions .album-replace { min-height: 0; padding: 3px 7px; font-size: 11px; }
+.album-pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.album-pagination[hidden] { display: none; }
+.album-page-info { color: var(--muted); font-size: 12px; text-align: center; }
+.admin-album-preview { width: calc(100% - 32px); max-width: 1000px; padding: 48px 24px 20px; border: 1px solid var(--line); background: var(--surface, #fff); }
+.admin-album-preview h2 { margin: 0 0 14px; font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-album-preview-image { display: block; width: 100%; max-height: 66vh; object-fit: contain; }
+.album-preview-download { display: inline-flex; margin-top: 14px; color: var(--blue); font-size: 13px; }
+@media (max-width: 600px) {
+  .album-tools { grid-template-columns: 1fr; gap: 8px; }
+  .album-pagination { gap: 8px; }
+  .album-page-info { flex-basis: 100%; order: -1; }
+  .admin-album-preview { padding: 44px 14px 16px; }
+}
