@@ -109,6 +109,384 @@
       "category": "管理团队",
       "bio": "武汉科技大学设计学硕士，负责品牌产品运营与品牌形象建设。",
       "image": "/assets/image7.webp"
+    },
+    {
+      "name": "向开进",
+      "role": "联合创始人 · 首席运营",
+      "category": "运营团队",
+      "bio": "课后邦联合创始人，课后邦素质教育首席运营。\n\n2 年电商线上运营创业经验，武汉科技大学本科。",
+      "image": "/assets/team-d1e90b50bfbdcd33ae7e2eb3.webp"
+    },
+    {
+      "name": "何全亮",
+      "role": "联合创始人 · 运营经理",
+      "category": "运营团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育线上运营，AI 内容运营实践者。\n\n武汉科技大学本科。",
+      "image": "/assets/team-c6ed934e3d0b6cc345319725.webp"
+    },
+    {
+      "name": "周自然",
+      "role": "技术总监",
+      "category": "技术团队",
+      "bio": "课后邦技术总监。\n\nAI 视频智能剪辑发布系统、自媒体智能营销获客系统、全媒体矩阵聚合发布系统。",
+      "image": "/assets/team-ee917d70952e1cdbc5bf380d.webp"
+    },
+    {
+      "name": "黄宇明",
+      "role": "联合创始人 · 产品经理",
+      "category": "技术团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育产品运营，统筹数字化管理后台技术系统。\n\n澳门科技大学本科。",
+      "image": "/assets/team-c71989c277adebe63a2c4ca5.webp"
+    },
+    {
+      "name": "马子豪",
+      "role": "联合创始人 · 技术经理",
+      "category": "技术团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育技术运营、企业 AI 产品架构与 Agent 开发。\n\n武汉科技大学本科。",
+      "image": "/assets/team-f08a122947e000c51760ddca.webp"
+    },
+    {
+      "name": "周玉钊",
+      "role": "联合创始人 · 技术经理",
+      "category": "技术团队",
+      "bio": "课后邦联合创始人，从事课后邦技术研发与系统建设、数字化产品开发实践。\n\n武汉科技大学本科。",
+      "image": "/assets/team-9742c6606a3f9a7200c81a67.webp"
+    },
+    {
+      "name": "简梦瑶",
+      "role": "联合创始人 · 技术经理",
+      "category": "技术团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育技术运营、企业 AI 技术项目协同技术运营。\n\n武汉科技大学本科。",
+      "image": "/assets/team-24d220653b0c2fac22056ff7.webp"
+    },
+    {
+      "name": "刘泉宇",
+      "role": "联合创始人 · 技术经理 · 学科教师",
+      "category": "技术团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育技术运营，Agent 架构师。\n\n武汉科技大学本科。\n\n教学介绍：\n武汉科技大学\n信息管理与信息系统\n辩论赛冠军及最佳辩手\n晚托班主任获家长认可",
+      "image": "/assets/team-72f208666286bc8ef5226432.webp"
+    },
+    {
+      "name": "赵家祥",
+      "role": "联合创始人 · 人力资源经理",
+      "category": "职能团队",
+      "bio": "课后邦联合创始人，武汉大学生人工智能社团秘书长。\n\n国家一级运动员，创祥壹零机器人创始人，武汉科技大学本科。",
+      "image": "/assets/team-939b4ee78763079be025a4d8.webp"
+    },
+    {
+      "name": "丁一于",
+      "role": "联合创始人 · 教务经理 · 学科教师",
+      "category": "教学团队",
+      "bio": "课后邦联合创始人，从事课后邦素质教育师资管理，统筹线上授课老师教学活动。\n\n武汉科技大学本科。\n\n教学介绍：\n武汉科技大学\n物流管理\n优秀团员 CET-4/6\n学堂助理教师顶岗授课",
+      "image": "/assets/image21.webp"
+    },
+    {
+      "name": "陈梦薇",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n物流管理\n辩论赛二等奖\n中考数学提分20+\n\n因材施教润物无声",
+      "image": "/assets/team-ce700b21c1576498878a0477.webp"
+    },
+    {
+      "name": "崔佳怡",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n储能科学与工程\n优秀青年志愿者\n语英学科系统辅导\n\n耐心细致寓教于乐",
+      "image": "/assets/team-486eccaf49a06e8892c129c3.webp"
+    },
+    {
+      "name": "黄倩琳",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学(硕)\n交通运输\n一等学业奖学金\n数学薄弱生提至70-80分\n\n以数启思以爱育人",
+      "image": "/assets/team-119f37ba5ac4adb8ebcc2449.webp"
+    },
+    {
+      "name": "李家乐",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n统计学\n高绩点 CET-4\n初中数学家教备课详尽\n\n逻辑清晰热情开朗",
+      "image": "/assets/team-ee9ace739b779cfb1212cabc.webp"
+    },
+    {
+      "name": "刘竞航",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n冶金工程\nCET-4 计算机二级\n多学段一对一家教\n\n灵活施教耐心陪伴",
+      "image": "/assets/team-81212dab2e2872a624c376c7.webp"
+    },
+    {
+      "name": "吕文霞",
+      "role": "英语教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n市场营销\n全国大学生英语竞赛三等奖\n3年一对一英语授课\n\n以言传心语你同行",
+      "image": "/assets/team-6a26ab428c27681707992f09.webp"
+    },
+    {
+      "name": "毛亦维",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n数英理科学科辅导\n挑战杯湖北省特等奖\n物理前十英语60到100+\n\n因材施教方法先行",
+      "image": "/assets/team-b9ab8b6328a46735ea7fc67f.webp"
+    },
+    {
+      "name": "王啸宇",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n投资学\n军训标兵情景剧一等奖\n英语60提至108分\n\n耐心引导激发潜能",
+      "image": "/assets/team-24d527cd7bf61b9ba2ec1f34.webp"
+    },
+    {
+      "name": "王哲",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n储能科学与工程\nCET-4 计算机二级\n数学60分提升至80分\n\n数理相融循序渐进",
+      "image": "/assets/team-8da1dcde0558b6e53d83d121.webp"
+    },
+    {
+      "name": "谢寓清",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n储能科学与工程\n科协杯演讲特等奖\n托管班科学课主讲\n\n科普启智知行合一",
+      "image": "/assets/team-6472792cdf15d0d49389c6e0.webp"
+    },
+    {
+      "name": "马慧",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n马克思主义理论\n全国大学生英语竞赛三等奖\n小学英语授课80课时\n\n以文载道以爱育人",
+      "image": "/assets/team-9bb0f5133f81d316b3fd4500.webp"
+    },
+    {
+      "name": "陈思思",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n计算机科学与技术\n市级数学竞赛二等奖\n高考数学129分\n\n拆解难点思维启蒙",
+      "image": "/assets/team-51e97522a678774b615c4a68.webp"
+    },
+    {
+      "name": "李琪",
+      "role": "英语教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n电子信息工程\n大创国家级立项\n线上英语授课60h+\n\n语言连接自信成长",
+      "image": "/assets/team-460adda20834b9629a481098.webp"
+    },
+    {
+      "name": "林思婧",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n德语\n外研社国才杯省三等奖\n十余段家教覆盖多学科\n\n以语为桥沟通世界",
+      "image": "/assets/team-e555c525548b68b98fcea563.webp"
+    },
+    {
+      "name": "刘佳丽",
+      "role": "语文英语",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n生物工程\n楚天杯作文省一等奖\n阿里AI训练师认证\n\n语英双优AI助教",
+      "image": "/assets/team-06f24146906bcb2630f8104e.webp"
+    },
+    {
+      "name": "蒙兴艳",
+      "role": "英语教师",
+      "category": "学科教师团队",
+      "bio": "中国地质大学\n会计学\n高中三好学生奖学金\n初中英语辅导\n\n认真靠谱稳步提升",
+      "image": "/assets/team-8d632e25b00b185753c65544.webp"
+    },
+    {
+      "name": "申锦媛",
+      "role": "语英教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n智能车辆工程\n素描10级计算机二级\n高考语英双120+\n\n语英双优趣味教学",
+      "image": "/assets/team-324ef22b70c8c680ac08f116.webp"
+    },
+    {
+      "name": "范池玉",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n电子信息工程(拔尖)\n优秀志愿者学习标兵\n英语薄弱生提40分\n\n真诚耐心因材施教",
+      "image": "/assets/team-44e524222c5a3454df87694a.webp"
+    },
+    {
+      "name": "刘奥文",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n无机数智双学位\n英语省三等奖\n化学单科提分10+\n\n612分学霸鼓励教学",
+      "image": "/assets/team-469e0808f43680c74a082fdb.webp"
+    },
+    {
+      "name": "王译慷",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n生物技术\n优秀干事优秀班干部\n社团活动志愿服务\n\n亲和耐心启发思考",
+      "image": "/assets/team-2069cfd91cb9dc70e167d273.webp"
+    },
+    {
+      "name": "李林喆",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n机械工程\n初中数学竞赛省一等奖\n多年数学家教提分显著\n\n逻辑清晰快速自学",
+      "image": "/assets/team-5bbf469c70952563a7b7fcad.webp"
+    },
+    {
+      "name": "唐心悦",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n机械(测控)\n班会课志愿教师\n小学英语音标单词家教\n\n青春陪伴趣味课堂",
+      "image": "/assets/team-e74609170305dcbd66eb8076.webp"
+    },
+    {
+      "name": "万锐",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n能源与动力工程\n数学教学资格证\n一年半数理家教\n\n数理专精经验丰富",
+      "image": "/assets/team-ec3a33b9c73b6c00fb055d72.webp"
+    },
+    {
+      "name": "王必雪",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "中国地质大学\n工商管理\n机构一对一课程\n纠正做题坏习惯\n\n因材施教培养思维",
+      "image": "/assets/team-af4e7316479653d019f76bdf.webp"
+    },
+    {
+      "name": "王璐",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n信息管理与信息系统\nCET-4 计算机二级\n辅导7名学生均进步\n\n高效学习触类旁通",
+      "image": "/assets/team-2ed09d233469a16e47f8c622.webp"
+    },
+    {
+      "name": "薛佳怡",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学(硕)\n土木水利\n学业二等奖学金\n初中数学C提至B\n\n循序渐进查漏补缺",
+      "image": "/assets/team-1506dfb3dfc9f39396041860.webp"
+    },
+    {
+      "name": "余欣妍",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n物流管理\nCET-4/6计算机二级\n社区托管小学辅导\n\n严谨负责举一反三",
+      "image": "/assets/team-6b262fcdf5e2c60204a38e5b.webp"
+    },
+    {
+      "name": "张钰涵",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n智能车辆工程\n专业绩点11/342\n英语50提至80分\n\n讲练结合因材施教",
+      "image": "/assets/team-d5a44483088aba3d4cfc6ac2.webp"
+    },
+    {
+      "name": "朱冰鑫",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n金融科技\n挑战杯校三等奖\n英语60提至100分\n\n学情诊断正向鼓励",
+      "image": "/assets/team-d0cb95e7167dc43d6c5623b8.webp"
+    },
+    {
+      "name": "刘思宜",
+      "role": "学科教师",
+      "category": "学科教师团队",
+      "bio": "武汉科技大学\n临床医学\n普通话二甲优秀干部\n小升初数英家教\n\n医学背景通俗讲解",
+      "image": "/assets/team-64dd55c84e108340f64f55cf.webp"
+    },
+    {
+      "name": "曾慧",
+      "role": "美育",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n金属材料\n科协杯一等奖\n作业帮助教获认可\n\n以美育人巧手创想",
+      "image": "/assets/team-0b31da57c0452e03ad882b19.webp"
+    },
+    {
+      "name": "陈博伟",
+      "role": "科技",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n电子信息工程\n大唐杯省级二等奖\n物理二调40提至65\n\n工科思维探究原理",
+      "image": "/assets/team-77b7085796e73c4c0ae57665.webp"
+    },
+    {
+      "name": "龚仁商",
+      "role": "美育",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n绘画\n永创杯全国设计一等奖\n油画被机构收藏\n\n以美为光以艺育人",
+      "image": "/assets/team-3da3d783336608f7cd78b05d.webp"
+    },
+    {
+      "name": "姜妍希",
+      "role": "劳动手工",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n储能科学与工程\n钢琴十级挑战杯省二\n钩织刺绣粘土拼豆\n\n心灵手巧美育手工",
+      "image": "/assets/team-7331b8eddd5d25ccac862966.webp"
+    },
+    {
+      "name": "罗安浩",
+      "role": "美育",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n机械工程\n软笔书法九级\n3D大赛省三柔力球省一\n\n翰墨飘香多元素养",
+      "image": "/assets/team-0b986fda484f200de88db0b3.webp"
+    },
+    {
+      "name": "王程祥",
+      "role": "科技",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n药学\nCET-4普通话\n物理50提至87分\n\n理科探究实验精神",
+      "image": "/assets/team-00bbd4eafd1ae7415229e227.webp"
+    },
+    {
+      "name": "许朝阳",
+      "role": "美育",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n视觉传达设计\n优秀团员学生干部\n主题宣讲课堂主持\n\n视觉传美设计育人",
+      "image": "/assets/team-13e02577ebfe85584b513bdc.webp"
+    },
+    {
+      "name": "曾子言",
+      "role": "益智",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n机械电子工程\n3Dshow建模龙鼎奖\nSW建模Python编程\n\n编程建模益智创新",
+      "image": "/assets/team-d5cecc33267de878d2991a62.webp"
+    },
+    {
+      "name": "陈鑫怡",
+      "role": "益智",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n测控技术与仪器\n沟通表达清晰\n快速掌握教学内容\n\n善于沟通接受力强",
+      "image": "/assets/team-8cf73c549ca942af7ed6ce60.webp"
+    },
+    {
+      "name": "李奕萱",
+      "role": "益智",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n社会工作\n沁湖诗会朗诵二等奖\n校级赛事主持全科家教\n\n表达出众活跃课堂",
+      "image": "/assets/team-16e67549699abc6f706d927d.webp"
+    },
+    {
+      "name": "郭淑菁",
+      "role": "益智",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n人力资源管理\n英语翻译大赛省二等奖\n协调排课100+节\n\n启发引导心理洞察",
+      "image": "/assets/team-95bfdee91d434a9c93af820c.webp"
+    },
+    {
+      "name": "彭淑兰",
+      "role": "劳动手工",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n人工智能科创班\n睿抗机器人国三\n机构班课线上答疑\n\n机器人科创动手实践",
+      "image": "/assets/team-ca7adf403f651016a08005e6.webp"
+    },
+    {
+      "name": "高青芳",
+      "role": "劳动手工",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n物流管理\n劳动之星标兵志愿者\n实验小学助教批改\n\n劳动实践志愿精神",
+      "image": "/assets/team-fadad0c86852065fd90573ee.webp"
+    },
+    {
+      "name": "钱雨丹",
+      "role": "科技",
+      "category": "综合素养教师团队",
+      "bio": "武汉科技大学\n生物工程\n校史馆优秀讲解员\n高三生物初三化学\n\n生科探究趣味教学",
+      "image": "/assets/team-55c6b1b0ec2ced0db59c8c18.webp"
     }
   ],
   "news": [
