@@ -21,8 +21,14 @@
   window.homeBusinessDestination = destination;
   const make = (tag, cls, text) => { const node = document.createElement(tag); if (cls) node.className = cls; if (text !== undefined) node.textContent = text; return node; };
   const setImage = (image, source, fallback) => {
-    image.onerror = () => { image.onerror = null; image.src = fallback; };
-    image.src = source || fallback;
+    const applySource = value => {
+      image.src = value;
+      if (image.parentElement?.classList.contains('business-feature-media')) {
+        image.parentElement.style.setProperty('--business-image', `url(${JSON.stringify(value)})`);
+      }
+    };
+    image.onerror = () => { image.onerror = null; applySource(fallback); };
+    applySource(source || fallback);
   };
   let destroyCarousel;
   window.renderHomeBusiness = data => {

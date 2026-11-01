@@ -15,7 +15,7 @@ for (const [index, id] of ids.entries()) {
   page.image = `/assets/business-${index + 1}.svg`;
 }
 
-async function createPage(browser, reducedMotion = 'no-preference') {
+async function createPage(browser, reducedMotion = 'no-preference', imageShape = 'wide') {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -27,6 +27,12 @@ async function createPage(browser, reducedMotion = 'no-preference') {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/content') return route.fulfill({ json: data });
     if (url.pathname.startsWith('/api/')) return route.fulfill({ status: 404, json: { error: 'Unexpected test endpoint' } });
+    // Match the maintained first photograph's 1396 x 1048 shape without reading
+    // private runtime content. Wide placeholders alone hide the letterboxing
+    // regression that made the user's real photograph look too small.
+    if (imageShape === 'photo' && url.pathname === '/assets/business-1.svg') {
+      return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1396" height="1048" viewBox="0 0 1396 1048"><rect width="1396" height="1048" fill="#a8c9e5"/><path d="M0 0h1396v1048H0z" fill="none" stroke="#24539a" stroke-width="18"/><text x="698" y="550" text-anchor="middle" font-size="96" fill="#163966">4:3 PHOTO</text></svg>' });
+    }
     const file = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
     const absolute = path.join('public', file);
     if (!fs.existsSync(absolute)) return route.fulfill({ status: 404, body: 'Not found' });
@@ -68,6 +74,8 @@ async function assertBusinessLayout(page, viewport) {
     const image = document.getElementById('business-feature-image');
     const panel = document.getElementById('business-feature-panel').getBoundingClientRect();
     const navigation = document.getElementById('business-showcase').getBoundingClientRect();
+    const brand = document.querySelector('#home .hero-content').getBoundingClientRect();
+    const copy = document.querySelector('#home .business-feature-copy').getBoundingClientRect();
     const bounds = image.getBoundingClientRect();
     const style = getComputedStyle(image);
     // With contain and top alignment, this is the rendered source-image area,
@@ -88,6 +96,10 @@ async function assertBusinessLayout(page, viewport) {
         tabs: horizontalBounds('#business-tabs')
       },
       panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom },
+      brand: { left: brand.left, right: brand.right, top: brand.top, bottom: brand.bottom },
+      copy: { left: copy.left, right: copy.right, top: copy.top, bottom: copy.bottom },
+      source: { width: image.naturalWidth, height: image.naturalHeight },
+      imageBox: { width: bounds.width, height: bounds.height },
       image: { left: bounds.left + (bounds.width - width) / 2, right: bounds.left + (bounds.width + width) / 2, top: bounds.top, bottom: bounds.top + height, width, height }
     };
   });
@@ -101,9 +113,56 @@ async function assertBusinessLayout(page, viewport) {
   assert.equal(layout.fit, 'contain', `Business images must be fully contained at ${label}`);
   assert.ok(['top', '0%', '0px'].includes(layout.position.trim().split(/\s+/).at(-1)), `Business images must align to the top at ${label}: ${layout.position}`);
   assert.ok(layout.image.width > 0 && layout.image.height > 0, `Business image must have a decoded visible area at ${label}`);
+  assert.ok(layout.image.left >= layout.panel.left - 1 && layout.image.right <= layout.panel.right + 1 && layout.image.top >= layout.panel.top - 1 && layout.image.bottom <= layout.panel.bottom + 1, `The complete business image must fit inside the visible hero panel at ${label}`);
+  assert.ok(layout.image.bottom <= layout.copy.top + 1, `The business caption must not cover the rendered image at ${label}`);
+  assert.ok(layout.panel.bottom <= layout.navigation.top + 1, `Business navigation must follow the media card at ${label}`);
   if (viewport.width > 760) {
-    assert.ok(layout.image.left >= layout.panel.left - 1 && layout.image.right <= layout.panel.right + 1 && layout.image.top >= layout.panel.top - 1 && layout.image.bottom <= layout.panel.bottom + 1, `The complete business image must fit inside the visible hero panel at ${label}`);
-    assert.ok(layout.image.bottom <= layout.navigation.top + 1, `Business navigation must not cover the rendered image at ${label}: image bottom ${layout.image.bottom}, navigation top ${layout.navigation.top}`);
+    assert.ok(layout.brand.right <= layout.panel.left + 1, `The headline and media must occupy separate columns at ${label}`);
+    if (layout.imageBox.height >= layout.imageBox.width * layout.source.height / layout.source.width) {
+      assert.ok(layout.image.width >= (layout.panel.right - layout.panel.left) * .9, `An image that fits vertically must fill the media column at ${label}`);
+    }
+  } else {
+    assert.ok(layout.brand.bottom <= layout.panel.top + 1, `The mobile headline must finish before the media card at ${label}`);
+    assert.ok(layout.panel.top - layout.brand.bottom <= 32, `The mobile heading and media must stay visually connected at ${label}`);
+    assert.ok(layout.navigation.top - layout.panel.bottom <= 28, `The mobile card and business navigation must stay visually connected at ${label}`);
+  }
+}
+
+const responsiveViewports = [
+  { width: 1440, height: 900 },
+  { width: 929, height: 657 },
+  { width: 768, height: 800 },
+  { width: 390, height: 844 },
+  { width: 320, height: 740 }
+];
+async function assertMobileSlideStability(page, viewport) {
+  const previous = await slideIndex(page);
+  const tabs = page.locator('#business-tabs [role="tab"]');
+  await tabs.first().dispatchEvent('click');
+  await page.locator('#business-feature-image').evaluate(image => image.decode());
+  await settleLayout(page);
+  const baseline = (await page.locator('#business-tabs').boundingBox()).y;
+  for (let index = 1; index < ids.length; index++) {
+    await tabs.nth(index).dispatchEvent('click');
+    await page.locator('#business-feature-image').evaluate(image => image.decode());
+    await settleLayout(page);
+    const top = (await page.locator('#business-tabs').boundingBox()).y;
+    assert.ok(Math.abs(top - baseline) <= 1, `Mobile business tabs must stay in place when switching image shapes or caption lengths at ${viewport.width}x${viewport.height}, slide ${index + 1}: ${top} vs ${baseline}`);
+  }
+  await tabs.nth(previous).dispatchEvent('click');
+  await page.locator('#business-feature-image').evaluate(image => image.decode());
+  await settleLayout(page);
+}
+async function assertResponsiveLayout(page) {
+  const tabs = page.locator('#business-tabs [role="tab"]');
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await showHero(page);
+    const visible = await tabs.evaluateAll(buttons => buttons.map(button => { const r = button.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }));
+    assert.deepEqual(visible, Array(7).fill(true), `All seven business buttons must be in the first viewport at ${viewport.width}x${viewport.height}`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await assertBusinessLayout(page, viewport);
+    if (viewport.width <= 760) await assertMobileSlideStability(page, viewport);
   }
 }
 
@@ -113,7 +172,8 @@ async function assertBusinessLayout(page, viewport) {
     const normal = await createPage(browser);
     let page = normal.page;
     const tabs = page.locator('#business-tabs [role="tab"]');
-    assert.equal(await page.locator('#home > #business-feature-panel.hero-image').count(), 1);
+    assert.equal(await page.locator('#home > .hero-stage > #business-feature-panel.hero-image').count(), 1);
+    assert.equal(await page.locator('#home > .hero-stage > .hero-content').count(), 1);
     assert.equal(await page.locator('#business-showcase').evaluate(section => Boolean(section.closest('#home'))), true);
     assert.equal(await page.locator('.business-feature').count(), 1);
     assert.equal(await tabs.count(), 7);
@@ -177,14 +237,7 @@ async function assertBusinessLayout(page, viewport) {
     await page.locator('.brand').first().focus();
     await showHero(page); await expectOneAutomaticStep(page, 0);
 
-    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }, { width: 320, height: 740 }]) {
-      await page.setViewportSize(viewport);
-      await showHero(page);
-      const visible = await tabs.evaluateAll(buttons => buttons.map(button => { const r = button.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }));
-      assert.deepEqual(visible, Array(7).fill(true), `All seven business buttons must be in the first viewport at ${viewport.width}x${viewport.height}`);
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      await assertBusinessLayout(page, viewport);
-    }
+    await assertResponsiveLayout(page);
     await page.getByLabel('外观').selectOption('dark');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(os.tmpdir(), 'khfwcms-hero-carousel-mobile-dark.png') });
@@ -193,12 +246,16 @@ async function assertBusinessLayout(page, viewport) {
 
     // The requested initial automatic playback also applies to reduced-motion
     // mode; that mode changes visual transitions rather than the six-second cadence.
-    const reduced = await createPage(browser, 'reduce');
+    const reduced = await createPage(browser, 'reduce', 'photo');
     page = reduced.page;
     await assertSlide(page, 0); await expectOneAutomaticStep(page, 0);
     assert.equal(await page.locator('#business-feature-counter, #business-autoplay').count(), 0);
+    await page.locator('#business-tabs [role="tab"]').first().dispatchEvent('click');
+    await assertResponsiveLayout(page);
+    await page.getByLabel('外观').selectOption('dark');
+    await assertResponsiveLayout(page);
     assert.deepEqual(reduced.errors, []);
     await page.close();
-    console.log('PASS: full-width navigation with aligned inner content and contained top-aligned hero images; seven first-viewport buttons, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and mobile dark layout.');
+    console.log('PASS: separate desktop headline/media columns and connected mobile flow for wide and 4:3 images; seven first-viewport buttons at five responsive sizes, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and dark layout.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

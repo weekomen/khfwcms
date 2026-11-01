@@ -28,7 +28,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
       await route.fulfill({body:fs.readFileSync(path.join('public',file)),contentType:({'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.jpg':'image/jpeg','.png':'image/png'})[path.extname(file)]||'application/octet-stream'});
     });
     await page.goto('http://localhost:3199/'); await page.waitForSelector('#business-tabs [role="tab"]');
-    assert.equal(await page.locator('#home > #business-feature-panel.hero-image').count(),1);
+    assert.equal(await page.locator('#home > .hero-stage > #business-feature-panel.hero-image').count(),1);
     assert.equal(await page.locator('#business-showcase').evaluate(section => Boolean(section.closest('#home'))),true);
     assert.equal(await page.locator('.business-feature').count(),1);
     const businessTabs = page.locator('#business-tabs [role="tab"]');
