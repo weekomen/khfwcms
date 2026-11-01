@@ -27,9 +27,8 @@ async function createPage(browser, reducedMotion = 'no-preference', imageShape =
     const url = new URL(route.request().url());
     if (url.pathname === '/api/content') return route.fulfill({ json: data });
     if (url.pathname.startsWith('/api/')) return route.fulfill({ status: 404, json: { error: 'Unexpected test endpoint' } });
-    // Match the maintained first photograph's 1396 x 1048 shape without reading
-    // private runtime content. Wide placeholders alone hide the letterboxing
-    // regression that made the user's real photograph look too small.
+    // Exercise a photograph shape as well as the wide placeholders, without
+    // reading maintained runtime content or administrator credentials.
     if (imageShape === 'photo' && url.pathname === '/assets/business-1.svg') {
       return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="1396" height="1048" viewBox="0 0 1396 1048"><rect width="1396" height="1048" fill="#a8c9e5"/><path d="M0 0h1396v1048H0z" fill="none" stroke="#24539a" stroke-width="18"/><text x="698" y="550" text-anchor="middle" font-size="96" fill="#163966">4:3 PHOTO</text></svg>' });
     }
@@ -41,7 +40,7 @@ async function createPage(browser, reducedMotion = 'no-preference', imageShape =
   });
   await page.goto(origin);
   await page.waitForSelector('#business-tabs [role="tab"]');
-  await showHero(page);
+  await showShowcase(page);
   return { page, errors };
 }
 
@@ -50,8 +49,8 @@ async function settleLayout(page) {
   // IntersectionObserver is driven by rendering, not only the fake timer.
   await page.waitForTimeout(60);
 }
-async function showHero(page) {
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+async function showShowcase(page) {
+  await page.evaluate(() => document.getElementById('business-showcase').scrollIntoView({ block: 'start', behavior: 'instant' }));
   await page.mouse.move(0, 0);
   await settleLayout(page);
 }
@@ -62,108 +61,81 @@ async function assertSlide(page, index) {
   assert.equal(await page.locator('#business-feature-image').getAttribute('src'), `/assets/business-${index + 1}.svg`);
   assert.equal(await page.locator('#business-tabs [aria-selected="true"]').count(), 1);
   assert.equal(await page.locator('#business-tabs [role="tab"]').nth(index).getAttribute('aria-selected'), 'true');
+  assert.equal((await page.locator('#business-feature-counter').textContent()).trim(), `${String(index + 1).padStart(2, '0')} / 07`);
+  assert.equal((await page.locator('#business-feature-index').textContent()).trim(), `${String(index + 1).padStart(2, '0')} / CORE BUSINESS`);
 }
 async function expectOneAutomaticStep(page, index) {
   await advance(page, 6100);
   await assertSlide(page, (index + 1) % ids.length);
 }
 async function assertBusinessLayout(page, viewport) {
-  assert.equal(await page.locator('#business-showcase > .business-showcase-inner').count(), 1, 'Business navigation must have one inner content container');
   await page.locator('#business-feature-image').evaluate(image => image.decode());
   const layout = await page.evaluate(() => {
-    const image = document.getElementById('business-feature-image');
-    const panel = document.getElementById('business-feature-panel').getBoundingClientRect();
-    const navigation = document.getElementById('business-showcase').getBoundingClientRect();
-    const brand = document.querySelector('#home .hero-content').getBoundingClientRect();
-    const copy = document.querySelector('#home .business-feature-copy').getBoundingClientRect();
-    const bounds = image.getBoundingClientRect();
-    const style = getComputedStyle(image);
-    // With contain and top alignment, this is the rendered source-image area,
-    // excluding any letterboxing in the element's larger CSS box.
-    const scale = Math.min(bounds.width / image.naturalWidth, bounds.height / image.naturalHeight);
-    const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
-    const horizontalBounds = selector => {
-      const rect = document.querySelector(selector).getBoundingClientRect();
-      return { left: rect.left, right: rect.right };
+    const rect = selector => {
+      const r = document.querySelector(selector).getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
     };
+    const tabs = document.getElementById('business-tabs');
     return {
-      fit: style.objectFit, position: style.objectPosition, viewportWidth: innerWidth,
-      navigation: { left: navigation.left, right: navigation.right, top: navigation.top },
-      reference: horizontalBounds('#after-school-supply .section-head'),
-      content: {
-        inner: horizontalBounds('#business-showcase > .business-showcase-inner'),
-        heading: horizontalBounds('#business-showcase .business-showcase-heading'),
-        tabs: horizontalBounds('#business-tabs')
-      },
-      panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom },
-      brand: { left: brand.left, right: brand.right, top: brand.top, bottom: brand.bottom },
-      copy: { left: copy.left, right: copy.right, top: copy.top, bottom: copy.bottom },
-      source: { width: image.naturalWidth, height: image.naturalHeight },
-      imageBox: { width: bounds.width, height: bounds.height },
-      image: { left: bounds.left + (bounds.width - width) / 2, right: bounds.left + (bounds.width + width) / 2, top: bounds.top, bottom: bounds.top + height, width, height }
+      hero: rect('#home'), showcase: rect('#business-showcase'), panel: rect('#business-feature-panel'),
+      heading: rect('#business-showcase .business-showcase-heading'), tabs: rect('#business-tabs'),
+      image: rect('#business-feature-image'), copy: rect('.business-feature-copy'), title: rect('#business-feature-title'), counter: rect('#business-feature-counter'),
+      reference: rect('#after-school-supply .section-head'), scrollable: tabs.scrollWidth > tabs.clientWidth
     };
   });
   const label = `${viewport.width}x${viewport.height}`;
-  assert.ok(Math.abs(layout.navigation.left) <= 1, `Business navigation must reach the left edge at ${label}`);
-  assert.ok(Math.abs(layout.navigation.right - layout.viewportWidth) <= 1, `Business navigation must reach the right edge at ${label}`);
-  for (const [name, bounds] of Object.entries(layout.content)) {
-    assert.ok(Math.abs(bounds.left - layout.reference.left) <= 1, `Business ${name} must align with the following section's left edge at ${label}: ${bounds.left} vs ${layout.reference.left}`);
-    assert.ok(Math.abs(bounds.right - layout.reference.right) <= 1, `Business ${name} must align with the following section's right edge at ${label}: ${bounds.right} vs ${layout.reference.right}`);
+  assert.ok(layout.hero.bottom <= layout.showcase.top + 1, `The office hero must precede the separate business showcase at ${label}`);
+  for (const [name, bounds] of Object.entries({ showcase: layout.showcase, heading: layout.heading, tabs: layout.tabs, panel: layout.panel })) {
+    assert.ok(Math.abs(bounds.left - layout.reference.left) <= 1, `Business ${name} must align with the next section's left edge at ${label}`);
+    assert.ok(Math.abs(bounds.right - layout.reference.right) <= 1, `Business ${name} must align with the next section's right edge at ${label}`);
   }
-  assert.equal(layout.fit, 'contain', `Business images must be fully contained at ${label}`);
-  assert.ok(['top', '0%', '0px'].includes(layout.position.trim().split(/\s+/).at(-1)), `Business images must align to the top at ${label}: ${layout.position}`);
-  assert.ok(layout.image.width > 0 && layout.image.height > 0, `Business image must have a decoded visible area at ${label}`);
-  assert.ok(layout.image.left >= layout.panel.left - 1 && layout.image.right <= layout.panel.right + 1 && layout.image.top >= layout.panel.top - 1 && layout.image.bottom <= layout.panel.bottom + 1, `The complete business image must fit inside the visible hero panel at ${label}`);
-  assert.ok(layout.image.bottom <= layout.copy.top + 1, `The business caption must not cover the rendered image at ${label}`);
-  assert.ok(layout.panel.bottom <= layout.navigation.top + 1, `Business navigation must follow the media card at ${label}`);
-  if (viewport.width > 760) {
-    assert.ok(layout.brand.right <= layout.panel.left + 1, `The headline and media must occupy separate columns at ${label}`);
-    if (layout.imageBox.height >= layout.imageBox.width * layout.source.height / layout.source.width) {
-      assert.ok(layout.image.width >= (layout.panel.right - layout.panel.left) * .9, `An image that fits vertically must fill the media column at ${label}`);
-    }
-  } else {
-    assert.ok(layout.brand.bottom <= layout.panel.top + 1, `The mobile headline must finish before the media card at ${label}`);
-    assert.ok(layout.panel.top - layout.brand.bottom <= 32, `The mobile heading and media must stay visually connected at ${label}`);
-    assert.ok(layout.navigation.top - layout.panel.bottom <= 28, `The mobile card and business navigation must stay visually connected at ${label}`);
-  }
+  assert.ok(layout.tabs.bottom <= layout.panel.top + 1, `The image must follow the seven business tabs at ${label}`);
+  assert.ok(layout.image.width > 0 && layout.image.height > 0, `The business image must have visible dimensions at ${label}`);
+  assert.ok(layout.copy.top >= layout.panel.top - 1 && layout.copy.bottom <= layout.panel.bottom, `The complete business caption must remain inside the image at ${label}`);
+  assert.ok(layout.title.left >= layout.panel.left && layout.title.right <= layout.panel.right, `The overlaid title must remain inside the image horizontally at ${label}`);
+  assert.ok(layout.title.top >= layout.panel.top - 1 && layout.title.bottom <= layout.panel.bottom, `The overlaid title must remain inside the image vertically at ${label}`);
+  assert.ok(layout.counter.top >= layout.panel.top && layout.counter.bottom <= layout.panel.bottom, `The slide counter must remain inside the image at ${label}`);
+  if (viewport.width <= 1000) assert.equal(layout.scrollable, true, `Small screens must scroll the seven business tabs horizontally at ${label}`);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `No page-wide horizontal overflow at ${label}`);
 }
-
 const responsiveViewports = [
-  { width: 1440, height: 900 },
-  { width: 929, height: 657 },
-  { width: 768, height: 800 },
-  { width: 390, height: 844 },
-  { width: 320, height: 740 }
+  { width: 1440, height: 900 }, { width: 929, height: 657 }, { width: 768, height: 800 },
+  { width: 390, height: 844 }, { width: 320, height: 740 }
 ];
-async function assertMobileSlideStability(page, viewport) {
-  const previous = await slideIndex(page);
-  const tabs = page.locator('#business-tabs [role="tab"]');
-  await tabs.first().dispatchEvent('click');
-  await page.locator('#business-feature-image').evaluate(image => image.decode());
-  await settleLayout(page);
-  const baseline = (await page.locator('#business-tabs').boundingBox()).y;
-  for (let index = 1; index < ids.length; index++) {
-    await tabs.nth(index).dispatchEvent('click');
-    await page.locator('#business-feature-image').evaluate(image => image.decode());
-    await settleLayout(page);
-    const top = (await page.locator('#business-tabs').boundingBox()).y;
-    assert.ok(Math.abs(top - baseline) <= 1, `Mobile business tabs must stay in place when switching image shapes or caption lengths at ${viewport.width}x${viewport.height}, slide ${index + 1}: ${top} vs ${baseline}`);
-  }
-  await tabs.nth(previous).dispatchEvent('click');
-  await page.locator('#business-feature-image').evaluate(image => image.decode());
-  await settleLayout(page);
-}
 async function assertResponsiveLayout(page) {
-  const tabs = page.locator('#business-tabs [role="tab"]');
+  const previous = await slideIndex(page);
   for (const viewport of responsiveViewports) {
     await page.setViewportSize(viewport);
-    await showHero(page);
-    const visible = await tabs.evaluateAll(buttons => buttons.map(button => { const r = button.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }));
-    assert.deepEqual(visible, Array(7).fill(true), `All seven business buttons must be in the first viewport at ${viewport.width}x${viewport.height}`);
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-    await assertBusinessLayout(page, viewport);
-    if (viewport.width <= 760) await assertMobileSlideStability(page, viewport);
+    await showShowcase(page);
+    // The first two long titles and summaries are the tightest caption cases.
+    for (const index of [0, 1]) {
+      await page.locator('#business-tabs [role="tab"]').nth(index).dispatchEvent('click');
+      await assertBusinessLayout(page, viewport);
+    }
   }
+  await page.locator('#business-tabs [role="tab"]').nth(previous).dispatchEvent('click');
+}
+async function assertDestinations(page) {
+  const tabs = page.locator('#business-tabs [role="tab"]');
+  for (let index = 0; index < ids.length; index++) {
+    await tabs.nth(index).dispatchEvent('click');
+    await assertSlide(page, index);
+    const feature = page.locator('#business-feature');
+    if (index < 2) {
+      assert.equal(await feature.getAttribute('href'), index === 0 ? '#after-school-supply' : '#ai-school-supply');
+      assert.equal(await feature.getAttribute('target'), null);
+    } else {
+      assert.equal(await feature.getAttribute('href'), index === 3 ? '/courses.html' : `/content-page.html?type=business&id=${ids[index]}`);
+      assert.equal(await feature.getAttribute('target'), '_blank');
+      assert.match(await feature.getAttribute('rel'), /noopener/);
+    }
+  }
+  const course = page.locator('#after-school-cards a').nth(1);
+  assert.equal(await course.getAttribute('href'), '/courses.html');
+  assert.equal(await course.getAttribute('target'), '_blank');
+  const plan = page.locator('#after-school-cards a').nth(2);
+  assert.equal(await plan.getAttribute('href'), 'https://kehoubang.cn/profile/upload/pdf/2/index.html');
+  assert.equal(await plan.getAttribute('target'), '_blank');
 }
 
 (async () => {
@@ -172,46 +144,34 @@ async function assertResponsiveLayout(page) {
     const normal = await createPage(browser);
     let page = normal.page;
     const tabs = page.locator('#business-tabs [role="tab"]');
-    assert.equal(await page.locator('#home > .hero-stage > #business-feature-panel.hero-image').count(), 1);
-    assert.equal(await page.locator('#home > .hero-stage > .hero-content').count(), 1);
-    assert.equal(await page.locator('#business-showcase').evaluate(section => Boolean(section.closest('#home'))), true);
+    assert.equal(await page.locator('#home > .hero-image[role="img"]').count(), 1);
+    assert.equal(await page.locator('#home > .hero-content.wrap').count(), 1);
+    assert.equal(await page.locator('#home .hero-note, #home .hero-index').count(), 2);
+    assert.equal(await page.locator('#home + section#business-showcase.wrap > #business-feature-panel').count(), 1);
+    assert.equal(await page.locator('#business-showcase').evaluate(section => Boolean(section.closest('#home'))), false);
+    assert.equal(await page.locator('#home #business-feature-image').count(), 0);
     assert.equal(await page.locator('.business-feature').count(), 1);
     assert.equal(await tabs.count(), 7);
-    assert.equal(await page.locator('#business-feature-counter, #business-autoplay').count(), 0);
+    assert.deepEqual(await tabs.locator('.business-tab-index').allTextContents(), ['01', '02', '03', '04', '05', '06', '07']);
+    assert.equal(await page.locator('#business-feature-counter').isVisible(), true);
+    assert.equal(await page.locator('#business-autoplay, #business-previous, #business-next').count(), 0);
     await assertSlide(page, 0);
     await advance(page, 5000); await assertSlide(page, 0);
     await advance(page, 1100); await assertSlide(page, 1);
 
-    // Manual selection resets the six-second interval and then keeps rotating.
-    for (let index = 0; index < ids.length; index++) {
-      await tabs.nth(index).dispatchEvent('click');
-      await assertSlide(page, index);
-      const feature = page.locator('#business-feature');
-      if (index < 2) {
-        assert.equal(await feature.getAttribute('href'), index === 0 ? '#after-school-supply' : '#ai-school-supply');
-        assert.equal(await feature.getAttribute('target'), null);
-      } else {
-        assert.equal(await feature.getAttribute('href'), index === 3 ? '/courses.html' : `/content-page.html?type=business&id=${ids[index]}`);
-        assert.equal(await feature.getAttribute('target'), '_blank');
-        assert.match(await feature.getAttribute('rel'), /noopener/);
-      }
-    }
+    // Manual selection keeps the existing destinations and resets the interval.
+    await assertDestinations(page);
     await advance(page, 5000); await assertSlide(page, 6);
     await advance(page, 1100); await assertSlide(page, 0);
-    await page.locator('#business-previous').click({ force: true });
-    await page.mouse.move(0, 0); await assertSlide(page, 6);
-    await page.locator('#business-next').click({ force: true });
-    await page.mouse.move(0, 0); await assertSlide(page, 0);
-    await expectOneAutomaticStep(page, 0);
 
-    // Hover suspends rotation only until the pointer leaves the hero.
-    const rect = await page.locator('#home').boundingBox();
+    // Hover suspends rotation only until the pointer leaves the business showcase.
+    const rect = await page.locator('#business-showcase').boundingBox();
     await page.mouse.move(rect.x + Math.min(200, rect.width / 2), rect.y + Math.min(200, rect.height / 2));
     let index = await slideIndex(page);
     await advance(page, 7000); await assertSlide(page, index);
     await page.mouse.move(0, 0); await expectOneAutomaticStep(page, index);
 
-    // A hidden document and an offscreen hero pause the same timer. They do
+    // A hidden document and an offscreen showcase pause the same timer. They do
     // not permanently disable automatic playback when visibility returns.
     index = await slideIndex(page);
     await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); });
@@ -221,10 +181,10 @@ async function assertResponsiveLayout(page) {
     index = await slideIndex(page);
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await settleLayout(page);
-    assert.ok(await page.locator('#home').evaluate(hero => hero.getBoundingClientRect().bottom < 0));
+    assert.ok(await page.locator('#business-showcase').evaluate(section => section.getBoundingClientRect().bottom < 0));
     index = await slideIndex(page);
     await advance(page, 7000); await assertSlide(page, index);
-    await showHero(page); await expectOneAutomaticStep(page, index);
+    await showShowcase(page); await expectOneAutomaticStep(page, index);
 
     // Keyboard tab navigation temporarily pauses while focus is visible in
     // the carousel, then resumes after focus moves back to the page header.
@@ -233,11 +193,23 @@ async function assertResponsiveLayout(page) {
     assert.equal(await tabs.nth(1).evaluate(button => button === document.activeElement), true);
     await page.keyboard.press('End'); await assertSlide(page, 6);
     await page.keyboard.press('Home'); await assertSlide(page, 0);
+    await page.keyboard.press('ArrowLeft'); await assertSlide(page, 6);
+    await page.keyboard.press('ArrowRight'); await assertSlide(page, 0);
     await advance(page, 7000); await assertSlide(page, 0);
     await page.locator('.brand').first().focus();
-    await showHero(page); await expectOneAutomaticStep(page, 0);
+    await showShowcase(page); await expectOneAutomaticStep(page, 0);
 
     await assertResponsiveLayout(page);
+    // Keyboard selection reveals offscreen tabs in the phone's horizontal list.
+    await tabs.first().focus();
+    await page.keyboard.press('End');
+    await settleLayout(page);
+    assert.equal(await tabs.last().evaluate(button => {
+      const tab = button.getBoundingClientRect(), list = button.parentElement.getBoundingClientRect();
+      return tab.left >= list.left - 1 && tab.right <= list.right + 1;
+    }), true);
+    await page.keyboard.press('Home');
+    await assertSlide(page, 0);
     await page.getByLabel('外观').selectOption('dark');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(os.tmpdir(), 'khfwcms-hero-carousel-mobile-dark.png') });
@@ -249,13 +221,14 @@ async function assertResponsiveLayout(page) {
     const reduced = await createPage(browser, 'reduce', 'photo');
     page = reduced.page;
     await assertSlide(page, 0); await expectOneAutomaticStep(page, 0);
-    assert.equal(await page.locator('#business-feature-counter, #business-autoplay').count(), 0);
+    assert.equal(await page.locator('#business-feature-counter').isVisible(), true);
+    assert.equal(await page.locator('#business-autoplay').count(), 0);
     await page.locator('#business-tabs [role="tab"]').first().dispatchEvent('click');
     await assertResponsiveLayout(page);
     await page.getByLabel('外观').selectOption('dark');
     await assertResponsiveLayout(page);
     assert.deepEqual(reduced.errors, []);
     await page.close();
-    console.log('PASS: separate desktop headline/media columns and connected mobile flow for wide and 4:3 images; seven first-viewport buttons at five responsive sizes, six-second autoplay, wraparound, manual reset, temporary pauses, links, reduced-motion cadence and dark layout.');
+    console.log('PASS: classic office hero followed by separate business showcase, seven numbered scrollable tabs and counter, unchanged destinations, six-second autoplay scoped to showcase visibility/interaction, keyboard navigation, five responsive sizes and dark layout.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
