@@ -12,6 +12,17 @@ import { validateContent } from '../validation.mjs';
 
 const seed = JSON.parse(await readFile(new URL('../data/seed.json', import.meta.url), 'utf8'));
 const legacyIds = ['supply-chain', 'online-education', 'education-street', 'youth-center', 'ai-museum'];
+test('a complete business collection keeps administrator ordering on repeated reads', () => {
+  const content = structuredClone(seed);
+  content.businessPages.reverse();
+  const ids = content.businessPages.map(page => page.id);
+  applyBusinessDefaults(content);
+  assert.deepEqual(content.businessPages.map(page => page.id), ids);
+  applyBusinessDefaults(content);
+  assert.deepEqual(content.businessPages.map(page => page.id), ids);
+  validateContent(content);
+});
+
 function legacyContent() {
   const content = structuredClone(seed);
   content.businessPages = content.businessPages.filter(page => legacyIds.includes(page.id));
@@ -147,11 +158,17 @@ test('legacy runtime GET migration never writes the file, and administrator-save
   const editable = await (await fetch(origin + '/api/admin/content', { headers: headers(session) })).json();
   Object.assign(editable.businessPages[0], { title: '学校维护的新标题', summary: '管理员维护首页整体介绍', image: '/assets/custom-home.jpg' });
   editable.businessPages.find(page => page.id === 'ai-study-system').body = '管理员维护的系统介绍';
+  const uploadedPhoto = { id: 'photo-fixture', src: '/assets/album-fixture.png', filename: '年夜饭合影.png', tag: '合影', width: 800, height: 600 };
+  editable.venturePages.find(page => page.id === 'new-year-dinner-2027').photos = [uploadedPhoto];
+  editable.venturePages.push({ id: 'private-company-dinner', title: '未发布公司年夜饭', summary: '', body: '', published: false, photos: [uploadedPhoto] });
   assert.equal((await fetch(origin + '/api/admin/content', { method: 'PUT', headers: headers(session), body: JSON.stringify(editable) })).status, 200);
   await stop(); await start();
   const persisted = await (await fetch(origin + '/api/content')).json();
   assert.equal(persisted.businessPages[0].title, '学校维护的新标题');
   assert.equal(persisted.businessPages[0].image, '/assets/custom-home.jpg');
   assert.equal(persisted.businessPages.find(page => page.id === 'ai-study-system').body, '管理员维护的系统介绍');
+  assert.deepEqual(persisted.venturePages.find(page => page.id === 'new-year-dinner-2027').photos, [uploadedPhoto]);
+  assert.equal(persisted.venturePages.some(page => page.id === 'private-company-dinner'), false);
+  assert.deepEqual(JSON.parse(await readFile(path.join(dir, 'content.json'), 'utf8')).venturePages.find(page => page.id === 'private-company-dinner').photos, [uploadedPhoto]);
   validateContent(persisted);
 });

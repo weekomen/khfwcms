@@ -76,20 +76,6 @@
       "image": "/assets/image6.webp"
     },
     {
-      "name": "李舒玉",
-      "role": "联合创始人 · 品牌经理",
-      "category": "管理团队",
-      "bio": "武汉科技大学设计学硕士，负责品牌产品运营与品牌形象建设。",
-      "image": "/assets/image7.webp"
-    },
-    {
-      "name": "赵通海",
-      "role": "联合创始人 · 运营总监",
-      "category": "管理团队",
-      "bio": "负责线上内容运营与用户增长，拥有社区实体运营经验。",
-      "image": "/assets/image8.webp"
-    },
-    {
       "name": "戴鹏",
       "role": "技术研发团队",
       "category": "技术团队",
@@ -104,11 +90,11 @@
       "image": "/assets/image12.webp"
     },
     {
-      "name": "丁一于",
-      "role": "教务经理",
-      "category": "教学团队",
-      "bio": "负责师资管理、教师培养与教学活动统筹。",
-      "image": "/assets/image21.webp"
+      "name": "赵通海",
+      "role": "联合创始人 · 运营总监",
+      "category": "管理团队",
+      "bio": "负责线上内容运营与用户增长，拥有社区实体运营经验。",
+      "image": "/assets/image8.webp"
     },
     {
       "name": "安武春",
@@ -116,6 +102,20 @@
       "category": "管理团队",
       "bio": "拥有渠道管理与品牌孵化经验，负责合作拓展与项目落地。",
       "image": "/assets/image19.webp"
+    },
+    {
+      "name": "李舒玉",
+      "role": "联合创始人 · 品牌经理",
+      "category": "管理团队",
+      "bio": "武汉科技大学设计学硕士，负责品牌产品运营与品牌形象建设。",
+      "image": "/assets/image7.webp"
+    },
+    {
+      "name": "丁一于",
+      "role": "教务经理",
+      "category": "教学团队",
+      "bio": "负责师资管理、教师培养与教学活动统筹。",
+      "image": "/assets/image21.webp"
     }
   ],
   "news": [],

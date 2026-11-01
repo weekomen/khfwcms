@@ -127,7 +127,7 @@ function renderNews(data) {
   };
   renderNewsList = category => {
     selected = normalizeNewsCategory(category || ''); drawFilters(); list.replaceChildren();
-    const news = asList(data.news).filter(item => !selected || newsCategoryOf(item) === selected).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const news = asList(data.news).filter(item => !selected || newsCategoryOf(item) === selected);
     if (!news.length) { const empty = el('div', 'news-empty'); empty.append(el('span', '', '↗'), el('div', '', '暂无该分类资讯，新的故事正在发生。')); list.append(empty); return; }
     news.forEach(item => {
       let source; try { const url = new URL(item.source || item.url); if (url.protocol === 'https:') source = url.href; } catch { }
@@ -147,8 +147,8 @@ function renderNews(data) {
 function applyNavigationData(data) {
   const items = asList(data.navigation);
   const home = items.find(item => (item.key || item.id) === 'home' || item.label === '首页') || items[0];
+  const homeLink = nav.querySelector('.nav-link');
   if (home) {
-    const homeLink = nav.querySelector('.nav-link');
     homeLink.textContent = home.label || home.title || '首页';
     homeLink.href = home.href || '#home';
     if (home.target === 'blank' || home.target === '_blank') { homeLink.target = '_blank'; homeLink.rel = 'noopener noreferrer'; }
@@ -180,7 +180,9 @@ function applyNavigationData(data) {
     return value || `#page-${safeSlug(child.slug || child.key || child.label)}`;
   };
   const navGroups = [...nav.querySelectorAll('[data-nav-group]')];
+  const orderedNodes = [];
   items.forEach((item, itemIndex) => {
+    if (item === home) { orderedNodes.push(homeLink); return; }
     const rawKey = item.key || item.id || safeSlug(item.label || item.title);
     const key = ({ 'core-business': 'business', 'group-business': 'business', 'product-service': 'business', 'resource-library': 'courses', 'course-library': 'courses', 'news-information': 'news', 'zhi-lin': 'venture', 'contact-us': 'contact' })[rawKey] || rawKey;
     // Keep edited CMS menus connected to the fixed seven-section shell even
@@ -188,7 +190,8 @@ function applyNavigationData(data) {
     // documents array order, so index-1 is a safe final fallback (home has no
     // .nav-group element).
     const group = navGroups.find(candidate => candidate.dataset.navKey === key || candidate.querySelector('.nav-parent')?.textContent.trim().startsWith(item.label || item.title || '\u0000')) || (itemIndex > 0 ? navGroups[itemIndex - 1] : null);
-    if (!group) return;
+    if (!group || orderedNodes.includes(group)) return;
+    orderedNodes.push(group);
     const label = item.label || item.title; if (label) group.querySelector('.nav-parent').firstChild.textContent = label + ' ';
     // 联系我们只保留联系方式入口；旧内容文件中可能仍有历史合作/招聘子项，
     // 前台统一过滤掉，避免升级已有站点时把旧按钮重新显示出来。
@@ -211,6 +214,8 @@ function applyNavigationData(data) {
       dropdown.append(link);
     });
   });
+  // Move the existing nodes so disclosure and focus handlers remain attached.
+  nav.append(...orderedNodes);
 }
 async function init() {
   try {

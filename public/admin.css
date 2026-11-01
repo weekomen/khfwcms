@@ -328,3 +328,49 @@ button:disabled {
     .consultation-details { grid-template-columns: 1fr 1fr; gap: 14px }
     .consultation-details > div:last-child { grid-column: 1 / -1 }
 }
+
+/* Reordering is shared by navigation, content records and uploaded photos. */
+.edit-card, .nested-card { min-width: 0; scroll-margin-top: 110px; }
+.card-heading { align-items: flex-start; gap: 12px; }
+.card-heading h2 { min-width: 0; overflow-wrap: anywhere; }
+.card-heading .remove { flex-shrink: 0; }
+.reorder-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 18px; }
+.reorder-button, .album-upload { min-height: 34px; border: 1px solid var(--line); border-radius: 3px; background: var(--surface, #fff); color: var(--blue); padding: 5px 10px; font-size: 12px; }
+.reorder-button:hover:not(:disabled), .album-upload:hover { border-color: var(--blue); }
+.reorder-button:disabled { cursor: default; opacity: .4; }
+.reorder-position { display: inline-flex; align-items: center; gap: 5px; margin: 0; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.reorder-position input { width: 58px; min-width: 0; padding: 5px; text-align: center; font-size: 12px; }
+.insert-after { border-style: dashed; }
+.album-editor { min-width: 0; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.album-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.album-heading h3 { margin: 0; font-size: 16px; }
+.album-editor > .admin-note { margin: 8px 0 10px; font-size: 12px; }
+.album-upload { font-size: 13px; padding: 7px 12px; }
+.album-message { margin: 0 0 10px; overflow-wrap: anywhere; }
+.album-message:empty { display: none; }
+.album-details > summary { color: var(--blue); font-size: 13px; cursor: pointer; padding: 8px 0; }
+.album-photo-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.album-photo-card { min-width: 0; display: grid; grid-template-columns: 74px minmax(0, 1fr); align-items: start; gap: 12px; border: 1px solid var(--line); background: var(--field, #f7f9fc); padding: 12px; scroll-margin-top: 110px; }
+.album-photo-thumb { display: block; width: 74px; height: 74px; object-fit: contain; background: var(--surface, #fff); }
+.album-photo-content { min-width: 0; }
+.album-photo-heading { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.album-photo-heading strong { min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
+.album-photo-heading .remove { padding: 3px 7px; font-size: 11px; }
+.album-photo-fields { grid-template-columns: 1fr; gap: 8px; }
+.album-photo-fields .form-field { min-width: 0; }
+.album-photo-fields label { font-size: 11px; margin-bottom: 3px; }
+.album-photo-fields input { min-width: 0; padding: 6px 8px; font-size: 12px; }
+.album-photo-card .reorder-controls { margin: 10px 0 0; gap: 5px; }
+.album-photo-card .reorder-button { min-height: 30px; padding: 3px 6px; font-size: 11px; }
+.album-photo-card .reorder-position { font-size: 11px; gap: 3px; }
+.album-photo-card .reorder-position input { width: 48px; padding: 3px; }
+@media (max-width: 800px) {
+  .album-photo-list { grid-template-columns: 1fr; }
+}
+@media (max-width: 450px) {
+  .reorder-controls { gap: 5px; }
+  .reorder-button { padding: 5px 8px; }
+  .album-photo-card { grid-template-columns: 58px minmax(0, 1fr); padding: 10px; gap: 10px; }
+  .album-photo-thumb { width: 58px; height: 58px; }
+  .nested-card-heading { align-items: start; flex-wrap: wrap; gap: 8px; }
+}

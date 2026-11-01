@@ -11,7 +11,7 @@ const supportFiles = new Set([
   'docs/DEPLOYMENT.md', 'docs/HANDOVER.md', 'docs/ACCEPTANCE.md',
   'deploy/khfwcms.service', 'deploy/nginx.conf', 'deploy/nginx-bootstrap.conf', 'deploy/khfwcms-proxy.conf', 'deploy/khfwcms.env.example',
   'scripts/backup-content.mjs', 'scripts/create-handoff.mjs', 'scripts/verify-handoff.mjs',
-  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/alliance-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs', 'tests/hero-carousel.cjs'
+  'tests/cms.test.mjs', 'tests/consultations.test.mjs', 'tests/business-content.test.mjs', 'tests/alliance-content.test.mjs', 'tests/album-content.test.mjs', 'tests/handoff.test.mjs', 'tests/browser.cjs', 'tests/site-interactions.cjs', 'tests/hero-carousel.cjs', 'tests/event-gallery.cjs', 'tests/admin-order-albums.cjs'
 ]);
 export const requiredFiles = [
   'README.md', 'package.json', 'server.mjs', 'auth.mjs', 'consultations.mjs', 'business-content.mjs', 'alliance-content.mjs', 'validation.mjs', 'data/seed.json', 'backups/published-content.json',
@@ -36,7 +36,8 @@ const knownFields = {
   businessPages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
   courseCategories: ['id', 'title', 'description', 'image', 'longImage', 'order', 'published'],
   newsCategories: ['id', 'title', 'description', 'order', 'published'],
-  venturePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
+  venturePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published', 'photos'],
+  photo: ['id', 'src', 'filename', 'tag', 'width', 'height'],
   alliancePages: ['id', 'title', 'summary', 'body', 'image', 'longImage', 'order', 'published'],
   contactTopics: ['id', 'title', 'description', 'order', 'published']
 };
@@ -54,8 +55,15 @@ export function validatePublicData(content, label) {
     checkKeys(item, knownFields.navigation, `navigation[${index}]`);
     for (const [childIndex, child] of (item.children || []).entries()) checkKeys(child, knownFields.navigationChild, `navigation[${index}].children[${childIndex}]`);
   }
+  const teamUploads = new Set((content.team || []).map(member => path.posix.basename(member.image || '')).filter(name => uploadName.test(name)));
+  for (const [index, page] of (content.venturePages || []).entries()) for (const [photoIndex, photo] of (page.photos || []).entries()) {
+    checkKeys(photo, knownFields.photo, `venturePages[${index}].photos[${photoIndex}]`);
+    const name = path.posix.basename(photo.src);
+    if (uploadName.test(name) && !teamUploads.has(name)) throw new Error(`${label} 含未获准公开备份的相册上传照片，停止打包。`);
+  }
   if (content.news.some(article => !article.published)) throw new Error(`${label} 含未发布文章，停止打包。`);
   if ((content.alliancePages || []).some(page => page.published === false)) throw new Error(`${label} 含未发布联盟页面，停止打包。`);
+  if ((content.venturePages || []).some(page => page.published === false)) throw new Error(`${label} 含未发布活动页面，停止打包。`);
 }
 export function safeRelativePath(file) {
   return typeof file === 'string' && !!file && !/[\\\x00-\x1f:]/.test(file) && !path.posix.isAbsolute(file) && file.split('/').every(part => part && part !== '.' && part !== '..');
@@ -85,6 +93,7 @@ function imageReferences(content) {
       if (typeof item[field] === 'string' && item[field]) references.push(item[field]);
     }
   }
+  for (const page of content.venturePages || []) for (const photo of page.photos || []) references.push(photo.src);
   return references;
 }
 function referencedUploadsIn(content) {

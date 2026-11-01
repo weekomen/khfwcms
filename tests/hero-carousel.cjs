@@ -229,6 +229,28 @@ async function assertDestinations(page) {
     await assertResponsiveLayout(page);
     assert.deepEqual(reduced.errors, []);
     await page.close();
+
+    // Moving records must reorder the showcase without changing ID-based
+    // image fallbacks, section summaries or course/document destinations.
+    const originalPages = data.businessPages;
+    const originalNavigation = data.navigation, originalNews = data.news;
+    data.businessPages = [...originalPages].reverse();
+    data.navigation = [...originalNavigation].reverse();
+    data.news = originalNews.map((item, index) => ({ ...item, date: index ? '2099-01-01' : '2000-01-01' }));
+    const reordered = await createPage(browser);
+    page = reordered.page;
+    assert.equal(await page.locator('#business-feature').getAttribute('data-business-id'), 'ai-museum');
+    assert.equal(await page.locator('#business-feature-image').getAttribute('src'), '/assets/business-7.svg');
+    assert.equal(await page.locator('#business-feature').getAttribute('href'), '/content-page.html?type=business&id=ai-museum');
+    assert.equal(await page.locator('[data-business-heading="supply-chain"]').textContent(), originalPages.find(item => item.id === 'supply-chain').title);
+    assert.equal(await page.locator('#after-school-cards a').nth(1).getAttribute('href'), '/courses.html');
+    assert.equal(await page.locator('#after-school-cards a').nth(2).getAttribute('href'), 'https://kehoubang.cn/profile/upload/pdf/2/index.html');
+    assert.deepEqual(await page.locator('#nav').evaluate(nav => [...nav.children].map(node => (node.querySelector('.nav-parent')?.firstChild.textContent || node.textContent).trim())), data.navigation.map(item => item.label));
+    assert.deepEqual(await page.locator('#news-list h3').allTextContents(), data.news.map(item => item.title));
+    assert.deepEqual(reordered.errors, []);
+    await page.close();
+    data.businessPages = originalPages;
+    data.navigation = originalNavigation; data.news = originalNews;
     console.log('PASS: classic office hero followed by separate business showcase, seven numbered scrollable tabs and counter, unchanged destinations, six-second autoplay scoped to showcase visibility/interaction, keyboard navigation, five responsive sizes and dark layout.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -30,7 +30,8 @@
     const tabs = document.getElementById('business-tabs');
     if (!tabs) return;
     const pages = new Map((data.businessPages || []).map(page => [page.id, page]));
-    const businesses = entries.map((entry, index) => ({ ...entry, image: `/assets/business-${index + 1}.svg`, ...pages.get(entry.id), title: pages.get(entry.id)?.title || entry.title }));
+    const positions = new Map((data.businessPages || []).map((page, index) => [page.id, index]));
+    const businesses = entries.map((entry, index) => ({ ...entry, image: `/assets/business-${index + 1}.svg`, ...pages.get(entry.id), title: pages.get(entry.id)?.title || entry.title, fallbackImage: `/assets/business-${index + 1}.svg` })).sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
     const feature = document.getElementById('business-feature');
     const image = document.getElementById('business-feature-image');
     const panel = document.getElementById('business-feature-panel');
@@ -55,7 +56,7 @@
       current = index;
       const page = businesses[index];
       buttons.forEach((button, position) => { const active = position === index; button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1; button.classList.toggle('selected', active); });
-      const fallback = `/assets/business-${index + 1}.svg`;
+      const fallback = page.fallbackImage;
       setImage(image, page.image, fallback); image.alt = `${page.title}展示图`;
       document.getElementById('business-feature-index').textContent = `${String(index + 1).padStart(2, '0')} / CORE BUSINESS`;
       document.getElementById('business-feature-counter').textContent = `${String(index + 1).padStart(2, '0')} / ${String(businesses.length).padStart(2, '0')}`;
@@ -113,16 +114,17 @@
     observer?.observe(showcase);
     destroyCarousel = () => { window.clearInterval(timer); observer?.disconnect(); listeners.forEach(remove => remove()); };
     syncAutoplay();
-    for (const page of businesses.slice(0, 2)) {
+    const schoolBusinesses = ['supply-chain', 'ai-school-supply'].map(id => businesses.find(page => page.id === id));
+    for (const page of schoolBusinesses) {
       document.querySelector(`[data-business-heading="${page.id}"]`).textContent = page.title;
       document.querySelector(`[data-business-summary="${page.id}"]`).textContent = page.summary ?? entries.find(entry => entry.id === page.id).summary;
       const overviewImage = document.querySelector(`[data-business-image="${page.id}"]`);
-      setImage(overviewImage, page.image, `/assets/business-${businesses.indexOf(page) + 1}.svg`);
+      setImage(overviewImage, page.image, page.fallbackImage);
       overviewImage.alt = `${page.title}整体介绍配图`;
     }
     const groups = [
-      { root: 'after-school-cards', image: businesses[0].image || '/assets/business-1.svg', ids: ['supply-system', 'supply-courses', 'supply-school-plan'], titles: ['技术系统介绍', '课程介绍', '一校一案'] },
-      { root: 'ai-school-cards', image: businesses[1].image || '/assets/business-2.svg', ids: ['ai-study-system', 'ai-portals', 'ai-school-model'], titles: ['AI伴学系统介绍', '学生端、学校端、老师端、家长端功能介绍', '进校模式'] }
+      { root: 'after-school-cards', image: schoolBusinesses[0].image || '/assets/business-1.svg', ids: ['supply-system', 'supply-courses', 'supply-school-plan'], titles: ['技术系统介绍', '课程介绍', '一校一案'] },
+      { root: 'ai-school-cards', image: schoolBusinesses[1].image || '/assets/business-2.svg', ids: ['ai-study-system', 'ai-portals', 'ai-school-model'], titles: ['AI伴学系统介绍', '学生端、学校端、老师端、家长端功能介绍', '进校模式'] }
     ];
     groups.forEach(group => {
       const root = document.getElementById(group.root); root.replaceChildren();

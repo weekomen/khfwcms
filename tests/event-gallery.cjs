@@ -1,0 +1,71 @@
+const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'C:/Users/zhou/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
+const origin = 'http://localhost:3196';
+const data = JSON.parse(fs.readFileSync('data/seed.json', 'utf8'));
+const uploaded = suffix => ({ id: `photo-upload-${suffix}`, src: `/assets/upload-${suffix.repeat(32)}.jpg`, filename: suffix === 'a' ? '新同事合影.jpg' : '舞台表演.jpg', tag: '公司年夜饭', width: 1800, height: 1200 });
+const dinner = data.venturePages.find(page => page.id === 'new-year-dinner-2026');
+dinner.published = true; dinner.photos = [uploaded('a'), uploaded('b')];
+const nextDinner = data.venturePages.find(page => page.id === 'new-year-dinner-2027'); nextDinner.published = true; nextDinner.photos = [];
+data.venturePages.push({ id: 'company-dinner', title: '公司年夜饭', summary: '', body: '', published: true, photos: [uploaded('a')] });
+const originals = [1, 2].map(index => ({ id: `old-${index}`, src: `/assets/events/2026/old-${index}.jpg`, thumb: `/assets/events/2026/old-${index}.jpg`, filename: `原有照片${index}.jpg`, tag: '嘉宾', width: 1800, height: 1200 }));
+const manifest = { 'new-year-dinner-2026': { photos: originals, tags: [{ name: '嘉宾' }] } };
+const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l3sAAAAASUVORK5CYII=', 'base64');
+(async () => {
+  const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || 'msedge', headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    let manifestFails = false;
+    await page.clock.install();
+    await page.route(`${origin}/**`, async route => {
+      const url = new URL(route.request().url());
+      if (url.pathname === '/api/content') return route.fulfill({ json: data });
+      if (url.pathname === '/assets/events/manifest.json') return route.fulfill(manifestFails ? { status: 503, body: 'Unavailable' } : { json: manifest });
+      if (/\.(?:png|jpg|webp)$/.test(url.pathname)) return route.fulfill({ body: pixel, contentType: 'image/png' });
+      if (url.pathname.startsWith('/api/')) return route.fulfill({ status: 404, json: { error: 'Unused fixture endpoint' } });
+      const file = path.join('public', url.pathname.slice(1));
+      return route.fulfill({ body: fs.readFileSync(file), contentType: ({ '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css' })[path.extname(file)] || 'application/octet-stream' });
+    });
+    const open = async id => {
+      await page.goto(`${origin}/content-page.html?type=venture&id=${id}`);
+      await page.waitForSelector('.event-gallery');
+    };
+    await open(dinner.id);
+    assert.equal(await page.locator('.event-photo-card').count(), 4, 'Uploads append to the imported archive');
+    assert.deepEqual(await page.locator('.event-photo-thumb').evaluateAll(nodes => nodes.map(image => image.getAttribute('src'))), [...originals, ...dinner.photos].map(photo => photo.src));
+    await page.getByLabel('按标签筛选').selectOption('公司年夜饭');
+    assert.equal(await page.locator('.event-photo-card').count(), 2);
+    await page.getByLabel('搜索照片名称').fill('新同事');
+    assert.equal(await page.locator('.event-photo-card').count(), 1);
+    await page.locator('.event-photo-card').click();
+    assert.equal(await page.locator('.event-lightbox-image').getAttribute('src'), uploaded('a').src);
+    assert.equal(await page.locator('.event-lightbox-download').getAttribute('href'), uploaded('a').src);
+    await page.getByLabel('关闭大图').click();
+    await page.getByLabel('搜索照片名称').fill(''); await page.getByLabel('按标签筛选').selectOption('');
+    await page.locator('.event-photo-card').last().click();
+    assert.match(await page.locator('.event-lightbox-caption').textContent(), /4 \/ 4/);
+    await page.getByLabel('下一张', { exact: true }).click();
+    assert.equal(await page.locator('.event-lightbox-image').getAttribute('src'), originals[0].src);
+    await page.getByLabel('自动播放照片', { exact: true }).click();
+    await page.clock.fastForward(3600);
+    assert.equal(await page.locator('.event-lightbox-image').getAttribute('src'), originals[1].src);
+    await page.getByLabel('关闭大图').click();
+    // Duplicate image URLs from a former import must appear only once.
+    dinner.photos.push({ ...uploaded('c'), src: originals[0].src });
+    await open(dinner.id); assert.equal(await page.locator('.event-photo-card').count(), 4); dinner.photos.pop();
+    await open(nextDinner.id); assert.equal(await page.locator('.event-gallery-empty').count(), 1);
+    nextDinner.photos.push(uploaded('a'));
+    await open(nextDinner.id); assert.equal(await page.locator('.event-photo-card').count(), 1); assert.equal(await page.locator('.event-gallery-empty').count(), 0);
+    await open('company-dinner'); assert.equal(await page.locator('.event-photo-card').count(), 1); assert.equal(await page.locator('.event-switcher').count(), 0);
+    manifestFails = true;
+    await open(dinner.id); assert.equal(await page.locator('.event-photo-card').count(), 2, 'CMS uploads remain available when the old manifest cannot load');
+    await page.setViewportSize({ width: 390, height: 844 }); await page.getByLabel('外观').selectOption('dark');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    dinner.published = false;
+    await page.goto(`${origin}/content-page.html?type=venture&id=${dinner.id}`);
+    await page.getByRole('heading', { name: '内容不存在', exact: true }).waitFor();
+    assert.equal(await page.locator('.event-photo-card').count(), 0);
+    assert.deepEqual(errors, []);
+    console.log('PASS: imported and CMS-uploaded photos merge in order; tags, search, lightbox, slideshow, empty 2027, custom company albums, duplicate sources, manifest fallback, draft isolation and mobile dark layout.');
+  } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

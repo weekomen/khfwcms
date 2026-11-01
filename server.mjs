@@ -67,6 +67,7 @@ const server = http.createServer(async (req, res) => {
         const content = withDefaultCollections(JSON.parse(await readFile(contentPath, 'utf8')));
         content.news = (content.news || []).filter(n => n.published);
         content.alliancePages = (content.alliancePages || []).filter(page => page.published !== false);
+        content.venturePages = (content.venturePages || []).filter(page => page.published !== false);
         return send(200, content);
       }
       return send(405, { error: '不支持此操作' });

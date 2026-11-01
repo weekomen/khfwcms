@@ -151,9 +151,9 @@ function validateNavigation(navigation) {
 }
 
 function pageRecords(value, max, fields, options = {}) {
-  const { image = false, longImage = false, idLabel = '页面编号' } = options;
+  const { image = false, longImage = false, photos = false, idLabel = '页面编号' } = options;
   list(value, max, options.listLabel || '页面列表');
-  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), 'order', 'published']);
+  const allowed = new Set(['id', ...fields, ...(image ? ['image'] : []), ...(longImage ? ['longImage'] : []), ...(photos ? ['photos'] : []), 'order', 'published']);
   const ids = new Set();
   for (const item of value) {
     object(item, options.itemLabel || '页面项目'); keys(item, allowed, options.itemLabel || '页面项目');
@@ -161,8 +161,27 @@ function pageRecords(value, max, fields, options = {}) {
     for (const field of fields) text(item[field], field === 'body' ? 50000 : 10000, `${idLabel}.${field}`);
     if (image) optionalAsset(item.image, '页面图片');
     if (longImage) optionalAsset(item.longImage, '页面长图');
+    if (photos && item.photos !== undefined) validatePhotos(item.photos);
     optionalInteger(item.order, 0, 999, `${idLabel}排序`);
     if (item.published !== undefined && typeof item.published !== 'boolean') throw Error(`${idLabel}发布状态无效`);
+  }
+}
+
+function validatePhotos(photos) {
+  list(photos, 500, '相册照片');
+  const allowed = new Set(['id', 'src', 'filename', 'tag', 'width', 'height']);
+  const ids = new Set(), sources = new Set();
+  for (const photo of photos) {
+    object(photo, '相册照片'); keys(photo, allowed, '相册照片');
+    id(photo.id, '照片编号');
+    if (ids.has(photo.id)) throw Error('照片编号须唯一');
+    ids.add(photo.id);
+    asset(photo.src, '相册照片');
+    if (!/\.(?:jpg|png|webp)$/i.test(photo.src)) throw Error('相册照片仅支持 JPG、PNG 或 WebP');
+    if (sources.has(photo.src)) throw Error('同一相册不能重复添加相同照片');
+    sources.add(photo.src);
+    text(photo.filename, 200, '照片名称'); text(photo.tag, 100, '照片标签');
+    integer(photo.width, 1, 100000, '照片宽度'); integer(photo.height, 1, 100000, '照片高度');
   }
 }
 
@@ -223,7 +242,7 @@ export function validateContent(content) {
   if (c.businessPages !== undefined) pageRecords(c.businessPages, 20, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '业务页面', itemLabel: '业务页面' });
   if (c.courseCategories !== undefined) pageRecords(c.courseCategories, 12, ['title', 'description'], { image: true, longImage: true, listLabel: '课程分类', itemLabel: '课程分类' });
   if (c.newsCategories !== undefined) validateNewsCategories(c.newsCategories);
-  if (c.venturePages !== undefined) pageRecords(c.venturePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '创投页面', itemLabel: '创投页面' });
+  if (c.venturePages !== undefined) pageRecords(c.venturePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, photos: true, listLabel: '创投页面', itemLabel: '创投页面' });
   if (c.alliancePages !== undefined) pageRecords(c.alliancePages, 12, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '联盟页面', itemLabel: '联盟页面' });
   if (c.contactTopics !== undefined) pageRecords(c.contactTopics, 12, ['title', 'description'], { image: false, longImage: false, listLabel: '联系主题', itemLabel: '联系主题' });
 }

@@ -58,6 +58,9 @@ export function applyBusinessDefaults(content) {
     const canonical = canonicalId(page.id);
     if (canonical !== page.id && !content.businessPages.some(other => other !== page && other.id === canonical)) page.id = canonical;
   }
+  // Only incomplete legacy collections need the canonical migration order.
+  // Once all fixed pages exist, the administrator's saved array order wins.
+  const complete = DEFAULT_BUSINESS_PAGES.every(page => content.businessPages.some(item => item.id === page.id));
   for (const page of DEFAULT_BUSINESS_PAGES) {
     const current = content.businessPages.find(item => item.id === page.id);
     if (!current) { content.businessPages.push(structuredClone(page)); continue; }
@@ -67,7 +70,7 @@ export function applyBusinessDefaults(content) {
     if (coreIds.has(page.id) && (!current.image || current.image === '/assets/logo.png')) current.image = page.image;
   }
   const defaults = new Set(DEFAULT_BUSINESS_PAGES.map(page => page.id));
-  content.businessPages = [...DEFAULT_BUSINESS_PAGES.map(page => content.businessPages.find(item => item.id === page.id)), ...content.businessPages.filter(page => !defaults.has(page.id))];
+  if (!complete) content.businessPages = [...DEFAULT_BUSINESS_PAGES.map(page => content.businessPages.find(item => item.id === page.id)), ...content.businessPages.filter(page => !defaults.has(page.id))];
   if (!Array.isArray(content.navigation)) return content;
   const business = navigationRoot(content, ['business', 'core-business', 'group-business', 'product-service', '集团核心业务', '产品与服务'], 2);
   if (business) {

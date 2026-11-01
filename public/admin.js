@@ -205,6 +205,128 @@ function ensureDataShape() {
     item.source ??= ''; item.image ??= ''; item.longImage ??= '';
   });
   data.courses.forEach(item => { item.description ??= ''; item.grades ??= ''; item.outline ??= ''; item.cover ??= ''; item.longImage ??= ''; item.page ??= 0; });
+  for (const collection of ORDERED_COLLECTIONS) data[collection].sort((a, b) => Number(a.order || 0) - Number(b.order || 0));
+}
+const ORDERED_COLLECTIONS = new Set(['aboutPages', 'alliancePages', 'courseCategories', 'venturePages', 'contactTopics']);
+const recordKeys = new WeakMap();
+const openAlbums = new WeakSet();
+function recordKey(item) {
+  if (!recordKeys.has(item)) recordKeys.set(item, crypto.randomUUID());
+  return recordKeys.get(item);
+}
+function renumber(items) {
+  items.forEach((item, index) => { if (Object.hasOwn(item, 'order')) item.order = index + 1; });
+}
+function focusRecord(item, editing = false) {
+  const card = document.querySelector(`[data-record-key="${recordKey(item)}"]`);
+  if (!card) return;
+  const control = editing ? card.querySelector('input:not([type="file"]), textarea, select') : card.querySelector('[data-reorder-action="position-input"]');
+  control?.focus({ preventScroll: true });
+  card.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+}
+function reorderControls(items, item, { refresh = render, insert, insertDisabled = false } = {}) {
+  const index = items.indexOf(item);
+  const name = String(item.name || item.title || item.label || item.filename || '新内容');
+  const controls = el('div', 'reorder-controls'); controls.setAttribute('role', 'group'); controls.setAttribute('aria-label', `${name}排序`);
+  const move = destination => {
+    const from = items.indexOf(item);
+    if (saving || uploading || from < 0 || !Number.isInteger(destination) || destination < 0 || destination >= items.length || destination === from) return;
+    items.splice(from, 1); items.splice(destination, 0, item); renumber(items); changed(); refresh(); focusRecord(item);
+    status(`“${name}”已移到第 ${destination + 1} 项，保存后生效。`);
+  };
+  const action = (label, key, destination, disabled) => {
+    const button = el('button', 'reorder-button', label); button.type = 'button'; button.dataset.reorderAction = key;
+    button.setAttribute('aria-label', `${name}${label}`); button.disabled = disabled; button.onclick = () => move(destination); controls.append(button);
+  };
+  action('上移', 'up', index - 1, index === 0);
+  action('下移', 'down', index + 1, index === items.length - 1);
+  action('置顶', 'top', 0, index === 0);
+  const positionBox = el('label', 'reorder-position'); positionBox.append(document.createTextNode('移到第'));
+  const position = el('input'); position.type = 'number'; position.min = '1'; position.max = String(items.length); position.step = '1'; position.required = true; position.value = String(index + 1); position.dataset.reorderAction = 'position-input';
+  position.setAttribute('aria-label', `将${name}移动到第几项`);
+  const applyPosition = () => {
+    if (!position.checkValidity() || !Number.isInteger(position.valueAsNumber)) { position.reportValidity(); return; }
+    move(position.valueAsNumber - 1);
+  };
+  position.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); applyPosition(); } });
+  positionBox.append(position, document.createTextNode('项')); controls.append(positionBox);
+  const go = el('button', 'reorder-button', '移动'); go.type = 'button'; go.dataset.reorderAction = 'position'; go.setAttribute('aria-label', `移动${name}到指定位置`); go.onclick = applyPosition; controls.append(go);
+  if (insert) {
+    const add = el('button', 'reorder-button insert-after', '+ 在下方插入'); add.type = 'button'; add.dataset.reorderAction = 'insert'; add.setAttribute('aria-label', `在${name}下方插入`); add.disabled = insertDisabled; if (insertDisabled) add.title = '已达到当前菜单数量上限'; add.onclick = insert; controls.append(add);
+  }
+  return controls;
+}
+function insertRecord(items, item, after = items.length - 1, limit = Infinity) {
+  if (items.length >= limit) return status(`当前最多支持 ${limit} 项，请调整现有内容。`, true);
+  items.splice(after + 1, 0, item); renumber(items); changed(); render(); focusRecord(item, true);
+}
+function removeRecord(items, item) {
+  const index = items.indexOf(item); if (index < 0) return;
+  items.splice(index, 1); renumber(items); changed(); render();
+}
+function setUploading(busy) {
+  uploading = busy; $('#save').disabled = busy; $('#fields').inert = busy;
+  document.querySelectorAll('[data-tab], #logout').forEach(button => { button.disabled = busy; });
+}
+function albumEditor(item) {
+  const section = el('section', 'album-editor'); section.dataset.albumFor = item.id;
+  const header = el('div', 'album-heading'); const title = el('h3', '', '现场相册');
+  const upload = el('button', 'album-upload', '+ 批量上传照片'); upload.type = 'button'; upload.setAttribute('aria-label', `上传${item.title || '页面'}相册照片`);
+  const input = el('input'); input.type = 'file'; input.multiple = true; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true; input.dataset.albumUpload = '';
+  header.append(title, upload); section.append(header, el('p', 'admin-note', '支持一次选择多张 JPG、PNG、WebP，每张不超过 5 MB，每批最多 50 张，相册最多新增 500 张。原有活动照片继续保留，上传照片在保存后追加到现场相册。'));
+  const message = el('p', 'photo-help album-message'); message.setAttribute('role', 'status'); message.setAttribute('aria-live', 'polite');
+  const details = el('details', 'album-details'); details.open = openAlbums.has(item); details.addEventListener('toggle', () => { if (details.open) openAlbums.add(item); else openAlbums.delete(item); });
+  const summary = el('summary'); const list = el('div', 'album-photo-list'); details.append(summary, list);
+  const photos = () => Array.isArray(item.photos) ? item.photos : [];
+  const draw = () => {
+    const items = photos(); summary.textContent = `已上传 ${items.length} 张照片 · 展开编辑`;
+    list.replaceChildren();
+    if (!items.length) { list.append(el('p', 'admin-note', '尚未上传新照片。')); return; }
+    items.forEach((photo, index) => {
+      const card = el('article', 'album-photo-card'); card.dataset.recordKey = recordKey(photo);
+      const image = el('img', 'album-photo-thumb'); image.src = photo.src; image.alt = photo.filename || `第 ${index + 1} 张照片`; image.loading = 'lazy'; image.decoding = 'async';
+      const content = el('div', 'album-photo-content'); const heading = el('div', 'album-photo-heading'); const remove = el('button', 'remove', '移除照片'); remove.type = 'button'; remove.setAttribute('aria-label', `移除${photo.filename || '照片'}`);
+      remove.onclick = () => { if (!confirm('确定从相册移除此照片？保存后生效。')) return; const position = items.indexOf(photo); if (position < 0) return; items.splice(position, 1); changed(); draw(); };
+      heading.append(el('strong', '', `${String(index + 1).padStart(2, '0')} / ${photo.filename || '照片'}`), remove);
+      const grid = el('div', 'form-grid album-photo-fields'); field(grid, photo, 'filename', '照片名称'); field(grid, photo, 'tag', '照片标签');
+      grid.querySelectorAll('input').forEach(control => { control.maxLength = control === grid.querySelector('input') ? 200 : 100; });
+      content.append(heading, grid, reorderControls(items, photo, { refresh: draw })); card.append(image, content); list.append(card);
+    });
+  };
+  upload.onclick = () => input.click();
+  input.onchange = async () => {
+    const files = Array.from(input.files || []); input.value = ''; if (!files.length || uploading || saving) return;
+    const fail = text => { message.textContent = text; message.classList.add('upload-error'); };
+    if (files.length > 50) return fail('每批最多上传 50 张照片，请减少选择数量。');
+    if (photos().length + files.length > 500) return fail('相册最多新增 500 张照片，请减少选择数量。');
+    setUploading(true); message.classList.remove('upload-error');
+    let success = 0; const failures = [];
+    try {
+      for (const [index, file] of files.entries()) {
+        const progress = `正在上传 ${index + 1} / ${files.length}：${file.name}`; message.textContent = progress; status(progress);
+        try {
+          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw Error('格式不支持');
+          if (file.size > 5 * 1024 * 1024) throw Error('超过 5 MB');
+          let bitmap, width, height;
+          try { bitmap = await createImageBitmap(file); width = bitmap.width; height = bitmap.height; if (width < 1 || height < 1 || width > 100000 || height > 100000) throw Error('图片尺寸不支持'); }
+          catch { throw Error('图片无法读取或尺寸超过限制'); }
+          finally { bitmap?.close(); }
+          const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
+          if (!Array.isArray(item.photos)) item.photos = [];
+          item.photos.push({ id: newId('photo'), src: result.url, filename: file.name.slice(0, 200), tag: '', width, height });
+          success++; changed(); draw();
+        } catch (error) {
+          failures.push(`${file.name}：${error.message || '上传失败'}`);
+          if (error.status === 401 || error.status === 403 || !csrfToken) break;
+        }
+      }
+      const summaryText = `成功上传 ${success} 张${failures.length ? `，失败 ${failures.length} 张` : ''}。${success ? '请点击“保存并更新官网”发布照片。' : ''}`;
+      message.textContent = summaryText + (failures.length ? ` ${failures.join('；')}` : ''); message.classList.toggle('upload-error', failures.length > 0);
+      if (success) { details.open = true; openAlbums.add(item); }
+      status(summaryText + (!csrfToken ? '请重新登录后保存已上传的照片。' : ''), failures.length > 0);
+    } finally { setUploading(false); }
+  };
+  draw(); section.append(input, message, details); return section;
 }
 function field(parent, obj, key, label, type = 'text', wide = false, options = {}) {
   const box = el('div', 'form-field' + (wide ? ' wide' : '')); const id = 'f-' + crypto.randomUUID(); const l = el('label', '', label); l.htmlFor = id;
@@ -238,15 +360,14 @@ function photoPicker(item, key = 'image', label = '图片') {
     const fail = text => { message.textContent = text; message.classList.add('upload-error'); };
     if (file.size > 5 * 1024 * 1024) return fail('图片超过 5 MB，请选择较小的图片。');
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return fail('格式不支持，请选择 JPG、PNG 或 WebP 图片。');
-    uploading = true; $('#save').disabled = true; $('#fields').inert = true;
-    document.querySelectorAll('[data-tab], #logout').forEach(b => b.disabled = true);
+    setUploading(true);
     message.classList.remove('upload-error'); message.textContent = '正在上传…';
     try {
       let bitmap; try { bitmap = await createImageBitmap(file); } catch { throw Error('图片无法读取，请选择有效的图片文件。'); } finally { bitmap?.close(); }
       const result = await apiRequest('/api/admin/images', 'POST', file, file.type);
       item[key] = result.url; img.src = result.url; caption.textContent = '点击更换' + label; changed(); message.textContent = '上传成功，保存后展示到官网。';
     } catch (e) { fail(e.message || '上传失败，请重试'); }
-    finally { uploading = false; $('#save').disabled = false; $('#fields').inert = false; document.querySelectorAll('[data-tab], #logout').forEach(b => b.disabled = false); }
+    finally { setUploading(false); }
   };
   box.append(button, input, message); return box;
 }
@@ -257,12 +378,13 @@ const FIXED_NEWS_CATEGORIES = [
   { id: 'industry', title: '行业洞察', description: '课后服务、AI 素质教育政策解读', order: 2, published: true }
 ];
 function renderNavigation(target) {
-  target.append(el('p', 'admin-note', '维护官网的七个一级菜单及下拉二级菜单。数组顺序就是官网显示顺序；链接、打开方式和动作均可编辑。'));
+  target.append(el('p', 'admin-note', '维护官网一级菜单及下拉菜单。一级菜单最多 7 项，每个下拉菜单最多 8 项；新闻资讯固定两个分类。可上移、下移或移到指定位置，未达到数量上限时也可在任意菜单下方插入；保存后官网同步更新。'));
   data.navigation.forEach((item, index) => {
     const fixedNews = item === findFixedNewsRoot();
-    const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const remove = el('button', 'remove', '删除');
-    remove.onclick = () => { if (confirm(`确定删除“${item.label || '新菜单'}”？保存后生效。`)) { data.navigation.splice(index, 1); changed(); render(); } };
+    const card = el('article', 'edit-card'); card.dataset.recordKey = recordKey(item); const heading = el('div', 'card-heading'); const remove = el('button', 'remove', '删除');
+    remove.onclick = () => { if (confirm(`确定删除“${item.label || '新菜单'}”？保存后生效。`)) { removeRecord(data.navigation, item); } };
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${item.label || '新菜单'}`)); if (!fixedNews) heading.append(remove); card.append(heading);
+    card.append(reorderControls(data.navigation, item, { insert: () => insertRecord(data.navigation, { id: newId('nav'), label: '新一级菜单', href: '#home', target: '', action: '', value: '', children: [] }, index, 7), insertDisabled: data.navigation.length >= 7 }));
     const grid = el('div', 'form-grid'); field(grid, item, 'id', '菜单 ID'); field(grid, item, 'label', '菜单名称'); field(grid, item, 'href', '链接地址'); field(grid, item, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(grid, item, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(grid, item, 'value', '动作参数'); card.append(grid);
     const childHead = el('div', 'nested-heading'); childHead.append(el('h3', '', '二级菜单')); card.append(childHead);
     if (fixedNews) {
@@ -273,25 +395,25 @@ function renderNavigation(target) {
       target.append(card); return;
     }
     item.children.forEach((child, childIndex) => {
-      const childCard = el('div', 'nested-card'); const childGrid = el('div', 'form-grid'); const childRemove = el('button', 'remove', '删除此项');
-      childRemove.type = 'button'; childRemove.onclick = () => { item.children.splice(childIndex, 1); changed(); render(); };
-      const childTitle = el('div', 'nested-card-heading'); childTitle.append(el('strong', '', `${String(childIndex + 1).padStart(2, '0')} / ${child.label || '新菜单项'}`), childRemove); childCard.append(childTitle);
+      const childCard = el('div', 'nested-card'); childCard.dataset.recordKey = recordKey(child); const childGrid = el('div', 'form-grid'); const childRemove = el('button', 'remove', '删除此项');
+      childRemove.type = 'button'; childRemove.onclick = () => { removeRecord(item.children, child); };
+      const childTitle = el('div', 'nested-card-heading'); childTitle.append(el('strong', '', `${String(childIndex + 1).padStart(2, '0')} / ${child.label || '新菜单项'}`), childRemove); childCard.append(childTitle, reorderControls(item.children, child, { insert: () => insertRecord(item.children, { id: newId('nav-item'), label: '新菜单项', href: '#home', target: '', action: '', value: '' }, childIndex, 8), insertDisabled: item.children.length >= 8 }));
       field(childGrid, child, 'id', '菜单项 ID'); field(childGrid, child, 'label', '显示名称'); field(childGrid, child, 'href', '链接地址'); field(childGrid, child, 'target', '打开方式', 'select', false, { choices: targetChoices }); field(childGrid, child, 'action', '交互动作', 'select', false, { choices: actionChoices }); field(childGrid, child, 'value', '动作参数'); childCard.append(childGrid); card.append(childCard);
     });
-    const addChild = el('button', 'add nested-add', '+ 新增二级菜单'); addChild.type = 'button'; addChild.onclick = () => { item.children.push({ id: newId('nav-item'), label: '新菜单项', href: '#home', target: '', action: '', value: '' }); changed(); render(); }; card.append(addChild); target.append(card);
+    const addChild = el('button', 'add nested-add', '+ 新增二级菜单'); addChild.type = 'button'; addChild.onclick = () => { insertRecord(item.children, { id: newId('nav-item'), label: '新菜单项', href: '#home', target: '', action: '', value: '' }, undefined, 8); }; addChild.disabled = item.children.length >= 8; if (addChild.disabled) addChild.title = '二级菜单最多 8 项'; card.append(addChild); target.append(card);
   });
-  const add = el('button', 'add', '+ 新增一级菜单'); add.onclick = () => { data.navigation.push({ id: newId('nav'), label: '新一级菜单', href: '#home', target: '', action: '', value: '', children: [] }); changed(); render(); }; target.append(add);
+  const add = el('button', 'add', '+ 新增一级菜单'); add.onclick = () => { insertRecord(data.navigation, { id: newId('nav'), label: '新一级菜单', href: '#home', target: '', action: '', value: '', children: [] }, undefined, 7); }; add.disabled = data.navigation.length >= 7; if (add.disabled) add.title = '一级菜单最多 7 项'; target.append(add);
 }
 function collectionFields(collection, item) {
-  if (collection === 'aboutPages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['link', '外部链接'], ['target', '打开方式', 'select', false, { choices: targetChoices }], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'aboutPages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['link', '外部链接'], ['target', '打开方式', 'select', false, { choices: targetChoices }], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'businessPages') return [['id', '业务 ID', 'text', false, { readOnly: FIXED_BUSINESS_IDS.has(item.id) }], ['title', '业务名称'], ['summary', CORE_BUSINESS_IDS.includes(item.id) ? '首页整体介绍 / 业务摘要' : '详情页摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
-  if (collection === 'alliancePages') return [['id', '页面 ID', 'text', false, { readOnly: FIXED_ALLIANCE_IDS.has(item.id) }], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'alliancePages') return [['id', '页面 ID', 'text', false, { readOnly: FIXED_ALLIANCE_IDS.has(item.id) }], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['grades', '适用年级'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
   if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['order', '排序号', 'number'], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
+  if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   return [];
 }
 function collectionDefault(collection) {
@@ -313,23 +435,24 @@ function renderCollection(target, collection) {
     alliancePages: '维护联盟介绍、第三届成员与理事单位招募、第三届大会计划三页。固定页面 ID 只读且不可删除；可编辑标题、摘要、正文、封面、长图、发布状态和排序。正式信息请核实后发布，“历届大会展示”链接在七大导航中维护。',
     courseCategories: '维护“关于课后邦 → 课程资源库”的分类和分类长图；课程卡片的详细内容在“课程目录”中编辑。',
     courses: '维护“关于课后邦 → 课程资源库”的课程卡片、独立封面、分类、适用年级、弹窗介绍和课程长图。简介与适用年级显示在详情图片前；年级未填写时显示“待补充”。课程手册页码填 0 表示不关联 PDF。',
-    team: '点击成员照片即可选择本机图片上传，完成编辑后点击“保存并更新官网”。',
+    team: '点击成员照片即可上传本机图片；使用排序按钮调整团队展示顺序，新增成员可直接在指定成员下方插入。完成后点击“保存并更新官网”。',
     news: '编辑文章标题、分类、日期、摘要与正文。公众号原文链接选填；未勾选发布的文章只保存在后台。',
-    venturePages: '编辑智邻精英汇介绍、智邻创投和历年书院世家别墅区年夜饭页面。',
+    venturePages: '编辑智邻精英汇介绍、智邻创投和历年年夜饭页面。每个页面下的“现场相册”支持批量上传照片、缩略图预览、标签和排序。',
     contactTopics: '编辑联系我们下的联系方式栏目。旧数据中的商务合作、师资合作和人才招聘记录仅作兼容保留，官网不会展示。'
   };
-  target.append(el('p', 'admin-note', notes[collection] || '维护栏目内容。'));
+  target.append(el('p', 'admin-note', (notes[collection] || '维护栏目内容。') + ' 可使用上移、下移、置顶或指定位置调整条目顺序，也可在任意条目下方插入。排序与新增内容均在保存后生效。'));
   data[collection].forEach((item, index) => {
-    const card = el('article', 'edit-card'); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
-    remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { data[collection].splice(index, 1); changed(); render(); } };
+    const card = el('article', 'edit-card'); card.dataset.recordKey = recordKey(item); const heading = el('div', 'card-heading'); const name = item.name || item.title || '新内容'; const remove = el('button', 'remove', '删除');
+    remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { removeRecord(data[collection], item); } };
     const fixedPage = (collection === 'businessPages' && FIXED_BUSINESS_IDS.has(item.id)) || (collection === 'alliancePages' && FIXED_ALLIANCE_IDS.has(item.id));
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`)); if (!fixedPage) heading.append(remove); card.append(heading);
+    card.append(reorderControls(data[collection], item, { insert: () => insertRecord(data[collection], collectionDefault(collection), index) }));
     const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ['longImage', '长图']] : collection === 'alliancePages' || collection === 'courseCategories' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
-    const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); target.append(card);
+    const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); if (collection === 'venturePages') card.append(albumEditor(item)); target.append(card);
   });
   const labels = { aboutPages: '页面', businessPages: '业务', alliancePages: '联盟页面', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目' };
-  const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { data[collection].push(collectionDefault(collection)); changed(); render(); const cards = target.querySelectorAll('.edit-card'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }; target.append(add);
+  const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { insertRecord(data[collection], collectionDefault(collection)); }; target.append(add);
 }
 function consultationPage(value) {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20]/.test(value) || value.length > 500) return '';
