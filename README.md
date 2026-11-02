@@ -37,6 +37,16 @@ npm start
 
 官网：http://127.0.0.1:3000 ，后台：http://127.0.0.1:3000/admin 。默认仅监听本机。
 
+通过 cpolar 临时分享时，先停止当前官网进程，再用 cpolar 当前的 HTTPS 域名启动。以下命令适用于 Windows CMD、PowerShell 和 Linux；`tunnel.example.test` 是占位地址，需替换为实际域名，不要加 `/admin`：
+
+```text
+npm run start:cpolar -- https://tunnel.example.test
+```
+
+也可运行 `npm run start:cpolar`，在交互终端按提示输入地址。脚本保留现有 `PORT`、`DATA_DIR`，仅为本次进程设置公网来源与本机代理配置，不把域名写进代码或环境文件。cpolar 转发到同机的实际运行端口，默认是 `3000`。别人从该 HTTPS 域名的 `/admin` 登录，本机仍可使用 `http://127.0.0.1:3000/admin`，不会跳到 cpolar；两个入口需要分别登录。
+
+临时域名变化后，用 `Ctrl+C` 停止官网进程，再以新域名执行同一命令。旧域名及其他 cpolar 域名不会自动获得管理访问权限。隧道须保留公网 Host 并传递 HTTPS 协议头，具体检查和端口设置见 [部署文档的 cpolar 说明](docs/DEPLOYMENT.md#使用-cpolar-临时分享)。
+
 首次启动生成随机初始密码；从旧版本升级时，原管理密钥可作为初始密码。读取方式：
 
 ```powershell
@@ -80,7 +90,7 @@ PPT 第 2、8、9 页对部分技术岗位有不同表述。首版将戴鹏标�
 
 当前项目已在现有服务器独立部署到公网。生产环境需要域名、有效 HTTPS 证书、同机反向代理、持久化磁盘和私有备份。多管理员权限、多因素认证、操作审计和公众号自动同步尚未实现。
 
-默认管理接口仅接受本机的 HTTP 请求。公网配置使用 `PUBLIC_ORIGIN=https://kehoubang.cn`、`TRUST_PROXY=loopback`，Node 保持 `HOST=127.0.0.1`。同机反向代理负责 TLS，官网主域的 HTTPS 请求才进入 Node；www 在 Nginx 层跳转到主域。不要直接把 Node 端口暴露到公网，也不要重写浏览器的 Origin。本项目不自动申请证书，证书签发及续期见部署手册。来源域名、协议或转发配置不匹配时，管理接口会拒绝访问。
+默认管理接口仅接受本机直连的 HTTP 请求。公网配置使用 `PUBLIC_ORIGIN=https://kehoubang.cn`、`TRUST_PROXY=loopback`，Node 保持 `HOST=127.0.0.1`。配置公网来源后，本机回环连接、回环 Host 且不带代理头的 `/admin` 和管理 API 仍可使用；本机与公网会话按来源隔离。同机反向代理负责 TLS，官网主域的 HTTPS 请求才进入 Node；www 在 Nginx 层跳转到主域。不要直接把 Node 端口暴露到公网，也不要重写浏览器的 Origin。本项目不自动申请证书，证书签发及续期见部署手册。来源域名、协议或转发配置不匹配时，管理接口会拒绝访问。
 
 登录保护包括：scrypt（N=131072、r=8、p=1）加盐哈希、HttpOnly / SameSite=Strict 会话 Cookie（公网启用 Secure）、同源校验、写操作 CSRF 校验、单来源连续 5 次失败后冷却 15 分钟，以及全局请求和密码计算并发限制。反代模式以代理连接的 IP 进行限流，因此所有访问者共享该代理的失败额度；公网反代还应按真实客户端 IP 配置边缘限流。本进程内会话和限流适用于单实例，重启会清除它们。
 

@@ -209,7 +209,10 @@ test('public HTTPS cookies, strict proxy origin and brute-force protection survi
   });
   const proxyHeaders = { Host: 'cms.example.test', 'X-Forwarded-Proto': 'https', 'X-Forwarded-For': '203.0.113.1' };
   for (const route of ['/admin', '/%61dmin.html', '/ADMIN.HTML']) {
-    const redirect = await api(route);
+    const localPage = await api(route);
+    assert.equal(localPage.status, 200);
+    assert.equal(localPage.headers.get('location'), null);
+    const redirect = await api(route, { headers: { Host: 'other.example.test' } });
     assert.equal(redirect.status, 308);
     assert.equal(redirect.headers.get('location'), publicOrigin + '/admin');
   }
@@ -221,13 +224,29 @@ test('public HTTPS cookies, strict proxy origin and brute-force protection survi
   assert.match(initial.setCookie, /;\s*Secure/i);
   assert.equal((await changePassword(api, publicOrigin, initial, legacyPassword, password, proxyHeaders)).status, 200);
   const session = await login(api, publicOrigin, password, proxyHeaders);
+  const localSession = await login(api, origin, password);
+  assert.doesNotMatch(localSession.setCookie, /;\s*Secure/i);
+  assert.equal((await api('/api/admin/session', { headers: sessionHeaders(origin, localSession) })).status, 200);
+  assert.equal((await api('/api/admin/session', { headers: sessionHeaders(origin, localSession, proxyHeaders) })).status, 403);
+  assert.equal((await api('/api/admin/session', { headers: sessionHeaders(publicOrigin, session) })).status, 403);
+  assert.equal((await api('/api/admin/session', { headers: sessionHeaders(publicOrigin, localSession, proxyHeaders) })).status, 401);
+  assert.equal((await api('/api/admin/session', { headers: sessionHeaders(origin, session) })).status, 401);
   const headers = sessionHeaders(publicOrigin, session, proxyHeaders);
   const trusted = await api('/api/admin/session', { headers });
   assert.equal(trusted.status, 200);
   assert.match(trusted.headers.get('strict-transport-security'), /max-age=/i);
   assert.equal((await api('/api/admin/session', { headers: { ...headers, 'X-Forwarded-Proto': 'http' } })).status, 403);
   assert.equal((await api('/api/admin/session', { headers: { ...headers, Host: 'attacker.example' } })).status, 403);
-  assert.equal((await api('/api/admin/session', { headers: { Cookie: session.cookie } })).status, 403);
+  assert.equal((await api('/api/admin/session', { headers: { Cookie: session.cookie } })).status, 401);
+  for (const invalid of [
+    { ...headers, 'X-Forwarded-Proto': undefined },
+    { ...headers, 'X-Forwarded-Host': 'other.cpolar.cn' },
+    { ...headers, Forwarded: 'proto=https;host=cms.example.test' },
+    { ...headers, Host: new URL(origin).host }
+  ]) {
+    const cleanHeaders = Object.fromEntries(Object.entries(invalid).filter(([, value]) => value !== undefined));
+    assert.equal((await api('/api/admin/session', { headers: cleanHeaders })).status, 403);
+  }
   for (let attempt = 0; attempt < 5; attempt++) {
     const response = await api('/api/admin/login', { method: 'POST', headers: { ...proxyHeaders, Origin: publicOrigin, 'Content-Type': 'application/json', 'X-Forwarded-For': `203.0.113.${attempt + 10}` }, body: JSON.stringify({ password: 'wrong-password' }) });
     assert.equal(response.status, 401);
@@ -236,6 +255,27 @@ test('public HTTPS cookies, strict proxy origin and brute-force protection survi
   assert.equal(blocked.status, 429);
   assert.ok(Number(blocked.headers.get('retry-after')) > 0);
   assert.equal((await api('/api/content')).status, 200);
+});
+
+test('a changed tunnel origin is applied on restart without changing code or allowing the old origin', async t => {
+  const environment = { PUBLIC_ORIGIN: 'https://first.cpolar.example', TRUST_PROXY: 'loopback' };
+  const { origin, stop, start } = await testServer(t, environment);
+  const probe = host => new Promise((resolve, reject) => {
+    const request = http.get(origin + '/api/admin/session', {
+      headers: { Host: host, 'X-Forwarded-Proto': 'https' }
+    }, response => { response.resume(); response.on('end', () => resolve(response.statusCode)); });
+    request.on('error', reject);
+  });
+  assert.equal(await probe('first.cpolar.example'), 401);
+  assert.equal(await probe('next.cpolar.example'), 403);
+  await stop();
+  environment.PUBLIC_ORIGIN = 'https://next.cpolar.example';
+  await start();
+  assert.equal(await probe('next.cpolar.example'), 401);
+  assert.equal(await probe('first.cpolar.example'), 403);
+  const localPage = await fetch(origin + '/admin', { redirect: 'manual' });
+  assert.equal(localPage.status, 200);
+  assert.equal(localPage.headers.get('location'), null);
 });
 
 test('sessions expire after inactivity and after the absolute lifetime despite activity', async t => {

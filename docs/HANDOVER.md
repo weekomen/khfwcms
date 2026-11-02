@@ -47,12 +47,15 @@
 | `data/seed.json` | 数据目录没有 `content.json` 时使用的初始化内容，不能替代现有运行数据 |
 | `backups/published-content.json`、`backups/uploads/` | 可进入公开仓库的内容快照及配套公开图片 |
 | `scripts/backup-content.mjs` | 生成公开内容快照；使用 `DATA_DIR` 或默认 `data/` |
+| `scripts/start-cpolar.mjs` | 按启动参数或终端输入的 HTTPS 来源启动同机 cpolar 预览，保留端口与数据目录，不持久化临时域名 |
 | `scripts/create-handoff.mjs` | 从已提交的 Git HEAD 导出白名单源码 ZIP、文件清单与 SHA-256 校验文件 |
 | `docs/DEPLOYMENT.md`、`deploy/` | Linux 部署步骤与域名、HTTPS、服务配置模板 |
 | `docs/ACCEPTANCE.md` | 本次版本的部署验收、交接责任及签收记录模板 |
 | `tests/` | API/认证自动测试及独立浏览器检查脚本 |
 
 `package.json` 声明 Node.js ≥20；公开备份脚本使用 `import.meta.dirname`，实际需要 Node.js 20.11 或更新版本。生产运行版本按部署文档统一，不要使用不再受维护的旧运行时。`npm start` 与 `npm run dev` 都只是启动 `node server.mjs`，没有自动重载。
+
+临时通过 cpolar 分享时，使用 `npm run start:cpolar -- https://tunnel.example.test`，将占位域名换成隧道当前的 HTTPS 来源，不包含 `/admin`。Windows CMD、PowerShell、Linux 使用相同命令；无参数时可在交互终端输入。脚本仅向子进程设置 `PUBLIC_ORIGIN`、`TRUST_PROXY=loopback`、`HOST=127.0.0.1`，保留 `PORT`、`DATA_DIR`；域名不写入代码或环境文件。域名变化后停止该进程，以新地址重启。隧道端口、Host 与协议头要求见 [部署文档](DEPLOYMENT.md#使用-cpolar-临时分享)。
 
 ## 2. 已实现的官网功能
 
@@ -110,7 +113,7 @@
 
 登录返回会话 Cookie `khb_admin_session`（`HttpOnly`、`SameSite=Strict`、`Path=/api/admin`，公网 HTTPS 使用 `Secure`）及 JSON 中的 CSRF token。后台只在内存持有 CSRF token，密码不进入浏览器存储；旧版 Bearer 管理密钥已不再支持。空闲 30 分钟或登录满 8 小时过期，重启也会清空会话。
 
-管理请求先校验访问上下文：未配置公网来源时，仅允许本机连接和本机 Host；公网必须匹配 `PUBLIC_ORIGIN`，按部署文档通过同机 HTTPS 反代。写请求必须带匹配的 `Origin`，除登录外还须带 `X-CSRF-Token`。读请求也会拒绝明确的跨站来源。`/admin` 是登录页面入口，不能把“页面能够打开”视为已经获得数据权限。
+管理请求先校验访问上下文：本机直连须同时满足回环连接、回环 Host、完全不带代理头，即使配置了 `PUBLIC_ORIGIN` 也可使用本机 `/admin` 和管理 API，不会跳到公网。其余公网请求必须精确匹配 `PUBLIC_ORIGIN`，按部署文档通过同机 HTTPS 反代；不自动接受其他 cpolar 域名。写请求必须带匹配的 `Origin`，除登录外还须带 `X-CSRF-Token`。读请求也会拒绝明确的跨站来源。本机与公网会话绑定各自的来源，需要分别登录；密码与内容仍使用同一个数据目录。`/admin` 是登录页面入口，不能把“页面能够打开”视为已经获得数据权限。
 
 | Method / 路径 | 认证与请求 | 成功响应 / 作用 | 主要业务错误 |
 | --- | --- | --- | --- |

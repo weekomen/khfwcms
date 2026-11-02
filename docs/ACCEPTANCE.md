@@ -56,6 +56,8 @@
 - [ ] `http://kehoubang.cn/`、`http://www.kehoubang.cn/` 均转到裸域 HTTPS；`https://www.kehoubang.cn/` 返回 `308` 至裸域 HTTPS，无重定向循环。
 - [ ] 验证路径和查询参数保持，例如 `https://www.kehoubang.cn/admin?from=www` 跳到 `https://kehoubang.cn/admin?from=www`。
 - [ ] 官网环境为 `PUBLIC_ORIGIN=https://kehoubang.cn`、`TRUST_PROXY=loopback`，反代保留裸域 Host 并覆盖正确协议头；从规范 `/admin` 地址登录。
+- [ ] 配置公网来源后，本机回环地址的 `/admin` 仍可直接打开并登录，不跳到公网；本机与公网分别登录，不能跨来源复用会话。
+- [ ] 若本次使用 cpolar 临时分享，以当前 HTTPS 来源运行 `npm run start:cpolar -- https://当前域名`；同机隧道转发到实际端口，保留公网 Host、传递 `X-Forwarded-Proto: https`，不重写 Origin。核验公网登录与本机入口均可用；域名变化后换参数重启并重新登录，旧域名和其他域名不被自动放行。不使用 cpolar 时记录“不适用”。
 - [ ] 证书续期检查已执行，域名和证书到期通知责任人明确。
 - [ ] `khb.kehoubang.cn` 没有被当作本仓库 CMS 的别名。其上线由业务系统负责人单独提供源码/上游服务并验收；仅完成 DNS 解析不视为业务系统已部署。
 - [ ] 域名切换前保存旧 DNS 值与 TTL，核对原站仍需保留的路径；两份在线手册的完整文件已迁入新入口或有经验证的原托管路由。保留旧入口和回退方案直到验收通过。

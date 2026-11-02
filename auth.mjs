@@ -58,10 +58,12 @@ function requestContext(req, policy) {
   try { hostUrl = new URL(`http://${host}`); } catch { return null; }
   const forwarded = Object.keys(req.headers).some(name => name === 'forwarded' || name.startsWith('x-forwarded-'));
   const localSocket = loopback(req.socket.remoteAddress);
-  if (!policy.publicOrigin) {
-    if (!localSocket || !['localhost', '127.0.0.1', '[::1]'].includes(hostUrl.hostname) || forwarded) return null;
+  // A direct loopback request stays local even when a public proxy is configured.
+  // Forwarded tunnel traffic must still pass the exact public-origin checks below.
+  if (localSocket && ['localhost', '127.0.0.1', '[::1]'].includes(hostUrl.hostname) && !forwarded) {
     return { origin: `http://${hostUrl.host}`, secure: false };
   }
+  if (!policy.publicOrigin) return null;
   if (hostUrl.host !== policy.publicHost) return null;
   const trustedProxy = policy.trustProxy && localSocket;
   if (forwarded && !trustedProxy) return null;
@@ -221,7 +223,7 @@ export async function createAdminAuth({ dataDir, env = process.env, now = Date.n
         const previous = cookieValue(req);
         if (previous) sessions.delete(sessionKey(previous));
         const value = randomBytes(32).toString('base64url');
-        const session = { csrfToken: randomBytes(32).toString('base64url'), createdAt: now(), lastUsed: now() };
+        const session = { origin: context.origin, csrfToken: randomBytes(32).toString('base64url'), createdAt: now(), lastUsed: now() };
         if (sessions.size >= MAX_SESSIONS) sessions.delete(sessions.keys().next().value);
         sessions.set(sessionKey(value), session);
         setCookie(res, value, context.secure);
@@ -231,7 +233,7 @@ export async function createAdminAuth({ dataDir, env = process.env, now = Date.n
       const value = cookieValue(req);
       const key = value ? sessionKey(value) : '';
       const session = sessions.get(key);
-      if (!session) { setCookie(res, '', context.secure, true); send(401, { error: '登录已过期，请重新登录' }); return true; }
+      if (!session || session.origin !== context.origin) { setCookie(res, '', context.secure, true); send(401, { error: '登录已过期，请重新登录' }); return true; }
       if (mutating && !safeEqual(req.headers['x-csrf-token'], session.csrfToken)) {
         send(403, { error: '登录状态已更新，请重新登录后重试', code: 'CSRF_INVALID' }); return true;
       }

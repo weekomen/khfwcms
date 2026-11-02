@@ -13,7 +13,7 @@
 
 `khb` 是用户确认的独立业务系统。本交接包不含其源码，不知道其实际服务器、应用端口、数据库或发布流程，也不会把该域名代理到官网的 3000 端口。该系统负责人应单独完成其域名、证书及应用发布。官网证书和配置不依赖 `khb` 的上线状态。
 
-官网统一使用裸域：当前认证只接受一个 `PUBLIC_ORIGIN`，不要填写逗号分隔的多个域名，也不要通过篡改浏览器 `Origin` 来兼容 www 登录。管理员从主域 `/admin` 进入。
+官网统一使用裸域：公网认证只接受一个 `PUBLIC_ORIGIN`，不要填写逗号分隔的多个域名，也不要通过篡改浏览器 `Origin` 来兼容 www 登录。公网管理员从主域 `/admin` 进入；本机回环直连仍可独立登录，见第 6 节。
 
 ## 2. 上线前准备与 DNS
 
@@ -162,9 +162,45 @@ PUBLIC_ORIGIN=https://kehoubang.cn
 TRUST_PROXY=loopback
 ```
 
-不要设置固定的 `ADMIN_TOKEN`。新数据目录由服务生成随机初始密码，完成首次改密后初始文件自动删除。配置了 PUBLIC_ORIGIN 后，本机直接 HTTP 访问管理 API 返回 403 是正常的，公开 `/api/content` 仍可用于存活检查。
+不要设置固定的 `ADMIN_TOKEN`。新数据目录由服务生成随机初始密码，完成首次改密后初始文件自动删除。配置 `PUBLIC_ORIGIN` 后，本机回环连接、回环 Host 且完全不带代理头的 HTTP 请求仍可打开 `/admin` 并登录管理 API，不会被重定向到公网；未登录请求返回 `401`。带任意代理头的请求不属于本机直连，仍须通过已配置的公网 HTTPS 来源校验。本机与公网会话按来源隔离，需要分别登录。公开 `/api/content` 可用于存活检查。
 
 运行一个 Node 进程即可；不要用多个 PM2/容器实例共享本目录。会话、限流、文件写入队列都是进程内状态。模板启用非 root 用户和 systemd 文件写入隔离；如果改变数据目录，还必须同步服务中的 `ReadWritePaths` 等设置。
+
+### 使用 cpolar 临时分享
+
+以下用于开发机临时分享，不替换正式服务器的 systemd 与 Nginx 配置。在项目根目录先停止正在占用该端口的官网进程，再使用 cpolar 当前提供的 HTTPS 域名启动；不要再同时运行第二个 `npm start`。以下命令在 Windows CMD、PowerShell 和 Linux 中相同，`tunnel.example.test` 仅为占位地址，必须换成实际域名，不能加 `/admin`、查询参数或路径：
+
+```text
+npm run start:cpolar -- https://tunnel.example.test
+```
+
+不传地址运行 `npm run start:cpolar` 时，可在交互终端按提示输入。脚本通过 `scripts/start-cpolar.mjs` 为官网子进程设置精确的 `PUBLIC_ORIGIN`、`TRUST_PROXY=loopback` 和 `HOST=127.0.0.1`，保留已有 `PORT`、`DATA_DIR`，不会把临时域名写入源码或 `.env`。默认端口为 `3000`；若需要改到 `3001`，分别使用当前终端对应的写法：
+
+Windows CMD：
+
+```bat
+set "PORT=3001"
+npm run start:cpolar -- https://tunnel.example.test
+```
+
+PowerShell：
+
+```powershell
+$env:PORT = "3001"
+npm run start:cpolar -- https://tunnel.example.test
+```
+
+Linux：
+
+```bash
+PORT=3001 npm run start:cpolar -- https://tunnel.example.test
+```
+
+将 cpolar 隧道指向同一台机器上官网实际监听的 `127.0.0.1:端口`。保留原始公网 `Host`，不要启用 `-host-header=rewrite` 把它改成 `localhost`（参见 [cpolar 官方文档第 8.1 节](https://www.cpolar.com/docs)）。转发到 Node 的请求必须有 `X-Forwarded-Proto: https`；如有 `X-Forwarded-Host`，须与当前公网域名一致。当前认证不接受 `Forwarded` 头；不要改写浏览器的 `Origin` 来绕过校验。来源错误时会返回“管理登录仅允许本机访问或已配置的 HTTPS 站点”，此时应核对隧道和启动配置。
+
+启动后，访客从 `https://当前域名/admin` 输入既有管理密码登录，本机仍从 `http://127.0.0.1:实际端口/admin` 登录。两个入口的 Cookie 和会话分别生效，密码及运行内容共用同一个 `DATA_DIR`；不需要重新初始化账号。临时域名变化后，先 `Ctrl+C` 停止官网，再以新域名重新执行启动命令，访客使用新地址重新登录。其他域名不会自动放行，也不使用 cpolar 通配域名。
+
+验收时先确认公网 `/admin` 显示登录页，再用有效账号完成登录并检查管理内容，同时确认本机入口仍可用。仅登录页返回 `200` 不代表登录或保存已验证；密码、Cookie 和完整代理请求头不写入公开记录。
 
 ## 7. 官网 HTTPS：先申请证书，再启用正式配置
 
@@ -352,6 +388,7 @@ sudo systemctl status khfwcms --no-pager
 | --- | --- |
 | Nginx 502 | `systemctl status khfwcms`、`journalctl -u khfwcms -n 80`；核对 Node 路径、数据权限、127.0.0.1:3000 与是否内存不足 |
 | 后台 403 | 裸域地址、PUBLIC_ORIGIN、TRUST_PROXY、Host/XFH/XFP 是否一致；反代必须本机连接，不得改写 Origin |
+| cpolar 后台提示仅允许本机或 HTTPS 站点 | 以当前 HTTPS 域名运行 `npm run start:cpolar -- https://当前域名`，核对转发端口、保留的公网 Host 与 `X-Forwarded-Proto: https`；域名变化后重启官网，不关闭来源校验 |
 | www 后台无法登录 | 先确认 www 已跳转到裸域；不要在两个域名分别打开不同后台副本 |
 | 429 登录限制 | 按 Retry-After 等待；排查失败请求来源和共享额度；不要通过关闭所有防护解决 |
 | 413 上传失败 | 应用最大 5 MiB，Nginx 模板同为 5m；检查实际图片大小和是否经过更小限制的网关 |
