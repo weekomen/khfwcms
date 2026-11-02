@@ -31,7 +31,7 @@
     if (!tabs) return;
     const pages = new Map((data.businessPages || []).map(page => [page.id, page]));
     const positions = new Map((data.businessPages || []).map((page, index) => [page.id, index]));
-    const businesses = entries.map((entry, index) => ({ ...entry, image: `/assets/business-${index + 1}.svg`, ...pages.get(entry.id), title: pages.get(entry.id)?.title || entry.title, fallbackImage: `/assets/business-${index + 1}.svg` })).sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
+    const businesses = entries.map((entry, index) => ({ ...entry, image: `/assets/business-${entry.id}-v1.webp`, ...pages.get(entry.id), title: pages.get(entry.id)?.title || entry.title, fallbackImage: `/assets/business-${entry.id}-v1.webp` })).sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity));
     const feature = document.getElementById('business-feature');
     const image = document.getElementById('business-feature-image');
     const panel = document.getElementById('business-feature-panel');
@@ -123,8 +123,8 @@
       overviewImage.alt = `${page.title}整体介绍配图`;
     }
     const groups = [
-      { root: 'after-school-cards', image: schoolBusinesses[0].image || '/assets/business-1.svg', ids: ['supply-system', 'supply-courses', 'supply-school-plan'], titles: ['技术系统介绍', '课程介绍', '一校一案'] },
-      { root: 'ai-school-cards', image: schoolBusinesses[1].image || '/assets/business-2.svg', ids: ['ai-study-system', 'ai-portals', 'ai-school-model'], titles: ['AI伴学系统介绍', '学生端、学校端、老师端、家长端功能介绍', '进校模式'] }
+      { root: 'after-school-cards', image: schoolBusinesses[0].image || '/assets/business-supply-chain-v1.webp', ids: ['supply-system', 'supply-courses', 'supply-school-plan'], titles: ['技术系统介绍', '课程介绍', '一校一案'] },
+      { root: 'ai-school-cards', image: schoolBusinesses[1].image || '/assets/business-ai-school-supply-v1.webp', ids: ['ai-study-system', 'ai-portals', 'ai-school-model'], titles: ['AI伴学系统介绍', '学生端、学校端、老师端、家长端功能介绍', '进校模式'] }
     ];
     groups.forEach(group => {
       const root = document.getElementById(group.root); root.replaceChildren();
@@ -132,7 +132,7 @@
         const page = pages.get(id) || {};
         const title = page.title || group.titles[index];
         const card = make('article', 'course-card business-detail-card');
-        const thumb = make('img', 'course-thumb'); setImage(thumb, page.image || group.image, group.root === 'after-school-cards' ? '/assets/business-1.svg' : '/assets/business-2.svg'); thumb.alt = title; thumb.loading = 'lazy'; thumb.decoding = 'async';
+        const thumb = make('img', 'course-thumb'); setImage(thumb, page.image || group.image, group.root === 'after-school-cards' ? '/assets/business-supply-chain-v1.webp' : '/assets/business-ai-school-supply-v1.webp'); thumb.alt = title; thumb.loading = 'lazy'; thumb.decoding = 'async';
         const link = make('a', 'text-link', '查看详细介绍 ↗'); link.href = destination(id); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.setAttribute('aria-label', `查看${title}（新标签页打开）`);
         card.append(thumb, make('h4', '', title), make('p', '', page.summary ?? '了解具体内容与服务方案。'), link); root.append(card);
       });

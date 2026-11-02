@@ -71,7 +71,7 @@ test('business migration adds the seven entries and six pages while preserving e
 test('only legacy default values migrate, and already edited seven-entry routes keep their values', () => {
   const content = applyBusinessDefaults(legacyContent());
   assert.equal(content.businessPages[0].title, '课后邦课后服务进校供应链');
-  assert.equal(content.businessPages[0].image, '/assets/business-1.svg');
+  assert.equal(content.businessPages[0].image, '/assets/business-supply-chain-v1.webp');
   const root = content.navigation.find(item => item.id === 'business');
   root.children[0].label = '已编辑的业务入口'; root.children[0].href = '/custom-route'; root.children[0].target = 'blank';
   const courses = content.navigation.find(item => item.id === 'courses'); courses.children[0].href = 'https://example.com/custom-course';
