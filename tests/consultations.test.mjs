@@ -12,7 +12,7 @@ import { isAllowedPath } from '../scripts/create-handoff.mjs';
 
 const initialPassword = 'consultation-test-initial-token';
 const password = 'Consultation test password across 82 rivers!';
-const submission = (index, extra = {}) => ({ name: `咨询测试${index}`, phone: `1380000000${index}`, consent: true, website: '', page: '/content-page.html?type=business&id=supply-chain', ...extra });
+const submission = (index, extra = {}) => ({ name: `咨询测试${index}`, phone: `1380000000${index}`, company: '测试公司', consent: true, website: '', page: '/content-page.html?type=business&id=supply-chain', ...extra });
 async function fixture(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'khb-consultation-test-'));
   await writeFile(path.join(dir, 'admin-token'), initialPassword);
@@ -62,7 +62,7 @@ test('consultations validate, persist privately across concurrent writes and res
   for (const requestHeaders of [
     { Origin: 'https://other.example' }, {}, { Origin: origin, 'Sec-Fetch-Site': 'cross-site' }
   ]) assert.equal((await api('/api/consultations', { method: 'POST', headers: { 'Content-Type': 'application/json', ...requestHeaders }, body: JSON.stringify(submission(1)) })).status, 403);
-  for (const invalid of [{ name: '' }, { name: '姓名\n换行' }, { company: 123 }, { company: '字'.repeat(101) }, { phone: '123' }, { consent: false }, { page: '//other.example' }]) {
+  for (const invalid of [{ name: '' }, { name: '姓名\n换行' }, { company: undefined }, { company: '   ' }, { company: 123 }, { company: '字'.repeat(101) }, { phone: '123' }, { consent: false }, { page: '//other.example' }]) {
     assert.equal((await submit(submission(1, invalid))).status, 400);
   }
   assert.equal((await api('/api/consultations', { method: 'POST', headers: { Origin: origin }, body: '{}' })).status, 415);

@@ -40,8 +40,8 @@ async function readJson(req) {
 function validateSubmission(body) {
   if (typeof body.name !== 'string' || /[\x00-\x1f\x7f]/.test(body.name)) throw fail(400, '请填写有效姓名');
   const name = body.name.trim();
-  const rawCompany = body.company === undefined ? '' : body.company;
-  if (typeof rawCompany !== 'string' || /[\x00-\x1f\x7f]/.test(rawCompany) || rawCompany.length > 100) {
+  const rawCompany = body.company;
+  if (typeof rawCompany !== 'string' || /[\x00-\x1f\x7f]/.test(rawCompany) || rawCompany.length > 100 || !rawCompany.trim()) {
     throw fail(400, '请填写有效公司名称，最多 100 个字符');
   }
   const company = rawCompany.trim();

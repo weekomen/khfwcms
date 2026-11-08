@@ -15,8 +15,8 @@
       <fieldset>
         <label for="consultation-name"><span aria-hidden="true">*</span> 姓名</label>
         <input id="consultation-name" name="name" type="text" autocomplete="name" maxlength="40" placeholder="请输入您的姓名" required autofocus>
-        <label for="consultation-company">公司名称（选填）</label>
-        <input id="consultation-company" name="company" type="text" autocomplete="organization" maxlength="100" placeholder="请输入公司名称">
+        <label for="consultation-company"><span aria-hidden="true">*</span> 公司名称</label>
+        <input id="consultation-company" name="company" type="text" autocomplete="organization" maxlength="100" placeholder="请输入公司名称" required>
         <label for="consultation-phone"><span aria-hidden="true">*</span> 手机号</label>
         <input id="consultation-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="请输入您的手机号码" required>
         <div class="consultation-trap" aria-hidden="true"><label for="consultation-website">网站</label><input id="consultation-website" name="website" type="text" autocomplete="off" tabindex="-1"></div>
@@ -37,6 +37,7 @@
   const form = dialog.querySelector('form');
   const fields = form.querySelector('fieldset');
   const nameInput = form.elements.namedItem('name');
+  const companyInput = form.elements.namedItem('company');
   const phoneInput = form.elements.namedItem('phone');
   const submit = form.querySelector('[type="submit"]');
   const status = form.querySelector('.consultation-status');
@@ -71,6 +72,7 @@
   });
   phoneInput.addEventListener('input', () => phoneInput.setCustomValidity(''));
   nameInput.addEventListener('input', () => nameInput.setCustomValidity(''));
+  companyInput.addEventListener('input', () => companyInput.setCustomValidity(''));
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (submitting) return;
@@ -78,8 +80,9 @@
     const phone = phoneInput.value.replace(/[\s()-]/g, '').replace(/^(?:\+86|0086)/, '');
     nameInput.setCustomValidity(name ? '' : '请输入您的姓名');
     phoneInput.setCustomValidity(/^1[3-9]\d{9}$/.test(phone) ? '' : '请输入有效的 11 位手机号码');
+    const company = companyInput.value.trim();
+    companyInput.setCustomValidity(company ? '' : '请输入公司名称');
     if (!form.reportValidity()) return;
-    const company = form.elements.namedItem('company').value.trim();
     const payload = { name, company, phone, consent: form.elements.namedItem('consent').checked, website: form.elements.namedItem('website').value, page: (location.pathname + location.search).slice(0, 200) };
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
