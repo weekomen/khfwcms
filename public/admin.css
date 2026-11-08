@@ -263,7 +263,24 @@ button:disabled {
     cursor: wait
 }
 
+#save {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    z-index: 15;
+    box-shadow: 0 4px 16px #10274333;
+}
+
 #save[hidden] { display: none }
+
+#editor:not([hidden]):has(#save:not([hidden])) {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+#editor:not([hidden]):has(#save:not([hidden])) ~ #status {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 14;
+}
 .consultation-inbox { min-width: 0 }
 .consultation-toolbar { display: flex; align-items: start; justify-content: space-between; gap: 24px; margin-bottom: 20px }
 .consultation-toolbar h2 { margin: 0; font-size: 24px }

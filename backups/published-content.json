@@ -70,35 +70,35 @@
     },
     {
       "name": "蔡雪珊",
-      "role": "联合创始人 · 课程供应链总监",
+      "role": "课后邦课程供应链总监",
       "category": "课程供应链中心",
       "bio": "负责课程资源整合、供应体系建设与课程落地支持。",
       "image": "/assets/image6.webp"
     },
     {
       "name": "戴鹏",
-      "role": "技术研发团队",
+      "role": "课后邦CTO",
       "category": "技术开发中心",
       "bio": "副高级工程师，长期从事信息化建设，为平台与技术研发提供支持。",
       "image": "/assets/image11.webp"
     },
     {
       "name": "许卿",
-      "role": "技术总监",
+      "role": "课后邦技术总监",
       "category": "技术开发中心",
       "bio": "拥有互联网产品经验，深耕产品与算法应用领域。",
       "image": "/assets/image12.webp"
     },
     {
       "name": "赵通海",
-      "role": "联合创始人 · 运营总监",
+      "role": "课后邦流量运营总经理",
       "category": "流量运营中心",
       "bio": "负责线上内容运营与用户增长，拥有社区实体运营经验。",
       "image": "/assets/image8.webp"
     },
     {
       "name": "肖文",
-      "role": "产品经理",
+      "role": "课后邦产品运营总经理",
       "category": "产品管理中心",
       "bio": "课后邦联合创始人、课后邦产品运营总经理，统筹线上授课老师教学活动。",
       "image": "/assets/team-xiao-wen.webp"
@@ -112,7 +112,7 @@
     },
     {
       "name": "李舒玉",
-      "role": "联合创始人 · 品牌经理",
+      "role": "课后邦品牌运营",
       "category": "品牌运营中心",
       "bio": "武汉科技大学设计学硕士，负责品牌产品运营与品牌形象建设。",
       "image": "/assets/image7.webp"
