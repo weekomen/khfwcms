@@ -325,20 +325,24 @@ dialog.course-detail-dialog {
   padding-block: 24px;
   align-items: start;
 }
-.course-promotions details {
-  border: 1px solid var(--line, #b7c9e1);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.course-promotions summary {
-  cursor: pointer;
-  padding: 16px 20px;
-  font-weight: 700;
-}
-.course-promotions img {
+.course-cover-button {
   display: block;
   width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.course-cover-button:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.course-cover-button:hover img { filter: brightness(1.06); }
+.course-promotions .course-thumb {
+  aspect-ratio: 16 / 9;
   height: auto;
+  object-fit: contain;
+  background: var(--bg);
 }
 .course-handbook-link {
   min-height: 44px;

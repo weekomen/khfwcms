@@ -55,7 +55,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     for (const category of [...new Set(data.courses.map(c=>c.category === '劳动类' ? '手工类' : c.category))]) {
       await page.getByRole('button',{name:category,exact:true}).click();
       if (await page.locator('#course-catalog .team-toggle').isVisible()) await page.locator('#course-catalog .team-toggle').click();
-      const buttons=page.locator('.course-detail-button');
+      const buttons=page.locator('#course-grid .course-card button');
       for(let i=0;i<await buttons.count();i++) {
         await buttons.nth(i).click();
         assert.equal(await page.locator('#detail').evaluate(d=>d.open),true);
@@ -89,7 +89,7 @@ const fs = require('node:fs'), path = require('node:path'), assert = require('no
     await page.goto('http://localhost:3199/courses.html?category=%E7%A7%91%E6%8A%80%E7%B1%BB'); await page.waitForSelector('.course-card');
     await page.getByLabel('外观').selectOption('dark');
     assert.equal(await page.locator('.course-filters .selected').textContent(),'科技类');
-    assert.equal(await page.locator('.course-card').count(),3);
+    assert.equal(await page.locator('#course-grid .course-card').count(),3);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.goto('http://localhost:3199/'); await page.waitForSelector('#platform-grid button');
     await page.screenshot({path:'reference/hero-business-mobile.png'});

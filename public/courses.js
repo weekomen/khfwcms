@@ -24,8 +24,80 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   const grid = make('div', 'course-grid'); grid.id = 'course-grid';
   const toggle = make('button', 'team-toggle'); toggle.type = 'button'; toggle.setAttribute('aria-controls', 'course-grid');
   const count = make('p', 'course-count'); count.setAttribute('role', 'status');
-  const footer = make('div', 'course-footer'); footer.append(make('p', 'muted', '点击课程详情，即可了解课程介绍与学习内容。'));
+  const footer = make('div', 'course-footer'); footer.append(make('p', 'muted', '点击课程封面，即可了解课程介绍与学习内容。'));
   const categoryFallbackCover = category => categoryCovers.get(category) || (images[category] ? `/assets/course-${images[category]}.webp` : '');
+  function openCourse(course, cover, longImage) {
+    const title = make('h2', '', course.title); title.id = 'course-dialog-title';
+    const nodes = [make('div', 'eyebrow', canonical(course.category) + ' / 课程介绍'), title];
+    const overview = make('section', 'course-overview');
+    overview.append(make('h3', 'course-detail-heading', '课程简介'), make('p', 'course-description', course.description || course.summary || '课程简介待补充。'));
+    const grades = make('dl', 'course-grades');
+    grades.append(make('dt', '', '适用年级'), make('dd', '', String(course.grades || '').trim() || '待补充'));
+    if (!course.featured) overview.append(grades);
+    nodes.push(overview);
+    if (course.videoUrl?.startsWith('https://')) {
+      const url = new URL(course.videoUrl);
+      nodes.push(make('h3', 'course-detail-heading', '课程介绍视频'));
+      if (/\.(mp4|webm)$/i.test(url.pathname)) {
+        const video = make('video', 'course-intro-video');
+        video.src = url.href;
+        video.controls = true;
+        video.preload = 'metadata';
+        video.playsInline = true;
+        nodes.push(video);
+      }
+      const videoLink = make('a', 'text-link', '在新标签页打开视频 ↗');
+      videoLink.href = url.href;
+      videoLink.target = '_blank';
+      videoLink.rel = 'noopener noreferrer';
+      nodes.push(videoLink);
+    }
+    if (cover && !course.featured) {
+      const coverImage = make('img', 'course-detail-cover'); coverImage.src = cover; coverImage.alt = `${course.title || ''}课程封面`; coverImage.loading = 'eager'; coverImage.decoding = 'async';
+      nodes.push(coverImage);
+    }
+    if (longImage) {
+      const figure = make('figure', 'course-long-image-wrap');
+      const link = make('a', 'course-long-image-link'); link.href = longImage; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.title = '打开课程长图原图';
+      const image = make('img', 'course-long-image'); image.src = longImage; image.alt = `${course.title || ''}课程介绍长图`; image.loading = 'eager'; image.decoding = 'async';
+      link.append(image); figure.append(link, make('figcaption', 'course-image-caption', '点击图片查看清晰原图')); nodes.push(figure);
+    }
+    const outline = String(course.outline || '').split('\n').map(line => line.trim()).filter(Boolean);
+    if (outline.length) { const list = make('ul', 'course-outline'); outline.forEach(line => list.append(make('li', '', line))); nodes.push(make('h3', 'course-detail-heading', '学习内容'), list); }
+    const detailDialog = document.getElementById('detail');
+    if (detailDialog) {
+      detailDialog.classList.add('course-detail-dialog');
+      detailDialog.addEventListener('close', () => detailDialog.classList.remove('course-detail-dialog'), { once: true });
+    }
+    showDetail(nodes);
+  }
+  function courseCard(course, category) {
+    const card = make('article', 'course-card');
+    const cover = normalizeImage(course.cover || course.image) || categoryFallbackCover(category);
+    const button = make('button', cover ? 'course-cover-button' : 'text-link', cover ? undefined : '打开课程介绍');
+    button.type = 'button';
+    button.setAttribute('aria-label', `查看${course.title}课程详情`);
+    if (cover) {
+      const image = make('img', 'course-thumb');
+      image.src = cover;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      button.append(image);
+    }
+    button.onclick = () => openCourse(course, cover, normalizeImage(course.longImage));
+    card.append(button, make('h4', '', course.title), make('p', '', course.summary || ''));
+    return card;
+  }
+  const promotions = make('section', 'course-promotions');
+  promotions.setAttribute('aria-label', '特色课程服务');
+  if (options.featured) {
+    const featured = [
+      { title: '家长会员课程', summary: '了解家长会员服务与家庭学习支持。', cover: '/assets/course-promo-membership.webp', longImage: '/assets/poster-parent-membership.webp' },
+      { title: '外教口语一对一', summary: '25 分钟真人外教一对一口语练习。', cover: '/assets/course-promo-english.webp', longImage: '/assets/poster-one-to-one-english.webp' }
+    ];
+    featured.forEach(course => promotions.append(courseCard({ ...course, category: '特色课程服务', featured: true })));
+  }
   function render() {
     const matches = courses.filter(course => canonical(course.category) === selected);
     const previewCount = mobile.matches ? 3 : 6;
@@ -35,62 +107,7 @@ window.renderCourses = (courses, showDetail, options = {}) => {
     if (bannerCover) { const image = make('img', 'course-banner-image'); image.src = bannerCover; image.alt = `${selected}课程配图`; image.loading = 'lazy'; banner.append(image); }
     const copy = make('div', 'course-banner-copy'); copy.append(make('div', 'eyebrow', 'COURSE COLLECTION / 课程资源'), make('h3', '', selected), make('p', '', categoryDescriptions.get(selected) ?? descriptions[selected] ?? '探索多样化课程，发现更多兴趣与可能。')); banner.append(copy);
     grid.replaceChildren();
-    matches.slice(0, expanded ? matches.length : previewCount).forEach(course => {
-      const card = make('article', 'course-card');
-      // The cover is a separate, short image chosen for the course card.  Keep
-      // `image` as a migration fallback, but never use the long detail image as
-      // a thumbnail: tall posters become unreadably small when cropped here.
-      const cover = normalizeImage(course.cover || course.image) || categoryFallbackCover(selected);
-      const longImage = normalizeImage(course.longImage);
-      if (cover) { const thumb = make('img', 'course-thumb'); thumb.src = cover; thumb.alt = course.title || ''; thumb.loading = 'lazy'; thumb.decoding = 'async'; card.append(thumb); }
-      card.append(make('h4', '', course.title), make('p', '', course.summary || ''));
-      const button = make('button', 'text-link course-detail-button', '查看课程详情 →'); button.type = 'button'; button.setAttribute('aria-label', `查看${course.title}课程详情`);
-      button.onclick = () => {
-        const title = make('h2', '', course.title); title.id = 'course-dialog-title';
-        const nodes = [make('div', 'eyebrow', canonical(course.category) + ' / 课程介绍'), title];
-        const overview = make('section', 'course-overview');
-        overview.append(make('h3', 'course-detail-heading', '课程简介'), make('p', 'course-description', course.description || course.summary || '课程简介待补充。'));
-        const grades = make('dl', 'course-grades');
-        grades.append(make('dt', '', '适用年级'), make('dd', '', String(course.grades || '').trim() || '待补充'));
-        overview.append(grades); nodes.push(overview);
-        if (course.videoUrl?.startsWith('https://')) {
-          const url = new URL(course.videoUrl);
-          nodes.push(make('h3', 'course-detail-heading', '课程介绍视频'));
-          if (/\.(mp4|webm)$/i.test(url.pathname)) {
-            const video = make('video', 'course-intro-video');
-            video.src = url.href;
-            video.controls = true;
-            video.preload = 'metadata';
-            video.playsInline = true;
-            nodes.push(video);
-          }
-          const videoLink = make('a', 'text-link', '在新标签页打开视频 ↗');
-          videoLink.href = url.href;
-          videoLink.target = '_blank';
-          videoLink.rel = 'noopener noreferrer';
-          nodes.push(videoLink);
-        }
-        if (cover) {
-          const coverImage = make('img', 'course-detail-cover'); coverImage.src = cover; coverImage.alt = `${course.title || ''}课程封面`; coverImage.loading = 'eager'; coverImage.decoding = 'async';
-          nodes.push(coverImage);
-        }
-        if (longImage) {
-          const figure = make('figure', 'course-long-image-wrap');
-          const link = make('a', 'course-long-image-link'); link.href = longImage; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.title = '打开课程长图原图';
-          const image = make('img', 'course-long-image'); image.src = longImage; image.alt = `${course.title || ''}课程介绍长图`; image.loading = 'eager'; image.decoding = 'async';
-          link.append(image); figure.append(link, make('figcaption', 'course-image-caption', '点击图片查看清晰原图')); nodes.push(figure);
-        }
-        const outline = String(course.outline || '').split('\n').map(line => line.trim()).filter(Boolean);
-        if (outline.length) { const list = make('ul', 'course-outline'); outline.forEach(line => list.append(make('li', '', line))); nodes.push(make('h3', 'course-detail-heading', '学习内容'), list); }
-        const detailDialog = document.getElementById('detail');
-        if (detailDialog) {
-          detailDialog.classList.add('course-detail-dialog');
-          detailDialog.addEventListener('close', () => detailDialog.classList.remove('course-detail-dialog'), { once: true });
-        }
-        showDetail(nodes);
-      };
-      card.append(button); grid.append(card);
-    });
+    matches.slice(0, expanded ? matches.length : previewCount).forEach(course => grid.append(courseCard(course, selected)));
     count.textContent = `${selected} · 共 ${matches.length} 门课程`;
     toggle.hidden = matches.length <= previewCount; toggle.textContent = expanded ? '收起课程 ↑' : `展开全部 ${matches.length} 门课程 ↓`; toggle.setAttribute('aria-expanded', String(expanded));
   }
@@ -103,5 +120,5 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   categories.forEach(category => { const button = make('button', '', category); button.type = 'button'; button.dataset.category = category; button.onclick = () => window.selectCourseCategory(category); filters.append(button); });
   toggle.onclick = () => { expanded = !expanded; render(); };
   mobile.addEventListener('change', render);
-  root.hidden = false; root.replaceChildren(filters, banner, count, grid, toggle, footer); render();
+  root.hidden = false; root.replaceChildren(...(options.featured ? [promotions] : []), filters, banner, count, grid, toggle, footer); render();
 };
