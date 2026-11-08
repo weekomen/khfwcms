@@ -40,6 +40,11 @@ async function readJson(req) {
 function validateSubmission(body) {
   if (typeof body.name !== 'string' || /[\x00-\x1f\x7f]/.test(body.name)) throw fail(400, '请填写有效姓名');
   const name = body.name.trim();
+  const rawCompany = body.company === undefined ? '' : body.company;
+  if (typeof rawCompany !== 'string' || /[\x00-\x1f\x7f]/.test(rawCompany) || rawCompany.length > 100) {
+    throw fail(400, '请填写有效公司名称，最多 100 个字符');
+  }
+  const company = rawCompany.trim();
   if ([...name].length < 1 || [...name].length > 40) throw fail(400, '姓名请填写 1–40 个字符');
   const phone = typeof body.phone === 'string' ? body.phone.replace(/[\s-]/g, '').replace(/^(?:\+86|0086)/, '') : '';
   if (!/^1[3-9]\d{9}$/.test(phone)) throw fail(400, '请填写有效的 11 位手机号码');
@@ -47,7 +52,7 @@ function validateSubmission(body) {
   if (body.website !== undefined && typeof body.website !== 'string') throw fail(400, '提交格式不正确');
   const page = body.page === undefined ? '/' : body.page;
   if (typeof page !== 'string' || page.length > 300 || !page.startsWith('/') || page.startsWith('//') || /[\\\x00-\x1f\x7f]/.test(page)) throw fail(400, '咨询来源不正确');
-  return { name, phone, page: page.split('#')[0], honeypot: !!body.website?.trim() };
+  return { name, company, phone, page: page.split('#')[0], honeypot: !!body.website?.trim() };
 }
 
 export async function createConsultations({ dataDir, env = process.env, now = Date.now }) {
@@ -110,7 +115,7 @@ export async function createConsultations({ dataDir, env = process.env, now = Da
         if (!submission.honeypot) await enqueue(async () => {
           if (items.some(item => item.phone === submission.phone && now() - Date.parse(item.createdAt) < DUPLICATE_MS)) return;
           if (items.length >= MAX_RECORDS) throw fail(503, '咨询暂时无法提交，请通过官网联系方式与我们联系');
-          const item = { id: randomBytes(16).toString('hex'), name: submission.name, phone: submission.phone, page: submission.page, createdAt: new Date(now()).toISOString(), status: 'new' };
+          const item = { id: randomBytes(16).toString('hex'), name: submission.name, company: submission.company, phone: submission.phone, page: submission.page, createdAt: new Date(now()).toISOString(), status: 'new' };
           await persist([...items, item]);
         });
         send(201, { ok: true }); return true;

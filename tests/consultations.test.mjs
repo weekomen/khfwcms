@@ -62,13 +62,13 @@ test('consultations validate, persist privately across concurrent writes and res
   for (const requestHeaders of [
     { Origin: 'https://other.example' }, {}, { Origin: origin, 'Sec-Fetch-Site': 'cross-site' }
   ]) assert.equal((await api('/api/consultations', { method: 'POST', headers: { 'Content-Type': 'application/json', ...requestHeaders }, body: JSON.stringify(submission(1)) })).status, 403);
-  for (const invalid of [{ name: '' }, { name: '姓名\n换行' }, { phone: '123' }, { consent: false }, { page: '//other.example' }]) {
+  for (const invalid of [{ name: '' }, { name: '姓名\n换行' }, { company: 123 }, { company: '字'.repeat(101) }, { phone: '123' }, { consent: false }, { page: '//other.example' }]) {
     assert.equal((await submit(submission(1, invalid))).status, 400);
   }
   assert.equal((await api('/api/consultations', { method: 'POST', headers: { Origin: origin }, body: '{}' })).status, 415);
   assert.equal((await api('/api/consultations', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: 'x'.repeat(4097) })).status, 413);
   assert.equal((await api('/api/consultations', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: '{' })).status, 400);
-  assert.equal((await submit(submission(1, { phone: '+86 138-0000-0001' }))).status, 201);
+  assert.equal((await submit(submission(1, { phone: '+86 138-0000-0001', company: ' 测试公司 ' }))).status, 201);
   const concurrent = await Promise.all([2, 3, 4].map(index => submit(submission(index))));
   concurrent.forEach(response => assert.equal(response.status, 201));
   assert.equal((await submit(submission(1))).status, 201);
@@ -93,6 +93,7 @@ test('consultations validate, persist privately across concurrent writes and res
   let session = await login(password);
   const list = await (await api('/api/admin/consultations', { headers: headers(session) })).json();
   assert.equal(list.items.length, 4);
+  assert.equal(list.items.find(item => item.phone === '13800000001').company, '测试公司');
   const id = list.items[0].id;
   assert.equal((await api(`/api/admin/consultations/${id}`, { method: 'PATCH', headers: { Origin: origin, Cookie: session.cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'contacted' }) })).status, 403);
   assert.equal((await api(`/api/admin/consultations/${id}`, { method: 'PATCH', headers: headers(session), body: JSON.stringify({ status: 'invalid' }) })).status, 400);

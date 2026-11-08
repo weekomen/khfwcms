@@ -690,6 +690,7 @@ function renderConsultations(target, view) {
       const phone = el('dd');
       if (/^1[3-9]\d{9}$/.test(item.phone || '')) { const link = el('a', '', item.phone); link.href = 'tel:' + item.phone; phone.append(link); }
       else phone.textContent = item.phone || '—';
+      detail('公司名称', el('dd', '', item.company || '未填写'));
       detail('联系电话', phone);
       const date = new Date(item.createdAt);
       detail('提交时间', el('dd', '', Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('zh-CN', { hour12: false })));
