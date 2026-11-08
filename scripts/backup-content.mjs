@@ -18,8 +18,9 @@ export function preparePublicContent(source, manifest = eventManifest) {
   const imageCollections = [
     ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
     ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
-    ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
+    ['courses', ['cover', 'longImage']], ['featuredCourses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
   ];
+  for (const course of [...(content.courses || []), ...(content.featuredCourses || [])]) delete course.videoFile;
   const uploadNames = new Set();
   if (uploadName.test(path.basename(content.site.heroImage || ''))) content.site.heroImage = '';
   for (const [collection, fields] of imageCollections) for (const item of content[collection] || []) for (const field of fields) {

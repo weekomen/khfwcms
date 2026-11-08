@@ -66,7 +66,7 @@
     document.querySelectorAll('[data-library-year]').forEach(node => { node.textContent = String(new Date().getFullYear()); });
     if (view === 'courses') {
       const courses = list(data.courses);
-      window.renderCourses(courses, detail, { categories: list(data.courseCategories), featured: true });
+      window.renderCourses(courses, detail, { categories: list(data.courseCategories), featured: list(data.featuredCourses) });
       if (!courses.length) { $('#library-status').textContent = '课程内容正在整理，欢迎稍后查看。'; return; }
       const category = new URLSearchParams(location.search).get('category');
       if (category) window.selectCourseCategory(category);

@@ -8,6 +8,7 @@ data/admin-auth.json.*
 .env.*
 data/*.tmp
 data/uploads/
+data/videos/
 reference/image*
 reference/contact.jpg
 test-results/

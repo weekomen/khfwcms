@@ -153,6 +153,18 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   assert.equal((await api('/data/admin-auth.json')).status, 404);
   assert.equal((await (await api('/api/content')).json()).news.length, 0);
   const content = await (await api('/api/admin/content', { headers })).json();
+  const videoHeaders = { ...headers, 'Content-Type': 'video/mp4' };
+  const video = Buffer.from('0000ftypisom');
+  assert.equal((await api('/api/admin/videos', { method: 'POST', headers: videoHeaders, body: 'invalid' })).status, 400);
+  assert.equal((await api('/api/admin/videos', { method: 'POST', headers: { 'Content-Type': 'video/mp4' }, body: video })).status, 403);
+  const videoUpload = await api('/api/admin/videos', { method: 'POST', headers: videoHeaders, body: video });
+  assert.equal(videoUpload.status, 201);
+  const { url: videoFile } = await videoUpload.json();
+  const partial = await api(videoFile, { headers: { Range: 'bytes=4-7' } });
+  assert.equal(partial.status, 206);
+  assert.equal(partial.headers.get('content-type'), 'video/mp4');
+  assert.equal(await partial.text(), 'ftyp');
+  content.featuredCourses[0].videoFile = videoFile;
   content.team[0].image = uploaded.url;
   content.courses[0].cover = uploaded.url;
   content.courses[0].longImage = '/assets/image5.webp';
@@ -164,6 +176,7 @@ test('legacy login migration, CSRF, CMS publication and persistence, and session
   content.news[0] = { ...content.news[0], title: '已发布测试文章', published: true, body: '测试内容', date: '2026-09-23' };
   assert.equal((await api('/api/admin/content', { method: 'PUT', headers, body: JSON.stringify(content) })).status, 200);
   const published = await (await api('/api/content')).json();
+  assert.equal(published.featuredCourses[0].videoFile, videoFile);
   assert.equal(published.news.length, 1);
   assert.equal(published.news[0].title, '已发布测试文章');
   assert.equal((await api('/api/admin/content', { method: 'PUT', headers, body: '{}' })).status, 400);

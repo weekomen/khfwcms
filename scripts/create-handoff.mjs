@@ -24,10 +24,10 @@ export const requiredFiles = [
 ];
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
 const knownFields = {
-  root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'],
+  root: ['site', 'services', 'courses', 'featuredCourses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'],
   site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing', 'heroImage'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
-  courses: ['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl'],
+  courses: ['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl', 'videoFile'],
   team: ['name', 'role', 'bio', 'category', 'image'],
   news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published', 'group', 'image', 'longImage'],
   navigation: ['id', 'label', 'href', 'children', 'target', 'action', 'value'],
@@ -48,8 +48,8 @@ export function validatePublicData(content, label) {
   };
   checkKeys(content, knownFields.root, 'root');
   checkKeys(content.site, knownFields.site, 'site');
-  for (const collection of ['services', 'courses', 'team', 'news', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages']) {
-    for (const [index, item] of (content[collection] || []).entries()) checkKeys(item, knownFields[collection], `${collection}[${index}]`);
+  for (const collection of ['services', 'courses', 'featuredCourses', 'team', 'news', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages']) {
+    for (const [index, item] of (content[collection] || []).entries()) checkKeys(item, knownFields[collection === 'featuredCourses' ? 'courses' : collection], `${collection}[${index}]`);
   }
   for (const [index, item] of (content.navigation || []).entries()) {
     checkKeys(item, knownFields.navigation, `navigation[${index}]`);
@@ -86,7 +86,7 @@ export function isAllowedPath(file, referencedUploads = new Set()) {
 const imageCollections = [
   ['team', ['image']], ['news', ['image', 'longImage']], ['aboutPages', ['image', 'longImage']],
   ['businessPages', ['image', 'longImage']], ['courseCategories', ['image', 'longImage']],
-  ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
+  ['courses', ['cover', 'longImage']], ['featuredCourses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
 ];
 function imageReferences(content) {
   const references = [];

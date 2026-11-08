@@ -1,5 +1,6 @@
 import http from 'node:http';
-import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { readFile, writeFile, mkdir, rename, open, unlink, stat } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +20,9 @@ validateContent(seedContent);
 // A missing archive must never turn a legacy album into a managed empty list.
 let eventManifest = null;
 try { eventManifest = JSON.parse(await readFile(path.join(root, 'public/assets/events/manifest.json'), 'utf8')); } catch { }
-const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'];
+const defaultCollections = ['navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages', 'featuredCourses'];
+const legacyTeamCategories = new Set(['管理团队', '技术团队', '运营团队', '职能团队', '教学团队']);
+const teamDepartments = new Map(seedContent.team.map(member => [member.name, member.category]));
 function withDefaultCollections(content) {
   for (const key of defaultCollections) {
     // This is an in-memory migration for old content.json files. It never
@@ -31,12 +34,20 @@ function withDefaultCollections(content) {
   // files readable while exposing the new field to the admin editor; the
   // administrator can explicitly save it when a cover is selected.
   for (const course of content.courses || []) if (course && typeof course === 'object') course.cover ??= '';
+  for (const member of content.team || []) {
+    if (legacyTeamCategories.has(member.category) && teamDepartments.has(member.name)) {
+      member.category = teamDepartments.get(member.name);
+    }
+  }
   return applyEventAlbumDefaults(applyAllianceDefaults(applyBusinessDefaults(content)), eventManifest);
 }
 try { await readFile(contentPath); } catch { await writeFile(contentPath, JSON.stringify(seedContent, null, 2) + '\n'); }
 const adminAuth = await createAdminAuth({ dataDir });
 const consultations = await createConsultations({ dataDir });
 let writing = Promise.resolve();
+const videoLimit = 50 * 1024 * 1024;
+const videoTypes = { 'video/mp4': 'mp4', 'video/webm': 'webm' };
+const mediaDir = path.join(dataDir, 'videos');
 const mime = { '.pdf': 'application/pdf', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -49,6 +60,35 @@ const server = http.createServer(async (req, res) => {
       if (await adminAuth.handle(req, res, url, send)) return;
     }
     if (await consultations.handle(req, res, url, send)) return;
+    if (url.pathname === '/api/admin/videos') {
+      if (req.method !== 'POST') return send(405, { error: '不支持此操作' });
+      const type = req.headers['content-type'];
+      const extension = Object.hasOwn(videoTypes, type) ? videoTypes[type] : '';
+      if (!extension) return send(415, { error: '请选择 MP4 或 WebM 视频' });
+      if (Number(req.headers['content-length']) > videoLimit) return send(413, { error: '视频不能超过 50 MB' });
+      await mkdir(mediaDir, { recursive: true });
+      const name = `course-${randomBytes(16).toString('hex')}.${extension}`;
+      const destination = path.join(mediaDir, name);
+      const temporary = destination + '.tmp';
+      try {
+        const file = await open(temporary, 'wx+');
+        try {
+          let size = 0;
+          for await (const chunk of req) {
+            size += chunk.length;
+            if (size > videoLimit) return send(413, { error: '视频不能超过 50 MB' });
+            await file.writeFile(chunk);
+          }
+          const header = Buffer.alloc(12);
+          await file.read(header, 0, header.length, 0);
+          const valid = extension === 'mp4' ? header.toString('ascii', 4, 8) === 'ftyp' :
+            header.readUInt32BE(0) === 0x1a45dfa3;
+          if (size < header.length || !valid) return send(400, { error: '视频文件格式无效' });
+        } finally { await file.close(); }
+        await rename(temporary, destination);
+        return send(201, { url: `/media/${name}` });
+      } finally { await unlink(temporary).catch(() => {}); }
+    }
     if (url.pathname === '/api/admin/images') {
       if (req.method !== 'POST') return send(405, { error: '不支持此操作' });
       const limit = 5 * 1024 * 1024;
@@ -86,6 +126,35 @@ const server = http.createServer(async (req, res) => {
       writing = job.catch(() => { }); await job; return send(200, { ok: true });
     }
     if (!['GET', 'HEAD'].includes(req.method)) return send(405, { error: '不支持此操作' });
+    if (/^\/media\/course-[a-f0-9]{32}\.(mp4|webm)$/.test(url.pathname)) {
+      const file = path.join(mediaDir, path.basename(url.pathname));
+      const { size } = await stat(file);
+      let start = 0, end = size - 1;
+      const headers = {
+        'Content-Type': file.endsWith('.mp4') ? 'video/mp4' : 'video/webm',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      };
+      const range = req.headers.range;
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (match && (match[1] || match[2])) {
+          start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+          if (match[1] && match[2]) end = Math.min(end, Number(match[2]));
+        }
+        if (!match || !(match[1] || match[2]) || start > end) {
+          res.writeHead(416, { 'Content-Range': `bytes */${size}` });
+          return res.end();
+        }
+        headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
+      }
+      res.writeHead(range ? 206 : 200, { ...headers, 'Content-Length': end - start + 1 });
+      if (req.method === 'HEAD') return res.end();
+      const stream = createReadStream(file, { start, end });
+      res.on('close', () => stream.destroy());
+      stream.on('error', () => res.destroy());
+      return stream.pipe(res);
+    }
     if (/^\/assets\/upload-[a-f0-9]{32}\.(png|jpg|webp)$/.test(url.pathname)) {
       const buffer = await readFile(path.join(dataDir, 'uploads', path.basename(url.pathname)));
       res.writeHead(200, { 'Content-Type': mime[path.extname(url.pathname)], 'Cache-Control': 'public, max-age=31536000, immutable' });

@@ -183,6 +183,7 @@ function newsGroupForCategory(category) {
 }
 function ensureDataShape() {
   data.courses ||= [];
+  data.featuredCourses ||= [];
   ARRAY_TABS.forEach(key => {
     if (!Array.isArray(data[key])) data[key] = key === 'alliancePages' && data[key] && typeof data[key] === 'object' ? Object.values(data[key]) : [];
   });
@@ -535,7 +536,7 @@ function collectionFields(collection, item) {
   if (collection === 'alliancePages') return [['id', '页面 ID', 'text', false, { readOnly: FIXED_ALLIANCE_IDS.has(item.id) }], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['grades', '适用年级'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['videoUrl', '介绍视频 HTTPS 链接（MP4、WebM 或视频页面）', 'url', true], ['page', '课程手册页码', 'number']];
-  if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
+  if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类', 'select', false, { choices: [...new Set([...TEAM_DEPARTMENTS, item.category].filter(Boolean))].map(value => ({ value, label: value })) }], ['bio', '个人介绍', 'textarea', true]];
   if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'contactTopics') return [['id', '栏目 ID'], ['title', '栏目名称'], ['description', '栏目说明', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
@@ -553,7 +554,65 @@ function collectionDefault(collection) {
   if (collection === 'contactTopics') return { id: newId('contact'), title: '新联系栏目', description: '', order: 0, published: true };
   return {};
 }
+const TEAM_DEPARTMENTS = ["总经办","流量运营中心","产品管理中心","课程供应链中心","品牌运营中心","市场运营中心","技术开发中心","人力资源中心","师资管理中心","学科教师团队","综合素养教师团队"];
+function courseVideoPicker(course) {
+  const box = el('div', 'photo-picker');
+  const upload = el('button', 'add', '上传介绍视频');
+  upload.type = 'button';
+  const remove = el('button', 'remove', '移除已上传视频');
+  remove.type = 'button';
+  remove.hidden = !course.videoFile;
+  const input = el('input');
+  input.type = 'file';
+  input.accept = 'video/mp4,video/webm,.mp4,.webm';
+  input.hidden = true;
+  const note = el('p', 'photo-help', course.videoFile ? '已添加视频。保存后在课程详情中播放。' : '支持 MP4、WebM，单个不超过 50 MB。');
+  note.setAttribute('role', 'status');
+  upload.onclick = () => input.click();
+  remove.onclick = () => {
+    if (uploading || saving) return;
+    delete course.videoFile;
+    remove.hidden = true;
+    note.textContent = '已移除。保存后更新官网。';
+    changed();
+  };
+  input.onchange = async () => {
+    const file = input.files[0];
+    input.value = '';
+    if (!file || uploading || saving) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['mp4', 'webm'].includes(ext) || file.size > 50 * 1024 * 1024) {
+      note.textContent = '请选择不超过 50 MB 的 MP4 或 WebM 视频。';
+      return;
+    }
+    setUploading(true);
+    upload.disabled = true;
+    note.textContent = '正在上传视频…';
+    try {
+      const result = await apiRequest('/api/admin/videos', 'POST', file, 'video/' + ext);
+      course.videoFile = result.url;
+      remove.hidden = false;
+      changed();
+      note.textContent = '上传成功。保存后在课程详情中播放。';
+    } catch (error) {
+      note.textContent = error.message || '视频上传失败，请重试。';
+    } finally {
+      upload.disabled = false;
+      setUploading(false);
+    }
+  };
+  box.append(upload, remove, input, note);
+  return box;
+}
 function renderCollection(target, collection) {
+  if (collection === 'courses') {
+    target.append(el('h2', '', '特色课程'));
+    renderCollection(target, 'featuredCourses');
+    target.append(el('h2', '', '普通课程'));
+  }
+  const fieldCollection = collection === 'featuredCourses' ? 'courses' : collection;
+  const newRecord = () => collectionDefault(fieldCollection);
+
   const notes = {
     aboutPages: '编辑“关于课后邦”下的集团介绍、公司展册、课程手册、一校一案和核心团队页面。',
     businessPages: '维护七大核心业务与六个详情页面。七大核心业务的封面同时用于首页业务切换图，两项进校业务的摘要用于首页整体介绍，且仅保留切换图 / 封面图上传。标题、摘要、正文和图片均可编辑。固定入口 ID 只读，修改后点击保存。',
@@ -571,13 +630,13 @@ function renderCollection(target, collection) {
     remove.onclick = () => { if (confirm(`确定删除“${name}”？保存后生效。`)) { removeRecord(data[collection], item); } };
     const fixedPage = (collection === 'businessPages' && FIXED_BUSINESS_IDS.has(item.id)) || (collection === 'alliancePages' && FIXED_ALLIANCE_IDS.has(item.id));
     heading.append(el('h2', '', `${String(index + 1).padStart(2, '0')} / ${name}`)); if (!fixedPage) heading.append(remove); card.append(heading);
-    card.append(reorderControls(data[collection], item, { insert: () => insertRecord(data[collection], collectionDefault(collection), index) }));
-    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ...(['supply-chain', 'ai-school-supply'].includes(item.id) ? [] : [['longImage', '长图']])] : collection === 'courseCategories' ? [['image', '封面图']] : collection === 'alliancePages' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : collection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
+    card.append(reorderControls(data[collection], item, { insert: () => insertRecord(data[collection], newRecord(), index) }));
+    const imageKeys = collection === 'team' ? [['image', '成员照片']] : collection === 'businessPages' ? [['image', CORE_BUSINESS_IDS.includes(item.id) ? '首页切换图 / 封面图' : '封面图'], ...(['supply-chain', 'ai-school-supply'].includes(item.id) ? [] : [['longImage', '长图']])] : collection === 'courseCategories' ? [['image', '封面图']] : collection === 'alliancePages' || collection === 'venturePages' ? [['image', '封面图'], ['longImage', '长图']] : fieldCollection === 'courses' ? [['cover', '课程封面'], ['longImage', '课程长图']] : [];
     imageKeys.forEach(([key, label]) => card.append(photoPicker(item, key, label)));
-    const grid = el('div', 'form-grid'); collectionFields(collection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); if (collection === 'venturePages') card.append(albumEditor(item)); target.append(card);
+    const grid = el('div', 'form-grid'); collectionFields(fieldCollection, item).forEach(([key, label, type, wide, options]) => field(grid, item, key, label, type, wide, options || {})); card.append(grid); if (fieldCollection === 'courses') card.append(courseVideoPicker(item)); if (collection === 'venturePages') card.append(albumEditor(item)); target.append(card);
   });
-  const labels = { aboutPages: '页面', businessPages: '业务', alliancePages: '联盟页面', courseCategories: '课程分类', courses: '课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目' };
-  const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { insertRecord(data[collection], collectionDefault(collection)); }; target.append(add);
+  const labels = { aboutPages: '页面', businessPages: '业务', alliancePages: '联盟页面', courseCategories: '课程分类', courses: '课程', featuredCourses: '特色课程', team: '成员', news: '文章', venturePages: '页面', contactTopics: '联系栏目' };
+  const add = el('button', 'add', '+ 新增' + labels[collection]); add.onclick = () => { insertRecord(data[collection], newRecord()); }; target.append(add);
 }
 function consultationPage(value) {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20]/.test(value) || value.length > 500) return '';

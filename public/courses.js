@@ -33,10 +33,11 @@ window.renderCourses = (courses, showDetail, options = {}) => {
     overview.append(make('h3', 'course-detail-heading', '课程简介'), make('p', 'course-description', course.description || course.summary || '课程简介待补充。'));
     const grades = make('dl', 'course-grades');
     grades.append(make('dt', '', '适用年级'), make('dd', '', String(course.grades || '').trim() || '待补充'));
-    if (!course.featured) overview.append(grades);
+    if (!course.featured || course.grades?.trim()) overview.append(grades);
     nodes.push(overview);
-    if (course.videoUrl?.startsWith('https://')) {
-      const url = new URL(course.videoUrl);
+    const videoSource = course.videoFile || course.videoUrl;
+    if (videoSource) {
+      const url = new URL(videoSource, location.origin);
       nodes.push(make('h3', 'course-detail-heading', '课程介绍视频'));
       if (/\.(mp4|webm)$/i.test(url.pathname)) {
         const video = make('video', 'course-intro-video');
@@ -91,13 +92,7 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   }
   const promotions = make('section', 'course-promotions');
   promotions.setAttribute('aria-label', '特色课程服务');
-  if (options.featured) {
-    const featured = [
-      { title: '家长会员课程', summary: '了解家长会员服务与家庭学习支持。', cover: '/assets/course-promo-membership.webp', longImage: '/assets/poster-parent-membership.webp' },
-      { title: '外教口语一对一', summary: '25 分钟真人外教一对一口语练习。', cover: '/assets/course-promo-english.webp', longImage: '/assets/poster-one-to-one-english.webp' }
-    ];
-    featured.forEach(course => promotions.append(courseCard({ ...course, category: '特色课程服务', featured: true })));
-  }
+  for (const course of options.featured || []) promotions.append(courseCard({ ...course, featured: true }, course.category));
   function render() {
     const matches = courses.filter(course => canonical(course.category) === selected);
     const previewCount = mobile.matches ? 3 : 6;
@@ -120,5 +115,5 @@ window.renderCourses = (courses, showDetail, options = {}) => {
   categories.forEach(category => { const button = make('button', '', category); button.type = 'button'; button.dataset.category = category; button.onclick = () => window.selectCourseCategory(category); filters.append(button); });
   toggle.onclick = () => { expanded = !expanded; render(); };
   mobile.addEventListener('change', render);
-  root.hidden = false; root.replaceChildren(...(options.featured ? [promotions] : []), filters, banner, count, grid, toggle, footer); render();
+  root.hidden = false; root.replaceChildren(...(promotions.childElementCount ? [promotions] : []), filters, banner, count, grid, toggle, footer); render();
 };

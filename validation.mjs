@@ -8,7 +8,7 @@
  */
 
 const TOP_LEVEL_KEYS = new Set([
-  'site', 'services', 'team', 'news', 'courses', 'navigation',
+  'site', 'services', 'team', 'news', 'courses', 'featuredCourses', 'navigation',
   'aboutPages', 'businessPages', 'courseCategories', 'newsCategories',
   'venturePages', 'contactTopics', 'alliancePages'
 ]);
@@ -107,7 +107,7 @@ function validateTeam(team) {
 
 function validateCourses(courses) {
   list(courses, 200, '课程列表');
-  const allowed = new Set(['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl']);
+  const allowed = new Set(['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl', 'videoFile']);
   for (const course of courses) {
     object(course, '课程项目'); keys(course, allowed, '课程项目');
     for (const key of ['title', 'category', 'summary']) text(course[key], 10000, `courses.${key}`);
@@ -115,6 +115,10 @@ function validateCourses(courses) {
     optionalText(course.grades, 200, '课程适用年级');
     optionalAsset(course.cover, '课程封面');
     optionalAsset(course.longImage, '课程长图');
+    if (course.videoFile !== undefined && course.videoFile !== '' &&
+        (typeof course.videoFile !== 'string' || !/^\/media\/course-[a-f0-9]{32}\.(mp4|webm)$/.test(course.videoFile))) {
+      throw Error('课程视频文件路径无效');
+    }
     if (course.videoUrl !== undefined && course.videoUrl !== '') {
       href(course.videoUrl, '介绍视频链接');
       if (!course.videoUrl.startsWith('https://')) throw Error('介绍视频须使用 HTTPS 链接');
@@ -249,6 +253,7 @@ export function validateContent(content) {
   validateTeam(c.team);
   validateNews(c.news);
   if (c.courses !== undefined) validateCourses(c.courses);
+  if (c.featuredCourses !== undefined) validateCourses(c.featuredCourses);
   if (c.navigation !== undefined) validateNavigation(c.navigation);
   if (c.aboutPages !== undefined) validateAboutPages(c.aboutPages);
   if (c.businessPages !== undefined) pageRecords(c.businessPages, 20, ['title', 'summary', 'body'], { image: true, longImage: true, listLabel: '业务页面', itemLabel: '业务页面' });

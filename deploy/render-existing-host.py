@@ -45,6 +45,11 @@ additions = '''    # Company website: all legacy API, H5, profile and document l
         limit_req_status 429;
         INCLUDE_PROXY
     }
+    location = /api/admin/videos {
+        client_max_body_size 50m;
+        INCLUDE_PROXY
+    }
+    location ^~ /media/course- { INCLUDE_PROXY }
     location ^~ /api/admin/ {
         client_max_body_size 5m;
         INCLUDE_PROXY

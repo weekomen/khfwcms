@@ -391,7 +391,8 @@ sudo systemctl status khfwcms --no-pager
 | cpolar 后台提示仅允许本机或 HTTPS 站点 | 以当前 HTTPS 域名运行 `npm run start:cpolar -- https://当前域名`，核对转发端口、保留的公网 Host 与 `X-Forwarded-Proto: https`；域名变化后重启官网，不关闭来源校验 |
 | www 后台无法登录 | 先确认 www 已跳转到裸域；不要在两个域名分别打开不同后台副本 |
 | 429 登录限制 | 按 Retry-After 等待；排查失败请求来源和共享额度；不要通过关闭所有防护解决 |
-| 413 上传失败 | 应用最大 5 MiB，Nginx 模板同为 5m；检查实际图片大小和是否经过更小限制的网关 |
+| 413 上传失败 | 图片上限 5 MiB，课程视频上限 50 MiB。部署更新后的 Nginx 配置，检查上游网关的上传限制 |
+| 课程视频 404 | 将 `DATA_DIR/videos/` 纳入私有数据备份和迁移，确保 `/media/course-…` 转发至官网服务 |
 | 更新代码后内容变旧 | 核对 DATA_DIR 与 current；确认没有导入 seed/公开快照覆盖原数据 |
 | 上传图片 404 | 核对 content.json 中引用与 DATA_DIR/uploads，确保迁移时一并复制且服务用户可读 |
 | 课程手册/一校一案 404 或空白 | 检查 `/srv/kehoubang-documents/profile/upload/pdf/1/`、`2/` 及完整依赖是否迁移；核对专用 Nginx location、MIME 类型和浏览器 Network 错误，不能只复制入口 HTML |
