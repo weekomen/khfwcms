@@ -67,3 +67,13 @@
   .business-feature-copy h2 { margin: 8px 0 6px; font-size: 20px; line-height: 1.35; }
   .business-feature-copy p { margin-bottom: 10px; line-height: 1.6; }
 }
+.business-image-link {
+  display: block;
+}
+.business-image-link:focus-visible {
+  outline: 3px solid var(--accent, #2563eb);
+  outline-offset: 3px;
+}
+.business-image-link:hover img {
+  filter: brightness(1.07);
+}

@@ -474,7 +474,8 @@ function field(parent, obj, key, label, type = 'text', wide = false, options = {
 function photoPicker(item, key = 'image', label = '图片') {
   const box = el('div', 'photo-picker'); const button = el('button', 'photo-button'); button.type = 'button';
   const name = item.name || item.title || '页面'; button.setAttribute('aria-label', `上传${name}${label}`);
-  const img = el('img'); img.loading = 'lazy'; img.decoding = 'async'; img.src = item[key] || '/assets/logo.png'; img.alt = `${name}${label}`;
+  const fallbackImage = key === 'heroImage' ? '/assets/hero-office.jpg' : '/assets/logo.png';
+  const img = el('img'); img.loading = 'lazy'; img.decoding = 'async'; img.src = item[key] || fallbackImage; img.alt = `${name}${label}`;
   const caption = el('span', '', item[key] ? '点击更换' + label : '点击上传' + label); button.append(img, caption);
   const input = el('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp'; input.hidden = true;
   const message = el('p', 'photo-help', '支持 JPG、PNG、WebP，单张不超过 5 MB'); message.setAttribute('role', 'status');
@@ -533,7 +534,7 @@ function collectionFields(collection, item) {
   if (collection === 'businessPages') return [['id', '业务 ID', 'text', false, { readOnly: FIXED_BUSINESS_IDS.has(item.id) }], ['title', '业务名称'], ['summary', CORE_BUSINESS_IDS.includes(item.id) ? '首页整体介绍 / 业务摘要' : '详情页摘要', 'textarea', true], ['body', '业务介绍', 'textarea', true]];
   if (collection === 'alliancePages') return [['id', '页面 ID', 'text', false, { readOnly: FIXED_ALLIANCE_IDS.has(item.id) }], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'courseCategories') return [['id', '分类 ID'], ['title', '分类名称'], ['description', '分类说明', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
-  if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['grades', '适用年级'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['page', '课程手册页码', 'number']];
+  if (collection === 'courses') return [['title', '课程名称'], ['category', '课程分类'], ['grades', '适用年级'], ['summary', '卡片摘要', 'textarea', true], ['description', '详细介绍（弹窗）', 'textarea', true], ['outline', '学习内容（每行一项）', 'textarea', true], ['videoUrl', '介绍视频 HTTPS 链接（MP4、WebM 或视频页面）', 'url', true], ['page', '课程手册页码', 'number']];
   if (collection === 'team') return [['name', '成员姓名'], ['role', '岗位职称'], ['category', '团队分类'], ['bio', '个人介绍', 'textarea', true]];
   if (collection === 'news') return [['title', '文章标题'], ['category', '文章分类', 'text', false, { onChange: value => { item.group = newsGroupForCategory(value) || item.group; } }], ['date', '发布日期', 'date'], ['source', '公众号原文链接', 'url'], ['summary', '摘要', 'textarea', true], ['body', '文章正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
   if (collection === 'venturePages') return [['id', '页面 ID'], ['title', '页面标题'], ['summary', '页面摘要', 'textarea', true], ['body', '页面正文', 'textarea', true], ['published', '在官网公开发布', 'checkbox']];
@@ -668,7 +669,7 @@ function render() {
   if (tab === 'site') {
     target.append(el('p', 'admin-note', '编辑首页文案与联系信息。未填写的电话、邮箱、地址和备案信息不会显示在官网。'));
     const card = el('div', 'edit-card'); const grid = el('div', 'form-grid');
-    [['name', '品牌名称'], ['tagline', '品牌说明'], ['headline', '首页标题（换行显示）', 'textarea'], ['intro', '首页简介', 'textarea'], ['about', '公司介绍', 'textarea', true], ['phone', '合作电话'], ['email', '合作邮箱', 'email'], ['address', '公司地址'], ['filing', '备案信息']].forEach(([k, l, t, w]) => field(grid, data.site, k, l, t, w)); card.append(grid); target.append(card); return;
+    [['name', '品牌名称'], ['tagline', '品牌说明'], ['headline', '首页标题（换行显示）', 'textarea'], ['intro', '首页简介', 'textarea'], ['about', '公司介绍', 'textarea', true], ['phone', '合作电话'], ['email', '合作邮箱', 'email'], ['address', '公司地址'], ['filing', '备案信息']].forEach(([k, l, t, w]) => field(grid, data.site, k, l, t, w)); card.append(grid, photoPicker(data.site, 'heroImage', '首页主图')); target.append(card); return;
   }
   if (tab === 'navigation') return renderNavigation(target);
   if (tab === 'consultations') return renderConsultations(target, view);

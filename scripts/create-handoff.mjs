@@ -25,9 +25,9 @@ export const requiredFiles = [
 const uploadName = /^upload-[a-f0-9]{32}\.(png|jpg|webp)$/;
 const knownFields = {
   root: ['site', 'services', 'courses', 'team', 'news', 'navigation', 'aboutPages', 'businessPages', 'courseCategories', 'newsCategories', 'venturePages', 'contactTopics', 'alliancePages'],
-  site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing'],
+  site: ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing', 'heroImage'],
   services: ['title', 'subtitle', 'description', 'category', 'features'],
-  courses: ['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage'],
+  courses: ['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl'],
   team: ['name', 'role', 'bio', 'category', 'image'],
   news: ['id', 'title', 'category', 'date', 'summary', 'body', 'source', 'published', 'group', 'image', 'longImage'],
   navigation: ['id', 'label', 'href', 'children', 'target', 'action', 'value'],
@@ -90,6 +90,7 @@ const imageCollections = [
 ];
 function imageReferences(content) {
   const references = [];
+  if (content.site.heroImage) references.push(content.site.heroImage);
   for (const [collection, fields] of imageCollections) {
     for (const item of content[collection] || []) for (const field of fields) {
       if (typeof item[field] === 'string' && item[field]) references.push(item[field]);

@@ -21,6 +21,7 @@ export function preparePublicContent(source, manifest = eventManifest) {
     ['courses', ['cover', 'longImage']], ['venturePages', ['image', 'longImage']], ['alliancePages', ['image', 'longImage']]
   ];
   const uploadNames = new Set();
+  if (uploadName.test(path.basename(content.site.heroImage || ''))) content.site.heroImage = '';
   for (const [collection, fields] of imageCollections) for (const item of content[collection] || []) for (const field of fields) {
     if (typeof item[field] !== 'string') continue;
     const name = path.basename(item[field]);

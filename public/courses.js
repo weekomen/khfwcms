@@ -53,6 +53,23 @@ window.renderCourses = (courses, showDetail, options = {}) => {
         const grades = make('dl', 'course-grades');
         grades.append(make('dt', '', '适用年级'), make('dd', '', String(course.grades || '').trim() || '待补充'));
         overview.append(grades); nodes.push(overview);
+        if (course.videoUrl?.startsWith('https://')) {
+          const url = new URL(course.videoUrl);
+          nodes.push(make('h3', 'course-detail-heading', '课程介绍视频'));
+          if (/\.(mp4|webm)$/i.test(url.pathname)) {
+            const video = make('video', 'course-intro-video');
+            video.src = url.href;
+            video.controls = true;
+            video.preload = 'metadata';
+            video.playsInline = true;
+            nodes.push(video);
+          }
+          const videoLink = make('a', 'text-link', '在新标签页打开视频 ↗');
+          videoLink.href = url.href;
+          videoLink.target = '_blank';
+          videoLink.rel = 'noopener noreferrer';
+          nodes.push(videoLink);
+        }
         if (cover) {
           const coverImage = make('img', 'course-detail-cover'); coverImage.src = cover; coverImage.alt = `${course.title || ''}课程封面`; coverImage.loading = 'eager'; coverImage.decoding = 'async';
           nodes.push(coverImage);

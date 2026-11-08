@@ -21,6 +21,7 @@
   dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => {
     document.body.classList.remove('modal-open');
+    dialog.querySelector('video')?.pause();
     if (opener?.isConnected) opener.focus({ preventScroll: true });
   });
   dialog.addEventListener('click', event => {

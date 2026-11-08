@@ -221,6 +221,11 @@ async function init() {
   try {
     const response = await fetch('/api/content'); if (!response.ok) throw Error();
     const data = await response.json(); const site = data.site || {};
+    const heroImage = $('.hero-image');
+    if (heroImage && /^\/assets\/[a-zA-Z0-9_.-]+$/.test(site.heroImage || '')) {
+      heroImage.style.backgroundImage = `url("${site.heroImage}")`;
+      heroImage.setAttribute('aria-label', '课后邦首页主图');
+    }
     document.title = `${site.name || '课后邦'}｜${site.tagline || '素质教育 · 课后服务'}`;
     $('.brand b').textContent = site.name || '课后邦'; $('#headline').textContent = site.headline || ''; $('#intro').textContent = site.intro || '';
     $('#copyright').textContent = `© ${new Date().getFullYear()} ${site.name || '课后邦'} 版权所有`; $('#filing').textContent = site.filing || '';

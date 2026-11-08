@@ -77,7 +77,8 @@ function target(value, label = '打开方式') {
 
 function validateSite(site) {
   object(site, '网站配置');
-  keys(site, new Set(['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing']), '网站配置');
+  keys(site, new Set(['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing', 'heroImage']), '网站配置');
+  optionalAsset(site.heroImage, '首页主图');
   for (const key of ['name', 'tagline', 'headline', 'intro', 'about', 'phone', 'email', 'address', 'filing']) text(site[key], 10000, `site.${key}`);
   if (!site.name.trim() || !site.headline.trim()) throw Error('品牌名和首页标题不能为空');
   if (site.email && !/^([^\s@]+)@([^\s@]+)\.([^\s@]+)$/.test(site.email)) throw Error('请输入有效邮箱');
@@ -106,7 +107,7 @@ function validateTeam(team) {
 
 function validateCourses(courses) {
   list(courses, 200, '课程列表');
-  const allowed = new Set(['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage']);
+  const allowed = new Set(['title', 'category', 'summary', 'description', 'grades', 'outline', 'page', 'cover', 'longImage', 'videoUrl']);
   for (const course of courses) {
     object(course, '课程项目'); keys(course, allowed, '课程项目');
     for (const key of ['title', 'category', 'summary']) text(course[key], 10000, `courses.${key}`);
@@ -114,6 +115,10 @@ function validateCourses(courses) {
     optionalText(course.grades, 200, '课程适用年级');
     optionalAsset(course.cover, '课程封面');
     optionalAsset(course.longImage, '课程长图');
+    if (course.videoUrl !== undefined && course.videoUrl !== '') {
+      href(course.videoUrl, '介绍视频链接');
+      if (!course.videoUrl.startsWith('https://')) throw Error('介绍视频须使用 HTTPS 链接');
+    }
     if (!course.title.trim() || !course.category.trim()) throw Error('课程名称和分类不能为空');
     integer(course.page, 0, 32, '课程手册页码须为 1–32，填 0 表示不关联手册');
   }

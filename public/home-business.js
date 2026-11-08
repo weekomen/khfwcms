@@ -133,8 +133,8 @@
         const title = page.title || group.titles[index];
         const card = make('article', 'course-card business-detail-card');
         const thumb = make('img', 'course-thumb'); setImage(thumb, page.image || group.image, group.root === 'after-school-cards' ? '/assets/business-supply-chain-v1.webp' : '/assets/business-ai-school-supply-v1.webp'); thumb.alt = title; thumb.loading = 'lazy'; thumb.decoding = 'async';
-        const link = make('a', 'text-link', '查看详细介绍 ↗'); link.href = destination(id); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.setAttribute('aria-label', `查看${title}（新标签页打开）`);
-        card.append(thumb, make('h4', '', title), make('p', '', page.summary ?? '了解具体内容与服务方案。'), link); root.append(card);
+        const link = make('a', 'business-image-link'); link.href = destination(id); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.setAttribute('aria-label', `查看${title}（新标签页打开）`);
+        link.append(thumb); card.append(link, make('h4', '', title), make('p', '', page.summary ?? '了解具体内容与服务方案。')); root.append(card);
       });
     });
   };
